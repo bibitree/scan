@@ -2,6 +2,7 @@ package sniffer
 
 import (
 	"context"
+	"errors"
 	"ethgo/eth"
 	"ethgo/model/blocknumber"
 	"ethgo/util/ethx"
@@ -25,6 +26,13 @@ type Sniffer struct {
 	handler      EventHandler
 	addresses    []common.Address
 	filterTopics []common.Hash
+}
+
+type TransactionInfo struct {
+	TxIndex     uint              // index of the transaction within the block
+	BlockNumber uint64            // number of the block containing the transaction
+	BlockHash   common.Hash       // hash of the block containing the transaction
+	Tx          types.Transaction // the actual transaction object
 }
 
 type Contract struct {
@@ -168,7 +176,7 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 		log.Info(transaction)
 		// Handle all logs.
 		// 处理抽取到的日志信息，并在处理过程中出现错误则进入等待状态。
-		if err := s.handleLogs(ctx, logs); err != nil {
+		if err := s.handleLogs(ctx, logs, transaction); err != nil {
 			log.With(err).Error("Failed to handleLogs")
 			goto WAIT
 		}
@@ -194,71 +202,77 @@ func (s *Sniffer) getSecurityBlockNumber(ctx context.Context, backend eth.Backen
 	return latestBlockNumber - securityHeight, nil
 }
 
-func (s *Sniffer) filterLogsAndTransactions(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]types.Log, []types.Transaction, error) {
-	transactions, err := s.getTransactionsInBlocks(ctx, backend, fromBlockNumber, toBlockNumber)
+func (s *Sniffer) filterLogsAndTransactions(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]types.Log, []TransactionInfo, error) {
+	transactionsInfo, err := s.getTransactionsInBlocks(ctx, backend, fromBlockNumber, toBlockNumber)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	logs, err := s.getLogsForTransactions(ctx, backend, transactions)
+	logs, err := s.getLogsForTransactions(ctx, backend, transactionsInfo)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	return logs, transactions, nil
+	return logs, transactionsInfo, nil
 }
 
-func (s *Sniffer) getLogsForTransactions(ctx context.Context, backend eth.Backend, transactions []types.Transaction) ([]types.Log, error) {
+func (s *Sniffer) getLogsForTransactions(ctx context.Context, backend eth.Backend, transactionsInfo []TransactionInfo) ([]types.Log, error) {
 	var logs []types.Log
-	for _, tx := range transactions {
-		if len(tx.Data()) > 0 {
-			txHash := tx.Hash()
-			txLogs, err := s.filterLogs(ctx, backend, tx.Nonce(), txHash)
+	for _, txInfo := range transactionsInfo {
+		if len(txInfo.Tx.Data()) > 0 {
+			txHash := txInfo.Tx.Hash()
+			txLogs, err := s.filterLogs(ctx, backend, txHash)
 			if err != nil {
 				return nil, err
 			}
-			logs = append(logs, txLogs...)
+			for _, log := range txLogs {
+				log.BlockNumber = txInfo.BlockNumber
+				log.TxHash = txHash
+				log.TxIndex = txInfo.TxIndex
+				log.BlockHash = txInfo.BlockHash
+				logs = append(logs, log)
+			}
 		}
 	}
 	return logs, nil
 }
 
-func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, nonce uint64, txHash common.Hash) ([]types.Log, error) {
+func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, txHash common.Hash) ([]types.Log, error) {
 	query := ethereum.FilterQuery{
-		FromBlock: new(big.Int).SetUint64(nonce),
-		ToBlock:   new(big.Int).SetUint64(nonce),
+		FromBlock: nil,
+		ToBlock:   nil,
 		Addresses: nil,
-		Topics:    [][]common.Hash{{txHash}},
+		Topics:    [][]common.Hash{{common.BytesToHash(txHash.Bytes())}},
 	}
 	return backend.FilterLogs(ctx, query)
 }
 
-func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]types.Transaction, error) {
-	var transactions []types.Transaction
-
+func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]TransactionInfo, error) {
+	var transactions []TransactionInfo
 	for blockNumber := big.NewInt(int64(fromBlockNumber)); blockNumber.Cmp(new(big.Int).SetUint64(toBlockNumber)) <= 0; blockNumber.Add(blockNumber, big.NewInt(1)) {
 		block, err := backend.BlockByNumber(ctx, blockNumber)
 		if err != nil {
 			return nil, err
 		}
-		for _, tx := range block.Transactions() {
-			transactions = append(transactions, *tx)
+		for txIndex, tx := range block.Transactions() {
+			txInfo := TransactionInfo{
+				TxIndex:     uint(txIndex),
+				BlockNumber: block.NumberU64(),
+				BlockHash:   block.Hash(),
+				Tx:          *tx,
+			}
+			transactions = append(transactions, txInfo)
 		}
 	}
 	return transactions, nil
 }
 
-func (s *Sniffer) handleLogs(ctx context.Context, logs []types.Log) error {
-
+func (s *Sniffer) handleLogs(ctx context.Context, logs []types.Log, txs []TransactionInfo) error {
 	// 处理所有的日志消息
 	for _, v := range logs {
 		event := new(Event)
-
 		// 反序列化日志消息
 		if err := s.unpackLog(v, event); err != nil {
 			log.Panic(err)
 		}
-
 		// 处理反序列化后的事件
 		if err := s.handleEvent(ctx, event); err != nil {
 			return err
@@ -270,8 +284,50 @@ func (s *Sniffer) handleLogs(ctx context.Context, logs []types.Log) error {
 		default:
 		}
 	}
-
+	for _, tx := range txs {
+		event := new(Event)
+		// 解析交易数据成为事件对象
+		if err := s.unpackTransaction(&tx, event); err != nil {
+			log.Panic(err)
+		}
+		// 处理反序列化后的事件
+		if err := s.handleEvent(ctx, event); err != nil {
+			return err
+		}
+		// 在应用程序关闭时，可以取消所有正在进行的处理任务
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+	}
 	return nil
+}
+
+func (s *Sniffer) unpackTransaction(tx *TransactionInfo, out *Event) error {
+	if tx.Tx.To() == nil {
+		return errors.New("transaction 'to' address is empty")
+	}
+	out.Name = ""                           // 设置Event结构中的事件名
+	out.Data = make(map[string]interface{}) // 准备一个空的数据映射
+	// 设置Event对象的其他属性
+	// out.Address = tx.To()
+	out.Address = common.Address(*tx.Tx.To())
+	out.BlockHash = tx.Tx.Hash()
+	out.TxHash = tx.Tx.Hash()
+	out.BlockNumber = strconv.FormatUint(tx.BlockNumber, 10)
+	out.TxIndex = strconv.FormatUint(uint64(tx.TxIndex), 10)
+	out.Gas = tx.Tx.Gas()
+	out.GasPrice = tx.Tx.GasPrice()
+	out.GasTipCap = tx.Tx.GasTipCap()
+	out.GasFeeCap = tx.Tx.GasFeeCap()
+	out.Value = tx.Tx.Value()
+	out.Nonce = tx.Tx.Nonce()
+	out.To = tx.Tx.To()
+	out.ContractName = ""
+	out.ChainID = s.chainID
+	return nil // 成功解析后结束函数
+
 }
 
 func (s *Sniffer) unpackLog(l types.Log, out *Event) error {
