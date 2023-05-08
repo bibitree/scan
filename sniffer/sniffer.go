@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -193,35 +194,43 @@ func (s *Sniffer) getSecurityBlockNumber(ctx context.Context, backend eth.Backen
 	return latestBlockNumber - securityHeight, nil
 }
 
-// func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]types.Log, error) {
-// 	filterQuery := ethereum.FilterQuery{
-// 		FromBlock: new(big.Int).SetUint64(fromBlockNumber),
-// 		ToBlock:   new(big.Int).SetUint64(toBlockNumber),
-// 		Addresses: nil,
-// 		Topics:    [][]common.Hash{},
-// 	}
-// 	return backend.FilterLogs(ctx, filterQuery)
-// }
-
 func (s *Sniffer) filterLogsAndTransactions(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]types.Log, []types.Transaction, error) {
-	// filterQuery := ethereum.FilterQuery{
-	// 	FromBlock: new(big.Int).SetUint64(fromBlockNumber),
-	// 	ToBlock:   new(big.Int).SetUint64(toBlockNumber),
-	// 	Addresses: []common.Address{},
-	// 	Topics:    [][]common.Hash{},
-	// }
-
-	// logs, err := backend.FilterLogs(ctx, filterQuery)
-	// if err != nil {
-	// 	return nil, nil, err
-	// }
-
 	transactions, err := s.getTransactionsInBlocks(ctx, backend, fromBlockNumber, toBlockNumber)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	logs, err := s.getLogsForTransactions(ctx, backend, transactions)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return logs, transactions, nil
+}
+
+func (s *Sniffer) getLogsForTransactions(ctx context.Context, backend eth.Backend, transactions []types.Transaction) ([]types.Log, error) {
+	var logs []types.Log
+	for _, tx := range transactions {
+		if len(tx.Data()) > 0 {
+			txHash := tx.Hash()
+			txLogs, err := s.filterLogs(ctx, backend, tx.Nonce(), txHash)
+			if err != nil {
+				return nil, err
+			}
+			logs = append(logs, txLogs...)
+		}
+	}
+	return logs, nil
+}
+
+func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, nonce uint64, txHash common.Hash) ([]types.Log, error) {
+	query := ethereum.FilterQuery{
+		FromBlock: new(big.Int).SetUint64(nonce),
+		ToBlock:   new(big.Int).SetUint64(nonce),
+		Addresses: nil,
+		Topics:    [][]common.Hash{{txHash}},
+	}
+	return backend.FilterLogs(ctx, query)
 }
 
 func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]types.Transaction, error) {
@@ -238,41 +247,6 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 	}
 	return transactions, nil
 }
-
-// func (s *Sniffer) filterLogsAndTransactions(ctx context.Context, backend *ethclient.Client, fromBlockNumber uint64, toBlockNumber uint64) ([]types.Log, []types.Transaction, error) {
-// 	filterQuery := ethereum.FilterQuery{
-// 		FromBlock: new(big.Int).SetUint64(fromBlockNumber),
-// 		ToBlock:   new(big.Int).SetUint64(toBlockNumber),
-// 		Addresses: []common.Address{},
-// 		Topics:    [][]common.Hash{},
-// 	}
-
-// 	logs, err := backend.FilterLogs(ctx, filterQuery)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-
-// 	transactions, err := s.getTransactionsInBlocks(ctx, backend, fromBlockNumber, toBlockNumber)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-
-// 	return logs, transactions, nil
-// }
-
-// func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend *ethclient.Client, fromBlockNumber uint64, toBlockNumber uint64) ([]types.Transaction, error) {
-// 	var transactions []types.Transaction
-// 	for blockNumber := big.NewInt(int64(fromBlockNumber)); blockNumber.Cmp(new(big.Int).SetUint64(toBlockNumber)) <= 0; blockNumber.Add(blockNumber, big.NewInt(1)) {
-// 		block, err := backend.BlockByNumber(ctx, blockNumber)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		for _, tx := range block.Transactions() {
-// 			transactions = append(transactions, *tx)
-// 		}
-// 	}
-// 	return transactions, nil
-// }
 
 func (s *Sniffer) handleLogs(ctx context.Context, logs []types.Log) error {
 
