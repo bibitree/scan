@@ -1,0 +1,48 @@
+[logger]
+Filename = "./logs/sniffer.log"
+Level = "debug"
+Compress = false
+MaxSize = 100
+MaxAge = 7
+MaxBackups = 512
+Named = "[SNIFFER]"
+
+[redis]
+Domain = "polygon"
+MaxIdle = 8
+MaxActive = 0
+IdleTimeout = 0
+#URI = "redis://:AyLf3qg%40ia%5EGZ%23yrbd34%25j@192.168.10.179:6001/2"
+URI = "redis://:@127.0.0.1:6379/1"
+Address = "127.0.0.1:3306"
+
+[sniffer]
+SecrityHeight = 0
+NumberOfBlocks = 512
+Callback = "http://127.0.0.1:8081/event/bridge"
+
+[[sniffer.contracts]]
+Addr = "ERC1155"
+Abi = "./contracts/ERC1155.abi"
+Events = [
+    "TransferSingle","TransferBatch","ApprovalForAll","URI"
+]
+
+[[sniffer.contracts]]
+Addr = "ERC721"
+Abi = "./contracts/ERC721.abi"
+Events = [
+    "Transfer","Approval","ApprovalForAll"
+]
+
+[[sniffer.contracts]]
+Addr = "ERC20"
+Abi = "./contracts/ERC20.abi"
+Events = [
+    "Transfer","Approval"
+]
+
+[backend]
+# Addr = "http://47.98.198.159:8989"
+Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
+TransactionsPerSecond = 128

@@ -1,0 +1,108 @@
+[logger]
+Filename = "./logs/tyche.log"
+Level = "debug"
+Compress = false
+MaxSize = 10
+MaxAge = 7
+MaxBackups = 512
+Named = "[TYCHE]"
+
+[redis]
+Domain = "polygon"
+MaxIdle = 8
+MaxActive = 0
+IdleTimeout = 0
+URI = "redis://:AyLf3qg%40ia%5EGZ%23yrbd34%25j@192.168.10.179:6001/8"
+
+[tyche]
+Listen = "0.0.0.0:8080"
+ReadTimeout = 15
+WriteTimeout = 15
+MaxHeaderBytes = 8192
+
+# HTTPS
+EnableTLS = false
+CertFile = "./pem/tyche.com.crt"
+keyFile = "./pem/tyche.com.key"
+
+# 账号
+Account = "0x3f42a9387A75E92283E0EbA1CC707E4c637c7dEe"
+PrivateKey = "37f562aa2e03b3cb2977e939a772d06172b42c9730bbf32b5039788e5adaaf1f"
+
+# Account = "0x893c33FB170eEAf184B8e305F847Cb0316cE9Bc5"
+# PrivateKey = "dc9060a7b457b9a98538045cce62028f31919116473ae0c40e09f154f045bb92"
+              
+# Account = "0x54987E5F03b503BFD7Df2c84f1981e2a7d3bC505"
+# PrivateKey = "164e15b4d90ee0b2fc2419308ba682eec15971e7600ae79cfcdb29854ae41d2a"
+
+# 回调
+ErrorURI = "http://127.0.0.1:8081/event/error"
+SucceedURI = "http://127.0.0.1:8081/event/succeed"
+FailedURI = "http://127.0.0.1:8081/event/failed"
+
+# 并发控制
+ErrorNumberOfConcurrent = 4
+FailedNumberOfConcurrent= 4
+PendingNumberOfConcurrent = 16
+SentNumberOfConcurrent = 1
+SucceedNumberOfConcurrent= 4
+
+# GasPrice
+EstimatorJS = "./js/gasprice.js"
+GasPriceUpdateInterval = 5
+
+# Nonce
+NonceCheckInterval = 3
+NonceKeepalive = 60
+MaxBumpingGasTimes = 3
+
+# 重试
+PendingRetryInterval = 1
+SentRetryInterval = 1
+RedisRetryInterval = 3
+NetworkRetryInterval = 5
+WaitMinedRetryInterval = 10
+CallbackRetryInterval = 15
+
+# [[tyche.contracts]]
+# Addr = "0x49604b7e8053800C572882Abb548a1f01908734a"
+# ABI = "./contracts/MoonTouchDNARandom.abi"
+
+
+# [[tyche.contracts]]
+# Addr = "0x9dCA7D8b9FEa0A0291c8D45C9df46FB638F6eDA0"
+# ABI = "./contracts/MoonTouch.abi"
+
+# [[tyche.contracts]]
+# Addr = "0x1a6C4BBC9BD58633710E6c44F41ab9be1B9C2971"
+# ABI = "./contracts/MTBox.abi"
+
+# [[tyche.contracts]]
+# Addr = "0x5c86dAd803872601d99E5dB15c985155F399CfD9"
+# ABI = "./contracts/OpenHeroBox.abi"
+
+# [[tyche.contracts]]
+# Addr = "0x4e33F05F98b5bD51E12D8864B258ad55e205e001"
+# ABI = "./contracts/BuyBox.abi"
+
+
+[[tyche.contracts]]
+Addr = "0xa19844250b2b37c8518cb837b58ffed67f2e915d"
+ABI = "./contracts/PlayWorld.abi"
+
+[[tyche.contracts]]
+Addr = "0x1afb1986f393ff971b47f6d6471cd90a32e2c5b0"
+ABI = "./contracts/StarKey.abi"
+
+[backend]
+# Addr = "http://47.98.198.159:8989"
+Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
+
+# Addr = "https://matic-mumbai.chainstacklabs.com"
+# Addr = "http://127.0.0.1:8545"
+DefaultGasLimit = 5500000
+TransactionsPerSecond = 20
+
+[[backend.headers]]
+Key = "x-api-key"
+Value = "6ef17cd9d9cc4d3b9e9d1945742f22d2"

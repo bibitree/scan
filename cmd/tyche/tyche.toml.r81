@@ -1,0 +1,75 @@
+[logger]
+Filename = "./logs/tyche.log"
+Level = "debug"
+Compress = false
+MaxSize = 10
+MaxAge = 7
+MaxBackups = 512
+Named = "[TYCHE]"
+
+[redis]
+Domain = "polygon"
+MaxIdle = 8
+MaxActive = 0
+IdleTimeout = 0
+URI = "redis://:AyLf3qg%40ia%5EGZ%23yrbd34%25j@192.168.10.179:6001/2"
+
+
+[tyche]
+Listen = "0.0.0.0:8080"
+ReadTimeout = 15
+WriteTimeout = 15
+MaxHeaderBytes = 8192
+
+# HTTPS
+EnableTLS = false
+CertFile = "./pem/tyche.com.crt"
+keyFile = "./pem/tyche.com.key"
+
+# 账号
+Account = "0x3f42a9387A75E92283E0EbA1CC707E4c637c7dEe"
+PrivateKey = "37f562aa2e03b3cb2977e939a772d06172b42c9730bbf32b5039788e5adaaf1f"
+
+# 回调
+ErrorURI = "http://127.0.0.1:8081/event/error"
+SucceedURI = "http://127.0.0.1:8081/event/succeed"
+FailedURI = "http://127.0.0.1:8081/event/failed"
+
+# 并发控制
+ErrorNumberOfConcurrent = 4
+FailedNumberOfConcurrent= 4
+PendingNumberOfConcurrent = 16
+SentNumberOfConcurrent = 8
+SucceedNumberOfConcurrent= 4
+
+# GasPrice
+EstimatorJS = "./js/gasprice.js"
+GasPriceUpdateInterval = 5
+
+# Nonce
+NonceCheckInterval = 3
+NonceKeepalive = 60
+MaxBumpingGasTimes = 3
+
+# 重试
+PendingRetryInterval = 1
+SentRetryInterval = 1
+RedisRetryInterval = 3
+NetworkRetryInterval = 5
+WaitMinedRetryInterval = 10
+CallbackRetryInterval = 15
+
+[[tyche.contracts]]
+Addr = "0xa19844250b2b37c8518cb837b58ffed67f2e915d"
+ABI = "./contracts/PlayWorld.abi"
+
+[[tyche.contracts]]
+Addr = "0x1afb1986f393ff971b47f6d6471cd90a32e2c5b0"
+ABI = "./contracts/StarKey.abi"
+
+[backend]
+# Addr = "http://47.98.198.159:8989"
+# Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
+Addr = "https://matic-mumbai.chainstacklabs.com"
+DefaultGasLimit = 5500000
+TransactionsPerSecond = 20
