@@ -1,40 +1,14 @@
 package mysqlOrders
 
 import (
+	"encoding/json"
 	"ethgo/model"
 	"ethgo/sniffer"
-	"fmt"
 	"log"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 )
-
-// 查询数据
-func QueryData() error {
-	// 声明SQL语句
-	sqlStr := "SELECT name, age FROM user"
-	// 执行查询操作，返回一个Rows结果集对象和错误信息
-	rows, err := model.MysqlPool.Query(sqlStr)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	// 遍历结果集
-	for rows.Next() {
-		var name string
-		var age int
-
-		err := rows.Scan(&name, &age)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%s is %d years old\n", name, age)
-	}
-
-	return nil
-}
 
 func GetEventByTxHash(txHash common.Hash) ([]sniffer.Event, error) {
 	// 声明SQL语句
@@ -49,8 +23,15 @@ func GetEventByTxHash(txHash common.Hash) ([]sniffer.Event, error) {
 	events := make([]sniffer.Event, 0)
 	for rows.Next() {
 		event := sniffer.Event{}
-		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &event.Data,
-			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex)
+		var data []byte
+		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &data,
+			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex,
+			&event.Gas, &event.GasPrice, &event.GasTipCap, &event.GasFeeCap,
+			&event.Value, &event.Nonce, &event.To)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -75,8 +56,15 @@ func GetEventByBlockHash(blockHash common.Hash) ([]sniffer.Event, error) {
 	events := make([]sniffer.Event, 0)
 	for rows.Next() {
 		event := sniffer.Event{}
-		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &event.Data,
-			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex)
+		var data []byte
+		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &data,
+			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex,
+			&event.Gas, &event.GasPrice, &event.GasTipCap, &event.GasFeeCap,
+			&event.Value, &event.Nonce, &event.To)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -102,8 +90,15 @@ func GetEventByBlockNumber(blockNumber uint64) ([]sniffer.Event, error) {
 	events := make([]sniffer.Event, 0)
 	for rows.Next() {
 		event := sniffer.Event{}
-		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &event.Data,
-			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex)
+		var data []byte
+		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &data,
+			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex,
+			&event.Gas, &event.GasPrice, &event.GasTipCap, &event.GasFeeCap,
+			&event.Value, &event.Nonce, &event.To)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -126,8 +121,15 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64) ([]sniffer.Event, er
 	events := make([]sniffer.Event, 0)
 	for rows.Next() {
 		event := sniffer.Event{}
-		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &event.Data,
-			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex)
+		var data []byte
+		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &data,
+			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex,
+			&event.Gas, &event.GasPrice, &event.GasTipCap, &event.GasFeeCap,
+			&event.Value, &event.Nonce, &event.To)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -152,8 +154,15 @@ func GetAllEvents() ([]sniffer.Event, error) {
 	events := make([]sniffer.Event, 0)
 	for rows.Next() {
 		event := sniffer.Event{}
-		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &event.Data,
-			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex)
+		var data []byte
+		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &data,
+			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex,
+			&event.Gas, &event.GasPrice, &event.GasTipCap, &event.GasFeeCap,
+			&event.Value, &event.Nonce, &event.To)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
 		}
