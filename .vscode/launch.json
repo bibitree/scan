@@ -11,7 +11,8 @@
             "mode": "auto",
             // "program": "${workspaceFolder}/cmd/tester/main.go"
             // "program": "${workspaceFolder}/cmd/tyche/main.go"
-            "program": "${workspaceFolder}/cmd/sniffer/main.go"
+            // "program": "${workspaceFolder}/cmd/sniffer/main.go"
+            "program": "${workspaceFolder}/cmd/chainFinder/main.go"
         }
     ]
 }

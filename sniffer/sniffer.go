@@ -293,9 +293,6 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	out.Data = make(map[string]interface{}) // 准备一个空的数据映射
 
 	// 设置Event对象的其他属性
-	// out.Address = tx.To()
-	// out.Address = common.Address(*tx.Tx.To())
-
 	out.Address = tx.From
 	out.BlockHash = tx.BlockHash
 	out.TxHash = tx.Tx.Hash()
