@@ -29,6 +29,18 @@ type Transact struct {
 	Args interface{} `json:"args" swaggertype:"object,string" example:"to:0xa70a1a4fb9143e6e9ef8b44d01c98794626b21b3,ids:[]int{2001},amounts:[]int{12},data:nothing"`
 }
 
+// type Event struct {
+// 	Address      string                 `json:"address"`
+// 	ContractName string                 `json:"contractName"`
+// 	ChainID      *big.Int               `json:"chainID"`
+// 	Data         map[string]interface{} `json:"data"`
+// 	BlockHash    common.Hash            `json:"blockHash"`
+// 	BlockNumber  string                 `json:"blockNumber"`
+// 	Name         string                 `json:"name"`
+// 	TxHash       common.Hash            `json:"txHash"`
+// 	TxIndex      string                 `json:"txIndex"`
+// }
+
 type Event struct {
 	Address      string                 `json:"address"`
 	ContractName string                 `json:"contractName"`
@@ -39,4 +51,11 @@ type Event struct {
 	Name         string                 `json:"name"`
 	TxHash       common.Hash            `json:"txHash"`
 	TxIndex      string                 `json:"txIndex"`
+	Gas          uint64                 `json:"gas"`
+	GasPrice     *big.Int               `json:"gasPrice"`
+	GasTipCap    *big.Int               `json:"gasTipCap"`
+	GasFeeCap    *big.Int               `json:"gasFeeCap"`
+	Value        *big.Int               `json:"value"`
+	Nonce        uint64                 `json:"nonce"`
+	To           string                 `json:"to"`
 }

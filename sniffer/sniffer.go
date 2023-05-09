@@ -323,7 +323,7 @@ func (s *Sniffer) unpackTransaction(tx *TransactionInfo, out *Event) error {
 	out.GasFeeCap = tx.Tx.GasFeeCap()
 	out.Value = tx.Tx.Value()
 	out.Nonce = tx.Tx.Nonce()
-	out.To = tx.Tx.To()
+	out.To = *tx.Tx.To()
 	out.ContractName = ""
 	out.ChainID = s.chainID
 	return nil // 成功解析后结束函数

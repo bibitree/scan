@@ -48,6 +48,13 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 		Name:         request.Name,
 		TxHash:       request.TxHash,
 		TxIndex:      request.TxIndex,
+		Gas:          request.Gas,
+		GasPrice:     request.GasPrice,
+		GasTipCap:    request.GasTipCap,
+		GasFeeCap:    request.GasFeeCap,
+		Value:        request.Value,
+		Nonce:        request.Nonce,
+		To:           common.HexToAddress(request.To),
 	}
 
 	orders.CreateTransactionStorage(event)
