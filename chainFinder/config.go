@@ -17,22 +17,21 @@ type Config struct {
 	SucceedURI             string `toml:"succeedURI" json:"succeedURI"`
 	GasPriceUpdateInterval int64  `toml:"gasPriceUpdateInterval" json:"gasPriceUpdateInterval"`
 
-	MaxBumpingGasTimes        int64            `toml:"maxBumpingGasTimes" json:"maxBumpingGasTimes"`
-	ErrorNumberOfConcurrent   int64            `toml:"errorNumberOfConcurrent" json:"errorNumberOfConcurrent"`
-	FailedNumberOfConcurrent  int64            `toml:"failedNumberOfConcurrent" json:"failedNumberOfConcurrent"`
-	PendingNumberOfConcurrent int64            `toml:"pendingNumberOfConcurrent" json:"pendingNumberOfConcurrent"`
-	SentNumberOfConcurrent    int64            `toml:"sentNumberOfConcurrent" json:"sentNumberOfConcurrent"`
-	SucceedNumberOfConcurrent int64            `toml:"succeedNumberOfConcurrent" json:"succeedNumberOfConcurrent"`
-	PendingRetryInterval      int64            `toml:"pendingRetryInterval" json:"pendingRetryInterval"`
-	SentRetryInterval         int64            `toml:"sentRetryInterval" json:"sentRetryInterval"`
-	RedisRetryInterval        int64            `toml:"redisRetryInterval" json:"redisRetryInterval"`
-	NetworkRetryInterval      int64            `toml:"networkRetryInterval" json:"networkRetryInterval"`
-	WaitMinedRetryInterval    int64            `toml:"waitMinedRetryInterval" json:"waitMinedRetryInterval"`
-	CallbackRetryInterval     int64            `toml:"callbackRetryInterval" json:"callbackRetryInterval"`
-	EnableTLS                 bool             `toml:"enableTLS" json:"enableTLS"`
-	CertFile                  string           `toml:"certFile" json:"certFile"`
-	KeyFile                   string           `toml:"keyFile" json:"keyFile"`
-	Contracts                 []ContractConfig `toml:"contracts" json:"contracts"`
+	MaxBumpingGasTimes        int64  `toml:"maxBumpingGasTimes" json:"maxBumpingGasTimes"`
+	ErrorNumberOfConcurrent   int64  `toml:"errorNumberOfConcurrent" json:"errorNumberOfConcurrent"`
+	FailedNumberOfConcurrent  int64  `toml:"failedNumberOfConcurrent" json:"failedNumberOfConcurrent"`
+	PendingNumberOfConcurrent int64  `toml:"pendingNumberOfConcurrent" json:"pendingNumberOfConcurrent"`
+	SentNumberOfConcurrent    int64  `toml:"sentNumberOfConcurrent" json:"sentNumberOfConcurrent"`
+	SucceedNumberOfConcurrent int64  `toml:"succeedNumberOfConcurrent" json:"succeedNumberOfConcurrent"`
+	PendingRetryInterval      int64  `toml:"pendingRetryInterval" json:"pendingRetryInterval"`
+	SentRetryInterval         int64  `toml:"sentRetryInterval" json:"sentRetryInterval"`
+	RedisRetryInterval        int64  `toml:"redisRetryInterval" json:"redisRetryInterval"`
+	NetworkRetryInterval      int64  `toml:"networkRetryInterval" json:"networkRetryInterval"`
+	WaitMinedRetryInterval    int64  `toml:"waitMinedRetryInterval" json:"waitMinedRetryInterval"`
+	CallbackRetryInterval     int64  `toml:"callbackRetryInterval" json:"callbackRetryInterval"`
+	EnableTLS                 bool   `toml:"enableTLS" json:"enableTLS"`
+	CertFile                  string `toml:"certFile" json:"certFile"`
+	KeyFile                   string `toml:"keyFile" json:"keyFile"`
 }
 
 type ContractConfig struct {
@@ -41,18 +40,6 @@ type ContractConfig struct {
 }
 
 func (c *Config) Init() error {
-	// if !common.IsHexAddress(c.Account) {
-	// 	return errors.New("account is invalid address")
-	// }
-
-	// for _, v := range c.Contracts {
-	// 	if !common.IsHexAddress(v.Addr) {
-	// 		return errors.New("contract Addr is invalid address")
-	// 	}
-	// 	if v.ABI == "" {
-	// 		return errors.New("contract ABI cannot be set to empty")
-	// 	}
-	// }
 	if c.ErrorURI == "" {
 		return errors.New("errorURI cannot be set to empty")
 	}

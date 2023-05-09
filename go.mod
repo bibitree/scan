@@ -7,15 +7,24 @@ require (
 	github.com/ethereum/go-ethereum v1.10.18
 	github.com/gin-gonic/gin v1.7.7
 	github.com/google/uuid v1.2.0
+	github.com/jinzhu/gorm v1.9.16
+	github.com/prometheus/common v0.6.0
 	github.com/swaggo/swag v1.8.1
 	go.uber.org/zap v1.21.0
 )
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
+	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
+	github.com/go-sql-driver/mysql v1.5.0 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
+	github.com/sirupsen/logrus v1.2.0 // indirect
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
+	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 )
 
 require (
