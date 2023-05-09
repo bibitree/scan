@@ -51,18 +51,5 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 	}
 
 	orders.CreateTransactionStorage(event)
-
-	// if err = orders.Pending(id, contract.Address.String(), hexutil.Encode(inputData)); err != nil {
-	// 	log.Errorf("Failed to %v: %v, %v", c.Request.URL, err, transactor)
-	// 	c.Failure(http.StatusInternalServerError, err.Error(), nil)
-	// 	return
-	// }
-
-	// if err = app.base.Transact(context.Background(), request.OrderID, transactor); err != nil {
-	// 	log.Errorf("Failed to %v: %v, %v", c.Request.URL, err, transactor)
-	// 	c.Failure(http.StatusInternalServerError, err.Error(), nil)
-	// 	return
-	// }
-
 	c.Success(http.StatusOK, "succ", event)
 }
