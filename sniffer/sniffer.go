@@ -252,9 +252,9 @@ func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []Tra
 		}
 		log.Info("完成")
 		// 处理反序列化后的事件
-		// if err := s.handleEvent(ctx, event); err != nil {
-		// 	return err
-		// }
+		if err := s.handleEvent(ctx, event); err != nil {
+			return err
+		}
 		// 在应用程序关闭时，可以取消所有正在进行的处理任务
 		select {
 		case <-ctx.Done():
