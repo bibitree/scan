@@ -2,7 +2,6 @@ package sniffer
 
 import (
 	"context"
-	"errors"
 	"ethgo/eth"
 	"ethgo/model/blocknumber"
 	"ethgo/util/ethx"
@@ -10,7 +9,6 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -175,7 +173,8 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			log.With(err).Error("Failed to filterLogs")
 			goto WAIT
 		}
-		log.Info(transaction)
+
+		// log.Info(transaction)
 		// Handle all logs.
 		// 处理抽取到的日志信息，并在处理过程中出现错误则进入等待状态。
 		if err := s.handleLogs(ctx, backend, transaction); err != nil {
@@ -209,6 +208,7 @@ func (s *Sniffer) filterLogsAndTransactions(ctx context.Context, backend eth.Bac
 	if err != nil {
 		return nil, err
 	}
+	log.Info("")
 	return transactionsInfo, nil
 }
 
@@ -223,46 +223,72 @@ func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, txHash co
 }
 
 func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]TransactionInfo, error) {
-	var wg sync.WaitGroup
-	transactionsChan := make(chan TransactionInfo)
+	transactions := make([]TransactionInfo, 0)
 
 	for blockNumber := big.NewInt(int64(fromBlockNumber)); blockNumber.Cmp(new(big.Int).SetUint64(toBlockNumber)) <= 0; blockNumber.Add(blockNumber, big.NewInt(1)) {
-		wg.Add(1)
-
-		go func(blockNumber *big.Int, ctx context.Context, backend eth.Backend, transactionsChan chan<- TransactionInfo) {
-			block, err := backend.BlockByNumber(ctx, blockNumber)
-			if err == nil {
-				for txIndex, tx := range block.Transactions() {
-					msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
-					if err != nil {
-						log.Fatal(err)
-					}
-					txInfo := TransactionInfo{
-						TxIndex:     uint(txIndex),
-						BlockNumber: block.NumberU64(),
-						BlockHash:   block.Hash(),
-						From:        msg.From(),
-						Tx:          *tx,
-					}
-					transactionsChan <- txInfo
+		block, err := backend.BlockByNumber(ctx, blockNumber)
+		if err == nil {
+			for txIndex, tx := range block.Transactions() {
+				msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
+				if err != nil {
+					log.Fatal(err)
 				}
+				txInfo := TransactionInfo{
+					TxIndex:     uint(txIndex),
+					BlockNumber: block.NumberU64(),
+					BlockHash:   block.Hash(),
+					From:        msg.From(),
+					Tx:          *tx,
+				}
+				transactions = append(transactions, txInfo)
 			}
-			wg.Done()
-		}(blockNumber, ctx, backend, transactionsChan)
-	}
-
-	go func() {
-		wg.Wait()
-		close(transactionsChan)
-	}()
-
-	var transactions []TransactionInfo
-	for txInfo := range transactionsChan {
-		transactions = append(transactions, txInfo)
+		}
 	}
 
 	return transactions, nil
 }
+
+// func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]TransactionInfo, error) {
+// 	var wg sync.WaitGroup
+// 	transactionsChan := make(chan TransactionInfo)
+
+// 	for blockNumber := big.NewInt(int64(fromBlockNumber)); blockNumber.Cmp(new(big.Int).SetUint64(toBlockNumber)) <= 0; blockNumber.Add(blockNumber, big.NewInt(1)) {
+// 		wg.Add(1)
+
+// 		go func(blockNumber *big.Int, ctx context.Context, backend eth.Backend, transactionsChan chan<- TransactionInfo) {
+// 			block, err := backend.BlockByNumber(ctx, blockNumber)
+// 			if err == nil {
+// 				for txIndex, tx := range block.Transactions() {
+// 					msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
+// 					if err != nil {
+// 						log.Fatal(err)
+// 					}
+// 					txInfo := TransactionInfo{
+// 						TxIndex:     uint(txIndex),
+// 						BlockNumber: block.NumberU64(),
+// 						BlockHash:   block.Hash(),
+// 						From:        msg.From(),
+// 						Tx:          *tx,
+// 					}
+// 					transactionsChan <- txInfo
+// 				}
+// 			}
+// 			wg.Done()
+// 		}(blockNumber, ctx, backend, transactionsChan)
+// 	}
+
+// 	go func() {
+// 		wg.Wait()
+// 		close(transactionsChan)
+// 	}()
+
+// 	var transactions []TransactionInfo
+// 	for txInfo := range transactionsChan {
+// 		transactions = append(transactions, txInfo)
+// 	}
+
+// 	return transactions, nil
+// }
 
 func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []TransactionInfo) error {
 	for _, tx := range txs {
@@ -271,10 +297,11 @@ func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []Tra
 		if err := s.unpackTransaction(ctx, backend, &tx, event); err != nil {
 			log.Panic(err)
 		}
+		log.Info("完成")
 		// 处理反序列化后的事件
-		if err := s.handleEvent(ctx, event); err != nil {
-			return err
-		}
+		// if err := s.handleEvent(ctx, event); err != nil {
+		// 	return err
+		// }
 		// 在应用程序关闭时，可以取消所有正在进行的处理任务
 		select {
 		case <-ctx.Done():
@@ -286,9 +313,6 @@ func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []Tra
 }
 
 func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx *TransactionInfo, out *Event) error {
-	if tx.Tx.To() == nil {
-		return errors.New("transaction 'to' address is empty")
-	}
 	out.Name = ""                           // 设置Event结构中的事件名
 	out.Data = make(map[string]interface{}) // 准备一个空的数据映射
 
@@ -304,10 +328,16 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	out.GasFeeCap = tx.Tx.GasFeeCap()
 	out.Value = tx.Tx.Value()
 	out.Nonce = tx.Tx.Nonce()
-	out.To = *tx.Tx.To()
+
+	to := tx.Tx.To()
+	if to != nil {
+		out.To = *to
+		// 处理空地址的情况
+	}
+	out.To = common.Address{}
 	out.ContractName = ""
 	out.ChainID = s.chainID
-	if tx.Tx.Data() != nil {
+	if len(tx.Tx.Data()) > 0 {
 		txLogs, err := s.filterLogs(ctx, backend, tx.Tx.Hash())
 		if err != nil {
 			return err
@@ -316,6 +346,9 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 		for _, address := range s.addresses {
 			// 在嗅探器对象的合约映射中查找是否存在与地址匹配的合约对象
 			contract := s.contracts[address]
+			if len(txLogs) == 0 {
+				return nil
+			}
 			// 根据日志中第一个topic查找对应的事件
 			event, err := contract.EventByID(txLogs[0].Topics[0])
 			if err == nil { // 如果找到了对应的事件
@@ -343,6 +376,7 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 }
 
 func (s *Sniffer) handleEvent(ctx context.Context, event *Event) error {
+	log.Info(event)
 	for {
 		err := s.handler(event)
 		if err == nil {

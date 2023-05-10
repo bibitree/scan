@@ -31,6 +31,38 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
+	gasPrice, err := message.Int64("GasPrice")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+	gasTipCap, err := message.Int64("GasTipCap")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+	gasFeeCap, err := message.Int64("GasFeeCap")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+	value, err := message.Int64("Value")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+
+	nonce, err := message.Uint64("Nonce")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+
+	gas, err := message.Uint64("Gas")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
 
 	yourMap := make(map[string]interface{})
 	err = json.Unmarshal([]byte(message.String("Data")), &yourMap)
@@ -49,6 +81,13 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		Name:         message.String("Name"),
 		TxHash:       common.HexToHash(message.String("TxHash")),
 		TxIndex:      message.String("TxIndex"),
+		Gas:          gas,
+		GasPrice:     big.NewInt(gasPrice),
+		GasTipCap:    big.NewInt(gasTipCap),
+		GasFeeCap:    big.NewInt(gasFeeCap),
+		Value:        big.NewInt(value),
+		Nonce:        nonce,
+		To:           common.HexToAddress(message.String("To")),
 	}
 	log.Info(event)
 	mysqlOrders.InsertEvent(event)

@@ -17,7 +17,7 @@ URI = "redis://:@127.0.0.1:6379/1"
 
 [sniffer]
 SecrityHeight = 0
-NumberOfBlocks = 512
+NumberOfBlocks = 10
 #Callback = "http://127.0.0.1:8081/event/bridge"
 Callback = "http://127.0.0.1:18071/tyche/api/AcceptTransactionStorage"
 

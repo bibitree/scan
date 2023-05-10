@@ -81,6 +81,11 @@ func InsertEvent(event sniffer.Event) error {
 func InsertEventData(event sniffer.Event) error {
 	// Check if event already exists in database
 	// Event does not exist, insert new row
+	var count int
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE txHash=?", event.TxHash).Scan(&count)
+	if err != nil {
+		return err
+	}
 	sqlStr := `INSERT INTO event(address, contractName, chainID, data, blockHash, blockNumber, name, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, recipient) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	stmt, err := model.MysqlPool.Prepare(sqlStr)
 	if err != nil {
