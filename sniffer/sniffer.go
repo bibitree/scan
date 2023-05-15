@@ -225,7 +225,7 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 			for txIndex, tx := range block.Transactions() {
 				msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
 				if err != nil {
-					log.Info(tx.Hash().String())
+					log.Info("err_ tx_Hash", tx.Hash().String())
 					continue
 				}
 				txInfo := TransactionInfo{
@@ -283,11 +283,11 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	out.Nonce = tx.Tx.Nonce()
 
 	to := tx.Tx.To()
-	if to != nil {
+	if to == nil {
+		out.To = common.Address{}
+	} else {
 		out.To = *to
-		// 处理空地址的情况
 	}
-	out.To = common.Address{}
 	out.ContractName = ""
 	out.ChainID = s.chainID
 	if len(tx.Tx.Data()) > 0 {
