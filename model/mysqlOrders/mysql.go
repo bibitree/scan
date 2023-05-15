@@ -103,10 +103,6 @@ func InsertEventData(event sniffer.Event) error {
 		log.Error("Error serializing event data: ", err)
 		return err
 	}
-	// var toStr string
-	// if event.To != (common.Address{}) {
-	// 	toStr = event.To.Hex()
-	// }
 	_, err = stmt.Exec(event.Address.Hex(), event.ContractName, event.ChainID.Int64(), string(serializedData), event.BlockHash.Hex(), event.BlockNumber, event.Name, event.TxHash.Hex(), event.TxIndex, event.Gas, event.GasPrice.String(), event.GasTipCap.String(), event.GasFeeCap.String(), event.Value, event.Nonce, event.To.Hex())
 	if err != nil {
 		log.Error("Error inserting event in database: ", err)
