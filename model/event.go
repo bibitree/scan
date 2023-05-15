@@ -1,4 +1,4 @@
-package chainFinder
+package model
 
 import (
 	"math/big"
@@ -20,7 +20,7 @@ type Event struct {
 	GasFeeCap    *big.Int               `json:"gasFeeCap"`
 	Value        string                 `json:"value"`
 	Nonce        uint64                 `json:"nonce"`
-	To           string                 `json:"to"`
+	ToAddress    string                 `json:"toToAddress"`
 }
 
 type EventHandler func(*Event) error

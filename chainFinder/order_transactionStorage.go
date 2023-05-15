@@ -3,6 +3,8 @@ package chainFinder
 import (
 	"context"
 	"encoding/json"
+
+	// "ethgo/model/mysqlOrders"
 	"ethgo/model/mysqlOrders"
 	"ethgo/model/orders"
 
@@ -92,6 +94,6 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	}
 	log.Info(event)
 	mysqlOrders.InsertEvent(event)
-	mysqlOrders.InsertEventData(event)
+	// mysqlOrders.InsertEventData(event)
 	return t.ack(message)
 }
