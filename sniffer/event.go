@@ -22,7 +22,7 @@ type Event struct {
 	GasPrice     *big.Int               `json:"gasPrice"`
 	GasTipCap    *big.Int               `json:"gasTipCap"`
 	GasFeeCap    *big.Int               `json:"gasFeeCap"`
-	Value        *big.Int               `json:"value"`
+	Value        string                 `json:"value"`
 	Nonce        uint64                 `json:"nonce"`
 	To           common.Address         `json:"to"`
 }
@@ -40,7 +40,7 @@ func (event *Event) IsEmpty() bool {
 		(event.GasPrice != nil) ||
 		(event.GasTipCap != nil) ||
 		(event.GasFeeCap != nil) ||
-		(event.Value != nil) ||
+		(event.Value != "") ||
 		(event.Nonce != 0) ||
 		(event.To != common.Address{}) {
 		return false

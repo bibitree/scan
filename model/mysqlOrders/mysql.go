@@ -69,7 +69,7 @@ func InsertEvent(event sniffer.Event) error {
 			string(data), event.BlockHash.Hex(),
 			event.BlockNumber, event.Name, event.TxHash.Hex(), event.TxIndex,
 			event.Gas, event.GasPrice.String(), event.GasTipCap.String(),
-			event.GasFeeCap.String(), event.Value.String(), event.Nonce,
+			event.GasFeeCap.String(), event.Value, event.Nonce,
 			event.To.Hex())
 		if err != nil {
 			return err
@@ -100,7 +100,7 @@ func InsertEventData(event sniffer.Event) error {
 	if event.To != (common.Address{}) {
 		toStr = event.To.Hex()
 	}
-	_, err = stmt.Exec(event.Address, event.ContractName, event.ChainID.Int64(), string(serializedData), event.BlockHash.String(), event.BlockNumber, event.Name, event.TxHash.Hex(), event.TxIndex, event.Gas, event.GasPrice.Int64(), event.GasTipCap.Int64(), event.GasFeeCap.Int64(), event.Value.Int64(), event.Nonce, toStr)
+	_, err = stmt.Exec(event.Address, event.ContractName, event.ChainID.Int64(), string(serializedData), event.BlockHash.String(), event.BlockNumber, event.Name, event.TxHash.Hex(), event.TxIndex, event.Gas, event.GasPrice.Int64(), event.GasTipCap.Int64(), event.GasFeeCap.Int64(), event.Value, event.Nonce, toStr)
 	if err != nil {
 		return err
 	}

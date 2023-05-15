@@ -46,11 +46,6 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
-	value, err := message.Int64("Value")
-	if err != nil {
-		// 发生错误，处理错误逻辑
-		return After(t.conf.NetworkRetryInterval, message)
-	}
 
 	nonce, err := message.Uint64("Nonce")
 	if err != nil {
@@ -85,7 +80,7 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		GasPrice:     big.NewInt(gasPrice),
 		GasTipCap:    big.NewInt(gasTipCap),
 		GasFeeCap:    big.NewInt(gasFeeCap),
-		Value:        big.NewInt(value),
+		Value:        message.String("Value"),
 		Nonce:        nonce,
 		To:           common.HexToAddress(message.String("To")),
 	}

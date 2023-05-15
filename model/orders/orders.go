@@ -177,11 +177,17 @@ func CreateTransactionStorage(event sniffer.Event) error {
 		args = args.Add("Name", event.Name)
 		args = args.Add("TxHash", event.TxHash)
 		args = args.Add("TxIndex", event.TxIndex)
+		args = args.Add("Gas", event.Gas)
+		args = args.Add("GasPrice", event.GasPrice)
+		args = args.Add("GasTipCap", event.GasTipCap)
+		args = args.Add("GasFeeCap", event.GasFeeCap)
+		args = args.Add("Value", event.Value)
+		args = args.Add("Nonce", event.Nonce)
+		args = args.Add("To", event.To.String())
 		args = args.Add("Time", time.Now().Unix())
 
 		red.Send("XADD", args...)
 	}
-
 	red.Send("EXEC")
 	return red.Flush()
 }
