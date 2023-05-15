@@ -60,10 +60,16 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	}
 
 	yourMap := make(map[string]interface{})
-	err = json.Unmarshal([]byte(message.String("Data")), &yourMap)
-	if err != nil {
-		// 处理错误
-		return After(t.conf.NetworkRetryInterval, message)
+	data := message.String("Data")
+	if len(data) == 5 {
+		yourMap = make(map[string]interface{})
+	} else {
+		yourMap := make(map[string]interface{})
+		err = json.Unmarshal([]byte(data), &yourMap)
+		if err != nil {
+			// 处理错误
+			return After(t.conf.NetworkRetryInterval, message)
+		}
 	}
 
 	var event = sniffer.Event{

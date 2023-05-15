@@ -29,8 +29,8 @@ func (t *Message) Hash() string {
 	panic("hash field must not be empty")
 }
 
-func (t *Message) Nonce() uint64 {
-	if val, ok := t.data["nonce"]; ok {
+func (t *Message) BlockNumber() uint64 {
+	if val, ok := t.data["BlockNumber"]; ok {
 		nonce, err := strconv.ParseUint(val, 10, 64)
 		if err != nil {
 			panic(err)
@@ -38,7 +38,7 @@ func (t *Message) Nonce() uint64 {
 		return nonce
 	}
 
-	panic("nonce field must not be empty")
+	panic("BlockNumber field must not be empty")
 }
 
 func (t *Message) CreatedAt() int64 {
@@ -48,6 +48,18 @@ func (t *Message) CreatedAt() int64 {
 		panic(err)
 	}
 	return createdAt
+}
+
+func (t *Message) TxIndex() int64 {
+	if val, ok := t.data["TxIndex"]; ok {
+		createdAt, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		return createdAt
+	} else {
+		panic("TxIndex field must not be empty")
+	}
 }
 
 func (t *Message) Exists(key string) bool {

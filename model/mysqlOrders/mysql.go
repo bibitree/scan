@@ -7,7 +7,7 @@ import (
 	"ethgo/sniffer"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 const (
@@ -53,11 +53,12 @@ func InsertEvent(event sniffer.Event) error {
 	var count int
 	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE txHash=?", event.TxHash).Scan(&count)
 	if err != nil {
+		log.Error("查询是否存在相同的txHash时出错: ", err) //添加内容
 		return err
 	}
 
 	if count == 0 { // 如果不存在相同的txHash，直接插入新数据
-		sqlStr := `INSERT INTO event(address, contractName, chainID, data, blockHash, blockNumber, name, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, to_address) 
+		sqlStr := `INSERT INTO event(address, contractName, chainID, data, blockHash, blockNumber, name, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, toAddress) 
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -72,6 +73,7 @@ func InsertEvent(event sniffer.Event) error {
 			event.GasFeeCap.String(), event.Value, event.Nonce,
 			event.To.Hex())
 		if err != nil {
+			log.Error("插入数据时出错: ", err) //添加内容
 			return err
 		}
 	}
@@ -82,26 +84,30 @@ func InsertEventData(event sniffer.Event) error {
 	// Check if event already exists in database
 	// Event does not exist, insert new row
 	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE txHash=?", event.TxHash).Scan(&count)
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM newtransaction WHERE txHash=?", event.TxHash).Scan(&count)
 	if err != nil {
+		log.Error("Error checking if event exists in database: ", err)
 		return err
 	}
-	sqlStr := `INSERT INTO event(address, contractName, chainID, data, blockHash, blockNumber, name, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, recipient) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	sqlStr := `INSERT INTO newtransaction(address, contractName, chainID, data, blockHash, blockNumber, name, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, toAddress) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	stmt, err := model.MysqlPool.Prepare(sqlStr)
 	if err != nil {
+		log.Error("Error preparing insertion statement: ", err)
 		return err
 	}
 	defer stmt.Close()
+
 	serializedData, err := json.Marshal(event.Data)
 	if err != nil {
+		log.Error("Error serializing event data: ", err)
 		return err
 	}
-	var toStr string
-	if event.To != (common.Address{}) {
-		toStr = event.To.Hex()
-	}
-	_, err = stmt.Exec(event.Address, event.ContractName, event.ChainID.Int64(), string(serializedData), event.BlockHash.String(), event.BlockNumber, event.Name, event.TxHash.Hex(), event.TxIndex, event.Gas, event.GasPrice.Int64(), event.GasTipCap.Int64(), event.GasFeeCap.Int64(), event.Value, event.Nonce, toStr)
+
+	_, err = stmt.Exec(event.Address.Hex(), event.ContractName, event.ChainID.Int64(), string(serializedData), event.BlockHash.Hex(), event.BlockNumber, event.Name, event.TxHash.Hex(), event.TxIndex, event.Gas, event.GasPrice.String(), event.GasTipCap.String(), event.GasFeeCap.String(), event.Value, event.Nonce, event.To.Hex())
+
 	if err != nil {
+		log.Error("Error inserting event in database: ", err)
 		return err
 	}
 
@@ -109,11 +115,13 @@ func InsertEventData(event sniffer.Event) error {
 	var rowCount int
 	err = model.MysqlPool.QueryRow("SELECT count(*) FROM event").Scan(&rowCount)
 	if err != nil {
+		log.Error("Error counting number of records in event table: ", err)
 		return err
 	}
 	if rowCount > 100 {
 		_, err = model.MysqlPool.Exec("DELETE FROM event WHERE blockNumber = (SELECT MIN(blockNumber) FROM event)")
 		if err != nil {
+			log.Error("Error deleting oldest record from event table: ", err)
 			return err
 		}
 	}

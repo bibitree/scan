@@ -1,7 +1,7 @@
 package app
 
 import (
-	"ethgo/tyche"
+	"ethgo/chainFinder"
 
 	"go.uber.org/zap"
 )
@@ -10,5 +10,5 @@ var log *zap.SugaredLogger
 
 func SetLogger(logger *zap.SugaredLogger) {
 	log = logger
-	tyche.SetLogger(logger)
+	chainFinder.SetLogger(logger)
 }

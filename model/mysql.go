@@ -15,7 +15,7 @@ type mysqlPool struct {
 var MysqlPool *mysqlPool
 
 func InitMysql(c *Config) error {
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8",
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4",
 		c.Username, c.Password, c.Address, c.Database)
 
 	// dataSourceName := "root:a2683570@tcp(127.0.0.1:3306)/chainfindata?charset=utf8mb4&parseTime=True&loc=Local"
