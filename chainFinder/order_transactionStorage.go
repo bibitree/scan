@@ -46,11 +46,6 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
-	value, err := message.Int64("Value")
-	if err != nil {
-		// 发生错误，处理错误逻辑
-		return After(t.conf.NetworkRetryInterval, message)
-	}
 
 	nonce, err := message.Uint64("Nonce")
 	if err != nil {
@@ -65,10 +60,16 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	}
 
 	yourMap := make(map[string]interface{})
-	err = json.Unmarshal([]byte(message.String("Data")), &yourMap)
-	if err != nil {
-		// 处理错误
-		return After(t.conf.NetworkRetryInterval, message)
+	data := message.String("Data")
+	if len(data) == 5 {
+		yourMap = make(map[string]interface{})
+	} else {
+		yourMap := make(map[string]interface{})
+		err = json.Unmarshal([]byte(data), &yourMap)
+		if err != nil {
+			// 处理错误
+			return After(t.conf.NetworkRetryInterval, message)
+		}
 	}
 
 	var event = sniffer.Event{
@@ -85,7 +86,7 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		GasPrice:     big.NewInt(gasPrice),
 		GasTipCap:    big.NewInt(gasTipCap),
 		GasFeeCap:    big.NewInt(gasFeeCap),
-		Value:        big.NewInt(value),
+		Value:        message.String("Value"),
 		Nonce:        nonce,
 		To:           common.HexToAddress(message.String("To")),
 	}

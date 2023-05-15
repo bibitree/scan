@@ -55,7 +55,7 @@ type Event struct {
 	GasPrice     *big.Int               `json:"gasPrice"`
 	GasTipCap    *big.Int               `json:"gasTipCap"`
 	GasFeeCap    *big.Int               `json:"gasFeeCap"`
-	Value        *big.Int               `json:"value"`
+	Value        string                 `json:"value"`
 	Nonce        uint64                 `json:"nonce"`
 	To           string                 `json:"to"`
 }

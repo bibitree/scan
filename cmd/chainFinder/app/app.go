@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	_ "ethgo/cmd/tyche/docs"
+	// _ "ethgo/cmd/tyche/docs"
 
 	"github.com/gin-gonic/gin"
 )

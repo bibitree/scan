@@ -10,10 +10,10 @@ type messageHeap []*orders.Message
 func (mq messageHeap) Len() int { return len(mq) }
 
 func (mq messageHeap) Less(i, j int) bool {
-	a := mq[i].Nonce()
-	b := mq[j].Nonce()
+	a := mq[i].BlockNumber()
+	b := mq[j].BlockNumber()
 	if a == b {
-		return mq[i].CreatedAt() > mq[j].CreatedAt()
+		return mq[i].TxIndex() > mq[j].TxIndex()
 	}
 	return a < b
 }
