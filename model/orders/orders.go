@@ -161,7 +161,7 @@ func Sent(modifier *Modifier) error {
 	return red.Flush()
 }
 
-func CreateTransactionStorage(event sniffer.Event) error {
+func CreateTransactionStorage(event sniffer.Event2) error {
 	var red = model.RedisPool.Get()
 	defer red.Close()
 	red.Send("MUTIL")
