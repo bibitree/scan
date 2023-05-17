@@ -26,11 +26,10 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 		return
 	}
 
-	var bytes, err = json.MarshalIndent(request, "", "  ")
+	var data, err = json.MarshalIndent(request.Data, "", "  ")
 	if err != nil {
 		panic(err)
 	}
-	log.Debugf("%v", string(bytes))
 
 	request.Address = strings.ToLower(request.Address)
 	if !common.IsHexAddress(request.Address) {
@@ -38,11 +37,11 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 		return
 	}
 
-	var event = sniffer.Event{
+	var event = sniffer.Event2{
 		Address:      common.HexToAddress(request.Address),
 		ContractName: request.ContractName,
 		ChainID:      request.ChainID,
-		Data:         request.Data,
+		Data:         data,
 		BlockHash:    request.BlockHash,
 		BlockNumber:  request.BlockNumber,
 		Name:         request.Name,
