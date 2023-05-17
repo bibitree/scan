@@ -2,6 +2,7 @@ package sniffer
 
 import (
 	"context"
+	"errors"
 	"ethgo/eth"
 	"ethgo/model/blocknumber"
 	"ethgo/util/ethx"
@@ -28,11 +29,17 @@ type Sniffer struct {
 }
 
 type TransactionInfo struct {
-	From        common.Address
-	TxIndex     uint              // index of the transaction within the block
-	BlockNumber uint64            // number of the block containing the transaction
-	BlockHash   common.Hash       // hash of the block containing the transaction
-	Tx          types.Transaction // the actual transaction object
+	From             common.Address
+	TxIndex          uint              // index of the transaction within the block
+	BlockNumber      uint64            // number of the block containing the transaction
+	BlockHash        common.Hash       // hash of the block containing the transaction
+	Tx               types.Transaction // the actual transaction object
+	Status           bool
+	Timestamp        uint64
+	MinerAddress     string
+	Size             common.StorageSize
+	BlockReward      string
+	AverageGasTipCap string
 }
 
 type Contract struct {
@@ -206,12 +213,12 @@ func (s *Sniffer) filterLogsAndTransactions(ctx context.Context, backend eth.Bac
 	return transactionsInfo, nil
 }
 
-func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, txHash common.Hash) ([]types.Log, error) {
+func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, blockNumber *big.Int, to common.Address) ([]types.Log, error) {
 	query := ethereum.FilterQuery{
-		FromBlock: nil,
-		ToBlock:   nil,
-		Addresses: nil,
-		Topics:    [][]common.Hash{{common.BytesToHash(txHash.Bytes())}},
+		FromBlock: blockNumber,
+		ToBlock:   blockNumber,
+		Addresses: []common.Address{to},
+		Topics:    [][]common.Hash{},
 	}
 	return backend.FilterLogs(ctx, query)
 }
@@ -221,6 +228,15 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 
 	for blockNumber := big.NewInt(int64(fromBlockNumber)); blockNumber.Cmp(new(big.Int).SetUint64(toBlockNumber)) <= 0; blockNumber.Add(blockNumber, big.NewInt(1)) {
 		block, err := backend.BlockByNumber(ctx, blockNumber)
+		if err != nil {
+			log.Info("err_ getBlock", err)
+			continue
+		}
+		blockReward, averageGasTipCap, err := getBlockRewar(block)
+		if err != nil {
+			log.Info("err_ getBlockRewar", err)
+			continue
+		}
 		if err == nil {
 			for txIndex, tx := range block.Transactions() {
 				msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
@@ -228,12 +244,28 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 					log.Info("err_ tx_Hash", tx.Hash().String())
 					continue
 				}
+
+				receipt, err := backend.TransactionReceipt(ctx, tx.Hash())
+				var status bool
+				if err == nil && receipt != nil {
+					status = receipt.Status == types.ReceiptStatusSuccessful
+				}
+				timestamp := block.Time()
+				minerAddress := block.Coinbase().String()
+				size := block.Size()
+				// .Status
 				txInfo := TransactionInfo{
-					TxIndex:     uint(txIndex),
-					BlockNumber: block.NumberU64(),
-					BlockHash:   block.Hash(),
-					From:        msg.From(),
-					Tx:          *tx,
+					TxIndex:          uint(txIndex),
+					BlockNumber:      block.NumberU64(),
+					BlockHash:        block.Hash(),
+					From:             msg.From(),
+					Tx:               *tx,
+					Status:           status,
+					Timestamp:        timestamp,
+					MinerAddress:     minerAddress,
+					Size:             size,
+					BlockReward:      blockReward,
+					AverageGasTipCap: averageGasTipCap,
 				}
 				transactions = append(transactions, txInfo)
 			}
@@ -242,6 +274,49 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 
 	return transactions, nil
 }
+
+func getBlockRewar(block *types.Block) (string, string, error) {
+	// 安全检测1：检查参数block是否为空
+	if block == nil {
+		return "", "", errors.New("block is nil")
+	}
+
+	// 获取所有的交易
+	txs := block.Transactions()
+
+	// 安全检测2：检查txs是否为空
+	if len(txs) == 0 {
+		return "", "", errors.New("no transactions in block")
+	}
+
+	gasTipCapSum := new(big.Int)
+	gasFee := big.NewInt(0)
+	for _, tx := range txs {
+		// 安全检测3：检查交易tx是否为空
+		if tx == nil {
+			continue
+		}
+		var gasTipCap = tx.GasTipCap()
+		var gas = tx.Gas()
+		gasTipCapSum = gasTipCapSum.Add(gasTipCapSum, gasTipCap)
+		gasFee = new(big.Int).Add(gasFee, new(big.Int).Mul(gasTipCap, new(big.Int).SetUint64(gas)))
+	}
+
+	// 安全检测4：检查len(txs)是否为0，防止除数为0
+	if len(txs) == 0 {
+		return "", "", errors.New("divide by zero")
+	}
+	averageGasTipCap := new(big.Int).Div(gasTipCapSum, big.NewInt(int64(len(txs))))
+	var averageGasTipCapData = new(big.Float).Quo(new(big.Float).SetInt(averageGasTipCap), big.NewFloat(1e9))
+	averageGasTipCapData.SetPrec(64)                             // 设置精度位数为64
+	averageGasTipCapDataStr := averageGasTipCapData.Text('f', 6) // 将结果转换为字符串，保留18位小数
+	var blockReward = new(big.Float).Quo(new(big.Float).SetInt(gasFee), big.NewFloat(1e18)).String()
+	return blockReward, averageGasTipCapDataStr, nil
+}
+
+// var blockReward = new(big.Float).Quo(new(big.Float).SetInt(gasFee), new(big.Float).SetInt64(1e18)).String()
+// return blockReward
+// }
 
 func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []TransactionInfo) error {
 	for _, tx := range txs {
@@ -283,6 +358,12 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	out.Nonce = tx.Tx.Nonce()
 
 	to := tx.Tx.To()
+	out.Size = tx.Size
+	out.Status = tx.Status
+	out.MinerAddress = tx.MinerAddress
+	out.Timestamp = tx.Timestamp
+	out.BlockReward = tx.BlockReward
+	out.AverageGasTipCap = tx.AverageGasTipCap
 	if to == nil {
 		out.To = common.Address{}
 	} else {
@@ -291,36 +372,53 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	out.ContractName = ""
 	out.ChainID = s.chainID
 	if len(tx.Tx.Data()) > 0 {
-		txLogs, err := s.filterLogs(ctx, backend, tx.Tx.Hash())
+
+		txLogs, err := s.filterLogs(ctx, backend, big.NewInt(int64(tx.BlockNumber)), out.To)
 		if err != nil {
 			return err
 		}
-		// 遍历所有待匹配地址
-		for _, address := range s.addresses {
-			// 在嗅探器对象的合约映射中查找是否存在与地址匹配的合约对象
-			contract := s.contracts[address]
-			if len(txLogs) == 0 {
+		if len(txLogs) == 0 {
+			return nil
+		}
+
+		for _, log := range txLogs {
+			if log.TxHash != tx.Tx.Hash() {
 				return nil
 			}
-			// 根据日志中第一个topic查找对应的事件
-			event, err := contract.EventByID(txLogs[0].Topics[0])
-			if err == nil { // 如果找到了对应的事件
-				out.ContractName = contract.Name        // 设置Event结构中的合约名
-				out.ChainID = s.chainID                 // 设置Event结构中的链ID
-				out.Name = event.Name                   // 设置Event结构中的事件名
-				out.Data = make(map[string]interface{}) // 准备一个空的数据映射
-				// 解压日志中的数据成为Event结构中的映射
-				err := contract.UnpackLogIntoMap(out.Data, out.Name, txLogs[0])
-				if err != nil {
-					return err
+			if len(log.Topics) == 0 {
+				continue
+			}
+			// if len(log.Topics) >= 0 {
+			// 	continue
+			// }
+
+			// 遍历所有待匹配地址
+			for _, address := range s.addresses {
+				// 在嗅探器对象的合约映射中查找是否存在与地址匹配的合约对象
+				contract := s.contracts[address]
+
+				// 根据日志中第一个topic查找对应的事件
+				event, err := contract.EventByID(log.Topics[0])
+				if err == nil { // 如果找到了对应的事件
+					out.ContractName = contract.Name        // 设置Event结构中的合约名
+					out.ChainID = s.chainID                 // 设置Event结构中的链ID
+					out.Name = event.Name                   // 设置Event结构中的事件名
+					out.Data = make(map[string]interface{}) // 准备一个空的数据映射
+					// 解压日志中的数据成为Event结构中的映射
+					err := contract.UnpackLogIntoMap(out.Data, out.Name, log)
+
+					if err != nil {
+						fmt.Println("+++++++++++++++++++++++++", out.TxHash.String())
+						continue
+					}
+					// 设置Event对象的其他属性
+					out.Address = txLogs[0].Address
+					out.BlockHash = txLogs[0].BlockHash
+					out.TxHash = txLogs[0].TxHash
+					out.BlockNumber = strconv.FormatUint(txLogs[0].BlockNumber, 10)
+					out.TxIndex = strconv.FormatUint(uint64(txLogs[0].TxIndex), 10)
+					return nil // 成功解析后结束函数
 				}
-				// 设置Event对象的其他属性
-				out.Address = txLogs[0].Address
-				out.BlockHash = txLogs[0].BlockHash
-				out.TxHash = txLogs[0].TxHash
-				out.BlockNumber = strconv.FormatUint(txLogs[0].BlockNumber, 10)
-				out.TxIndex = strconv.FormatUint(uint64(txLogs[0].TxIndex), 10)
-				return nil // 成功解析后结束函数
 			}
 		}
 		return nil
