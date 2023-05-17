@@ -54,7 +54,7 @@ func InsertEvent(event sniffer.Event) error {
 	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE txHash=?", event.TxHash).Scan(&count)
 	if err != nil {
 		log.Error("查询是否存在相同的txHash时出错: ", err) //添加内容
-		return err
+		return nil
 	}
 
 	if count == 0 { // 如果不存在相同的txHash，直接插入新数据
