@@ -5,17 +5,17 @@ import (
 	"ethgo/proto"
 	"ethgo/util/ginx"
 	"net/http"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 func (app *App) GetAllEvents(c *ginx.Context) {
+
 	var request = new(proto.AllEvents)
+	log.Info("请求内容", request.N)
 	if err := c.BindJSONEx(request); err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, err := mysqlOrders.GetAllEvents()
+	events, err := mysqlOrders.GetAllEvents(uint64(request.N))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,7 +28,7 @@ func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, err := mysqlOrders.GetEventsBetweenBlockNumbers(uint64(request.Star), uint64(request.End))
+	events, err := mysqlOrders.GetEventsBetweenBlockNumbers(uint64(request.Star), uint64(request.End), uint64(request.PageNo), uint64(request.PageSize))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func (app *App) GetEventsByTxHash(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, err := mysqlOrders.GetEventByTxHash(common.HexToHash(request.TxHash))
+	events, err := mysqlOrders.GetEventByTxHash(request.TxHash)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func (app *App) GetEventsByBlockHash(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, err := mysqlOrders.GetEventByBlockHash(common.HexToHash(request.BlockHash))
+	events, err := mysqlOrders.GetEventByBlockHash(request.BlockHash)
 	if err != nil {
 		log.Fatal(err)
 	}

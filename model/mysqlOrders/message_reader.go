@@ -3,15 +3,13 @@ package mysqlOrders
 import (
 	"encoding/json"
 	"ethgo/model"
-	"ethgo/sniffer"
+	"fmt"
 	"log"
-	"strconv"
-
-	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 )
 
-func GetEventByTxHash(txHash common.Hash) ([]sniffer.Event, error) {
-	// 声明SQL语句
+// 声明SQL语句
+func GetEventByTxHash(txHash string) ([]model.Event, error) {
 	sqlStr := `SELECT * FROM event WHERE txHash = ?`
 	// 查询匹配的数据
 	rows, err := model.MysqlPool.Query(sqlStr, txHash)
@@ -20,27 +18,46 @@ func GetEventByTxHash(txHash common.Hash) ([]sniffer.Event, error) {
 	}
 	defer rows.Close()
 	// 将查询结果遍历转化为Event类型并返回
-	events := make([]sniffer.Event, 0)
+	events := make([]model.Event, 0)
 	for rows.Next() {
-		event := sniffer.Event{}
-		var data []byte
-		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &data,
-			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex,
-			&event.Gas, &event.GasPrice, &event.GasTipCap, &event.GasFeeCap,
-			&event.Value, &event.Nonce, &event.To)
+		event := model.Event{}
+		var data, chainID, blockHashBytes, txHash []byte
+		var id uint64
+		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		err := rows.Scan(&id, &event.Address, &event.ContractName, &chainID, &data,
+			&blockHashBytes, &event.BlockNumber, &event.Name, &txHash, &event.TxIndex,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Value, &event.Nonce, &event.ToAddress)
+
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		gasPriceParsed, _ := new(big.Int).SetString(gasPrice, 10)
+		event.GasPrice = gasPriceParsed
+
+		gasTipCapParsed, _ := new(big.Int).SetString(gasTipCap, 10)
+		event.GasTipCap = gasTipCapParsed
+
+		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
+		event.GasFeeCap = gasFeeCapParsed
+
+		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
+
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
+
 		events = append(events, event)
 	}
 	return events, nil
 }
 
-func GetEventByBlockHash(blockHash common.Hash) ([]sniffer.Event, error) {
+func GetEventByBlockHash(blockHash string) ([]model.Event, error) {
 	// 声明SQL语句
 	sqlStr := `SELECT * FROM event WHERE blockHash = ?`
 
@@ -53,28 +70,46 @@ func GetEventByBlockHash(blockHash common.Hash) ([]sniffer.Event, error) {
 	defer rows.Close()
 
 	// 将查询结果遍历转化为Event类型并返回
-	events := make([]sniffer.Event, 0)
+	events := make([]model.Event, 0)
 	for rows.Next() {
-		event := sniffer.Event{}
-		var data []byte
-		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &data,
-			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex,
-			&event.Gas, &event.GasPrice, &event.GasTipCap, &event.GasFeeCap,
-			&event.Value, &event.Nonce, &event.To)
+		event := model.Event{}
+		var data, chainID, blockHashBytes, txHash []byte
+		var id uint64
+		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		err := rows.Scan(&id, &event.Address, &event.ContractName, &chainID, &data,
+			&blockHashBytes, &event.BlockNumber, &event.Name, &txHash, &event.TxIndex,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Value, &event.Nonce, &event.ToAddress)
+
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		gasPriceParsed, _ := new(big.Int).SetString(gasPrice, 10)
+		event.GasPrice = gasPriceParsed
+
+		gasTipCapParsed, _ := new(big.Int).SetString(gasTipCap, 10)
+		event.GasTipCap = gasTipCapParsed
+
+		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
+		event.GasFeeCap = gasFeeCapParsed
+
+		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
+
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
+
 		events = append(events, event)
 	}
-
 	return events, nil
 }
 
-func GetEventByBlockNumber(blockNumber uint64) ([]sniffer.Event, error) {
+func GetEventByBlockNumber(blockNumber uint64) ([]model.Event, error) {
 	// 声明SQL语句
 	sqlStr := `SELECT * FROM event WHERE blockNumber = ?`
 
@@ -87,87 +122,146 @@ func GetEventByBlockNumber(blockNumber uint64) ([]sniffer.Event, error) {
 	defer rows.Close()
 
 	// 将查询结果遍历转化为Event类型并返回
-	events := make([]sniffer.Event, 0)
+	events := make([]model.Event, 0)
 	for rows.Next() {
-		event := sniffer.Event{}
-		var data []byte
-		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &data,
-			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex,
-			&event.Gas, &event.GasPrice, &event.GasTipCap, &event.GasFeeCap,
-			&event.Value, &event.Nonce, &event.To)
+		event := model.Event{}
+		var data, chainID, blockHashBytes, txHash []byte
+		var id uint64
+		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		err := rows.Scan(&id, &event.Address, &event.ContractName, &chainID, &data,
+			&blockHashBytes, &event.BlockNumber, &event.Name, &txHash, &event.TxIndex,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Value, &event.Nonce, &event.ToAddress)
+
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		gasPriceParsed, _ := new(big.Int).SetString(gasPrice, 10)
+		event.GasPrice = gasPriceParsed
+
+		gasTipCapParsed, _ := new(big.Int).SetString(gasTipCap, 10)
+		event.GasTipCap = gasTipCapParsed
+
+		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
+		event.GasFeeCap = gasFeeCapParsed
+
+		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
+
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
+
 		events = append(events, event)
 	}
-
 	return events, nil
 }
 
-func GetEventsBetweenBlockNumbers(start uint64, end uint64) ([]sniffer.Event, error) {
-	// 声明SQL语句
-	sqlStr := `SELECT * FROM event WHERE blockNumber BETWEEN ? AND ?`
+func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageSize uint64) ([]model.Event, error) {
+	// 计算偏移量
+	offset := (pageNo - 1) * pageSize
+
+	// 声明SQL语句和参数
+	sqlStr := `SELECT * FROM event WHERE blockNumber BETWEEN ? AND ? LIMIT ?,?`
+	args := []interface{}{start, end, offset, pageSize}
+
 	// 查询匹配的数据
-	rows, err := model.MysqlPool.Query(sqlStr, strconv.Itoa(int(start)), strconv.Itoa(int(end)))
+	rows, err := model.MysqlPool.Query(sqlStr, args...)
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 	defer rows.Close()
+
 	// 将查询结果遍历转化为Event类型并返回
-	events := make([]sniffer.Event, 0)
+	events := make([]model.Event, 0)
 	for rows.Next() {
-		event := sniffer.Event{}
-		var data []byte
-		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &data,
-			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex,
-			&event.Gas, &event.GasPrice, &event.GasTipCap, &event.GasFeeCap,
-			&event.Value, &event.Nonce, &event.To)
+		event := model.Event{}
+		var data, chainID, blockHashBytes, txHash []byte
+		var id uint64
+		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		err := rows.Scan(&id, &event.Address, &event.ContractName, &chainID, &data,
+			&blockHashBytes, &event.BlockNumber, &event.Name, &txHash, &event.TxIndex,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Value, &event.Nonce, &event.ToAddress)
+
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		gasPriceParsed, _ := new(big.Int).SetString(gasPrice, 10)
+		event.GasPrice = gasPriceParsed
+
+		gasTipCapParsed, _ := new(big.Int).SetString(gasTipCap, 10)
+		event.GasTipCap = gasTipCapParsed
+
+		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
+		event.GasFeeCap = gasFeeCapParsed
+
+		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
+
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
+
 		events = append(events, event)
 	}
 	return events, nil
 }
 
-func GetAllEvents() ([]sniffer.Event, error) {
-	// 声明SQL语句
-	sqlStr := `SELECT * FROM newtransaction`
-
+func GetAllEvents(n uint64) ([]model.Event, error) {
+	// 声明SQL语句，限制返回数量为 n
+	sqlStr := fmt.Sprintf("SELECT * FROM event ORDER BY id DESC LIMIT %d", n)
 	// 查询所有数据
 	rows, err := model.MysqlPool.Query(sqlStr)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	// 将查询结果遍历转化为Event类型并返回
-	events := make([]sniffer.Event, 0)
+	events := make([]model.Event, 0)
 	for rows.Next() {
-		event := sniffer.Event{}
-		var data []byte
-		err := rows.Scan(&event.Address, &event.ContractName, &event.ChainID, &data,
-			&event.BlockHash, &event.BlockNumber, &event.Name, &event.TxHash, &event.TxIndex,
-			&event.Gas, &event.GasPrice, &event.GasTipCap, &event.GasFeeCap,
-			&event.Value, &event.Nonce, &event.To)
+		event := model.Event{}
+		var data, chainID, blockHashBytes, txHash []byte
+		var id uint64
+		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		err := rows.Scan(&id, &event.Address, &event.ContractName, &chainID, &data,
+			&blockHashBytes, &event.BlockNumber, &event.Name, &txHash, &event.TxIndex,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Value, &event.Nonce, &event.ToAddress)
+
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		gasPriceParsed, _ := new(big.Int).SetString(gasPrice, 10)
+		event.GasPrice = gasPriceParsed
+
+		gasTipCapParsed, _ := new(big.Int).SetString(gasTipCap, 10)
+		event.GasTipCap = gasTipCapParsed
+
+		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
+		event.GasFeeCap = gasFeeCapParsed
+
+		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
+
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
+
 		events = append(events, event)
 	}
-
 	return events, nil
 }

@@ -3,6 +3,8 @@ package chainFinder
 import (
 	"context"
 	"encoding/json"
+
+	// "ethgo/model/mysqlOrders"
 	"ethgo/model/mysqlOrders"
 	"ethgo/model/orders"
 
@@ -59,19 +61,17 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
-	yourMap := make(map[string]interface{})
-	data := message.String("Data")
-	if len(data) == 5 {
+	var yourMap map[string]interface{}
+	data := message.Bytes("Data")
+	if len(data) == 2 {
 		yourMap = make(map[string]interface{})
 	} else {
-		yourMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(data), &yourMap)
+		err = json.Unmarshal(data, &yourMap)
 		if err != nil {
 			// 处理错误
 			return After(t.conf.NetworkRetryInterval, message)
 		}
 	}
-
 	var event = sniffer.Event{
 		Address:      common.HexToAddress(message.String("Address")),
 		ContractName: message.String("ContractName"),
@@ -92,6 +92,6 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	}
 	log.Info(event)
 	mysqlOrders.InsertEvent(event)
-	mysqlOrders.InsertEventData(event)
+	// mysqlOrders.InsertEventData(event)
 	return t.ack(message)
 }

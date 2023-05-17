@@ -25,11 +25,14 @@ type OrderResponse struct {
 }
 
 type AllEvents struct {
+	N int `json:"n" example:"100"`
 }
 
 type ByBlockNumbers struct {
-	Star int `json:"star" example:"100"`
-	End  int `json:"end" example:"100"`
+	Star     int `json:"star" example:"100"`
+	End      int `json:"end" example:"100"`
+	PageNo   int `json:"pageNo" example:"100"`
+	PageSize int `json:"pageSize" example:"100"`
 }
 
 type ByBlockNumber struct {

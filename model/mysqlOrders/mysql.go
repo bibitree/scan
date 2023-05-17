@@ -54,7 +54,7 @@ func InsertEvent(event sniffer.Event) error {
 	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE txHash=?", event.TxHash).Scan(&count)
 	if err != nil {
 		log.Error("查询是否存在相同的txHash时出错: ", err) //添加内容
-		return err
+		return nil
 	}
 
 	if count == 0 { // 如果不存在相同的txHash，直接插入新数据
@@ -74,53 +74,6 @@ func InsertEvent(event sniffer.Event) error {
 			event.To.Hex())
 		if err != nil {
 			log.Error("插入数据时出错: ", err) //添加内容
-			return err
-		}
-	}
-	return nil
-}
-
-func InsertEventData(event sniffer.Event) error {
-	// Check if event already exists in database
-	// Event does not exist, insert new row
-	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM newtransaction WHERE txHash=?", event.TxHash).Scan(&count)
-	if err != nil {
-		log.Error("Error checking if event exists in database: ", err)
-		return err
-	}
-	sqlStr := `INSERT INTO newtransaction(address, contractName, chainID, data, blockHash, blockNumber, name, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, toAddress) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	stmt, err := model.MysqlPool.Prepare(sqlStr)
-	if err != nil {
-		log.Error("Error preparing insertion statement: ", err)
-		return err
-	}
-	defer stmt.Close()
-
-	serializedData, err := json.Marshal(event.Data)
-	if err != nil {
-		log.Error("Error serializing event data: ", err)
-		return err
-	}
-	_, err = stmt.Exec(event.Address.Hex(), event.ContractName, event.ChainID.Int64(), string(serializedData), event.BlockHash.Hex(), event.BlockNumber, event.Name, event.TxHash.Hex(), event.TxIndex, event.Gas, event.GasPrice.String(), event.GasTipCap.String(), event.GasFeeCap.String(), event.Value, event.Nonce, event.To.Hex())
-
-	if err != nil {
-		log.Error("Error inserting event in database: ", err)
-		return err
-	}
-
-	// Delete oldest record if more than 100 records in the table
-	var rowCount int
-	err = model.MysqlPool.QueryRow("SELECT count(*) FROM event").Scan(&rowCount)
-	if err != nil {
-		log.Error("Error counting number of records in event table: ", err)
-		return err
-	}
-	if rowCount > 100 {
-		_, err = model.MysqlPool.Exec("DELETE FROM event WHERE blockNumber = (SELECT MIN(blockNumber) FROM event)")
-		if err != nil {
-			log.Error("Error deleting oldest record from event table: ", err)
 			return err
 		}
 	}
