@@ -45,5 +45,7 @@ Events = [
 
 [backend]
 # Addr = "http://47.98.198.159:8989"
-Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
+ Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
+# Addr = "https://eth-goerli.public.blastapi.io"
+#Addr = "https://rpc.ankr.com/eth"
 TransactionsPerSecond = 128

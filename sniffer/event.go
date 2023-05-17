@@ -31,6 +31,8 @@ type Event struct {
 	Size             common.StorageSize     `json:"size"`
 	BlockReward      string                 `json:"blockReward"`
 	AverageGasTipCap string                 `json:"averageGasTipCap"`
+<<<<<<< HEAD
+=======
 }
 
 type Event2 struct {
@@ -56,6 +58,7 @@ type Event2 struct {
 	Size             common.StorageSize `json:"size"`
 	BlockReward      string             `json:"blockReward"`
 	AverageGasTipCap string             `json:"averageGasTipCap"`
+>>>>>>> bce8f99115cf2a6f39df95b0a5e8e373a26ee4ce
 }
 
 func (event *Event) IsEmpty() bool {
