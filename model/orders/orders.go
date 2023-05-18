@@ -184,6 +184,12 @@ func CreateTransactionStorage(event sniffer.Event2) error {
 		args = args.Add("Value", event.Value)
 		args = args.Add("Nonce", event.Nonce)
 		args = args.Add("To", event.To.String())
+		args = args.Add("Status", event.Status)
+		args = args.Add("Timestamp", event.Timestamp)
+		args = args.Add("MinerAddress", event.MinerAddress)
+		args = args.Add("Size", event.Size)
+		args = args.Add("BlockReward", event.BlockReward)
+		args = args.Add("AverageGasTipCap", event.AverageGasTipCap)
 		args = args.Add("Time", time.Now().Unix())
 
 		red.Send("XADD", args...)

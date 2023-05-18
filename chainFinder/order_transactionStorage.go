@@ -72,23 +72,38 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 			return After(t.conf.NetworkRetryInterval, message)
 		}
 	}
+
+	timestamp, err := message.Uint64("Timestamp")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+
+	sizeStr := message.String("Size")
+
 	var event = sniffer.Event{
-		Address:      common.HexToAddress(message.String("Address")),
-		ContractName: message.String("ContractName"),
-		ChainID:      big.NewInt(chainID),
-		Data:         yourMap,
-		BlockHash:    common.HexToHash(message.String("BlockHash")),
-		BlockNumber:  message.String("BlockNumber"),
-		Name:         message.String("Name"),
-		TxHash:       common.HexToHash(message.String("TxHash")),
-		TxIndex:      message.String("TxIndex"),
-		Gas:          gas,
-		GasPrice:     big.NewInt(gasPrice),
-		GasTipCap:    big.NewInt(gasTipCap),
-		GasFeeCap:    big.NewInt(gasFeeCap),
-		Value:        message.String("Value"),
-		Nonce:        nonce,
-		To:           common.HexToAddress(message.String("To")),
+		Address:          common.HexToAddress(message.String("Address")),
+		ContractName:     message.String("ContractName"),
+		ChainID:          big.NewInt(chainID),
+		Data:             yourMap,
+		BlockHash:        common.HexToHash(message.String("BlockHash")),
+		BlockNumber:      message.String("BlockNumber"),
+		Name:             message.String("Name"),
+		TxHash:           common.HexToHash(message.String("TxHash")),
+		TxIndex:          message.String("TxIndex"),
+		Gas:              gas,
+		GasPrice:         big.NewInt(gasPrice),
+		GasTipCap:        big.NewInt(gasTipCap),
+		GasFeeCap:        big.NewInt(gasFeeCap),
+		Value:            message.String("Value"),
+		Nonce:            nonce,
+		To:               common.HexToAddress(message.String("To")),
+		Status:           message.String("Status") == "true",
+		Timestamp:        timestamp,
+		MinerAddress:     message.String("MinerAddress"),
+		Size:             sizeStr,
+		BlockReward:      message.String("BlockReward"),
+		AverageGasTipCap: message.String("AverageGasTipCap"),
 	}
 	log.Info(event)
 	mysqlOrders.InsertEvent(event)

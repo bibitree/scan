@@ -37,7 +37,7 @@ type TransactionInfo struct {
 	Status           bool
 	Timestamp        uint64
 	MinerAddress     string
-	Size             common.StorageSize
+	Size             string
 	BlockReward      string
 	AverageGasTipCap string
 }
@@ -252,7 +252,7 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 				}
 				timestamp := block.Time()
 				minerAddress := block.Coinbase().String()
-				size := block.Size()
+				size := block.Size().String()
 				// .Status
 				txInfo := TransactionInfo{
 					TxIndex:          uint(txIndex),

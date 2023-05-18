@@ -58,8 +58,8 @@ func InsertEvent(event sniffer.Event) error {
 	}
 
 	if count == 0 { // 如果不存在相同的txHash，直接插入新数据
-		sqlStr := `INSERT INTO event(address, contractName, chainID, data, blockHash, blockNumber, name, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, toAddress) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		sqlStr := `INSERT INTO event2(address, contractName, chainID, data, blockHash, blockNumber, name, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, toAddress, status, timestamp, minerAddress, size, blockReward, averageGasTipCap)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` // 修改表名和新增字段
 		// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -71,11 +71,14 @@ func InsertEvent(event sniffer.Event) error {
 			event.BlockNumber, event.Name, event.TxHash.Hex(), event.TxIndex,
 			event.Gas, event.GasPrice.String(), event.GasTipCap.String(),
 			event.GasFeeCap.String(), event.Value, event.Nonce,
-			event.To.Hex())
+			event.To.Hex(), event.Status, event.Timestamp,
+			event.MinerAddress, event.Size,
+			event.BlockReward, event.AverageGasTipCap) // 添加新字段
 		if err != nil {
-			log.Error("插入数据时出错: ", err) //添加内容
+			log.Error("插入数据时出错: ", err)
 			return err
 		}
+
 	}
 	return nil
 }
