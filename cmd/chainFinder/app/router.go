@@ -7,10 +7,10 @@ import (
 )
 
 func (app *App) Router(g *gin.Engine) {
-	g.POST("/tyche/api/AcceptTransactionStorage", ginx.WrapHandler(app.AcceptTransactionStorage))
-	g.POST("/tyche/api/GetAllEvents", ginx.WrapHandler(app.GetAllEvents))
-	g.POST("/tyche/api/GetEventsByBlockNumbers", ginx.WrapHandler(app.GetEventsByBlockNumbers))
-	g.POST("/tyche/api/GetEventsByBlockNumber", ginx.WrapHandler(app.GetEventsByBlockNumber))
-	g.POST("/tyche/api/GetEventsByTxHash", ginx.WrapHandler(app.GetEventsByTxHash))
-	g.POST("/tyche/api/GetEventsByBlockHash", ginx.WrapHandler(app.GetEventsByBlockHash))
+	g.POST("/chainFinder/api/AcceptTransactionStorage", ginx.WrapHandler(app.AcceptTransactionStorage))
+	g.POST("/chainFinder/api/GetAllEvents", ginx.WrapHandler(app.GetAllEvents))
+	g.POST("/chainFinder/api/GetEventsByBlockNumbers", ginx.WrapHandler(app.GetEventsByBlockNumbers))
+	g.POST("/chainFinder/api/GetEventsByBlockNumber", ginx.WrapHandler(app.GetEventsByBlockNumber))
+	g.POST("/chainFinder/api/GetEventsByTxHash", ginx.WrapHandler(app.GetEventsByTxHash))
+	g.POST("/chainFinder/api/GetEventsByBlockHash", ginx.WrapHandler(app.GetEventsByBlockHash))
 }

@@ -27,6 +27,7 @@ type Event struct {
 	Size             string                 `json:"size"`
 	BlockReward      string                 `json:"blockReward"`
 	AverageGasTipCap string                 `json:"averageGasTipCap"`
+	BlockBeasReward  string                 `json:"blockBeasReward"`
 }
 
 type EventHandler func(*Event) error

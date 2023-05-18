@@ -27,7 +27,9 @@ func GetEventByTxHash(txHash string) ([]model.Event, error) {
 		err := rows.Scan(&id, &event.Address, &event.ContractName, &chainID, &data,
 			&blockHashBytes, &event.BlockNumber, &event.Name, &txHash, &event.TxIndex,
 			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
-			&event.Value, &event.Nonce, &event.ToAddress)
+			&event.Value, &event.Nonce, &event.ToAddress,
+			&event.Status, &event.Timestamp, &event.MinerAddress,
+			&event.Size, &event.BlockReward, &event.AverageGasTipCap)
 
 		if err != nil {
 			log.Fatal(err)
@@ -51,7 +53,7 @@ func GetEventByTxHash(txHash string) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-
+		event.BlockBeasReward = "0"
 		events = append(events, event)
 	}
 	return events, nil
@@ -79,7 +81,9 @@ func GetEventByBlockHash(blockHash string) ([]model.Event, error) {
 		err := rows.Scan(&id, &event.Address, &event.ContractName, &chainID, &data,
 			&blockHashBytes, &event.BlockNumber, &event.Name, &txHash, &event.TxIndex,
 			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
-			&event.Value, &event.Nonce, &event.ToAddress)
+			&event.Value, &event.Nonce, &event.ToAddress,
+			&event.Status, &event.Timestamp, &event.MinerAddress,
+			&event.Size, &event.BlockReward, &event.AverageGasTipCap)
 
 		if err != nil {
 			log.Fatal(err)
@@ -103,7 +107,7 @@ func GetEventByBlockHash(blockHash string) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-
+		event.BlockBeasReward = "0"
 		events = append(events, event)
 	}
 	return events, nil
@@ -131,7 +135,9 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.Event, error) {
 		err := rows.Scan(&id, &event.Address, &event.ContractName, &chainID, &data,
 			&blockHashBytes, &event.BlockNumber, &event.Name, &txHash, &event.TxIndex,
 			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
-			&event.Value, &event.Nonce, &event.ToAddress)
+			&event.Value, &event.Nonce, &event.ToAddress,
+			&event.Status, &event.Timestamp, &event.MinerAddress,
+			&event.Size, &event.BlockReward, &event.AverageGasTipCap)
 
 		if err != nil {
 			log.Fatal(err)
@@ -155,7 +161,7 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-
+		event.BlockBeasReward = "0"
 		events = append(events, event)
 	}
 	return events, nil
@@ -186,7 +192,9 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 		err := rows.Scan(&id, &event.Address, &event.ContractName, &chainID, &data,
 			&blockHashBytes, &event.BlockNumber, &event.Name, &txHash, &event.TxIndex,
 			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
-			&event.Value, &event.Nonce, &event.ToAddress)
+			&event.Value, &event.Nonce, &event.ToAddress,
+			&event.Status, &event.Timestamp, &event.MinerAddress,
+			&event.Size, &event.BlockReward, &event.AverageGasTipCap)
 
 		if err != nil {
 			log.Fatal(err)
@@ -210,7 +218,7 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-
+		event.BlockBeasReward = "0"
 		events = append(events, event)
 	}
 	return events, nil
@@ -262,7 +270,7 @@ func GetAllEvents(n uint64) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-
+		event.BlockBeasReward = "0"
 		events = append(events, event)
 	}
 	return events, nil
