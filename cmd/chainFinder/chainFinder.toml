@@ -38,6 +38,11 @@ PrivateKey = "37f562aa2e03b3cb2977e939a772d06172b42c9730bbf32b5039788e5adaaf1f"
 ErrorURI = "http://127.0.0.1:8081/event/error"
 SucceedURI = "http://127.0.0.1:8081/event/succeed"
 FailedURI = "http://127.0.0.1:8081/event/failed"
+Callback = "http://127.0.0.1:8071/tyche/api/call"
+ContractCreationTime = "http://127.0.0.1:8071/tyche/api/wallet/contractTxCount"
+
+# 链地址的前缀
+PrefixChain ="E"
 
 # 并发控制
 ErrorNumberOfConcurrent = 4

@@ -58,7 +58,7 @@ func InsertEvent(event sniffer.Event) error {
 	}
 
 	if count == 0 { // 如果不存在相同的txHash，直接插入新数据
-		sqlStr := `INSERT INTO event(address, contractName, chainID, data, blockHash, blockNumber, name, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, toAddress, status, timestamp, minerAddress, size, blockReward, averageGasTipCap) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		sqlStr := `INSERT INTO event(address, contractName, chainID, data, blockHash, blockNumber, name, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, toAddress, status, timestamp, minerAddress, size, blockReward, averageGasTipCap,newAddress,newToAddress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -72,12 +72,46 @@ func InsertEvent(event sniffer.Event) error {
 			event.GasFeeCap.String(), event.Value, event.Nonce,
 			event.To.Hex(), event.Status, event.Timestamp,
 			event.MinerAddress, event.Size,
-			event.BlockReward, event.AverageGasTipCap) // 添加新字段
+			event.BlockReward, event.AverageGasTipCap,
+			event.NewAddress, event.NewToAddress) // 添加新字段
 		if err != nil {
 			log.Error("插入数据时出错: ", err)
 			return err
 		}
 
+	}
+	return nil
+}
+
+func InsertErcTop(event sniffer.ErcTop) error {
+	// 查询是否存在相同的contracaddress
+	var count int
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM ercTop WHERE contracaddress=?", event.ContractAddress).Scan(&count)
+	if err != nil {
+		log.Error("查询是否存在相同的contracaddress时出错: ", err)
+		return err
+	}
+
+	if count == 0 { // 如果不存在相同的contracaddress，直接插入新数据
+		sqlStr := `INSERT INTO ercTop(contracaddress, name, value, newContracaddress, contractTxCount) VALUES (?, ?, ?, ?, ?)`
+		// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		// 使用ExecContext执行sql语句，如果执行成功则返回nil
+		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractAddress, event.ContractName, event.Value, event.NewContractAddress, event.ContractTxCount)
+		if err != nil {
+			log.Error("插入数据时出错: ", err)
+			return err
+		}
+	} else { // 如果存在相同的contracaddress，更新数据
+		sqlStr := `UPDATE ercTop SET name=?, value=?, newContracaddress=?, contractTxCount=? WHERE contracaddress=?`
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractName, event.Value, event.NewContractAddress, event.ContractTxCount, event.ContractAddress)
+		if err != nil {
+			log.Error("更新数据时出错: ", err)
+			return err
+		}
 	}
 	return nil
 }

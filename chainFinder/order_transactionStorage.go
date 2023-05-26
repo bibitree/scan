@@ -3,10 +3,14 @@ package chainFinder
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
 
 	// "ethgo/model/mysqlOrders"
 	"ethgo/model/mysqlOrders"
 	"ethgo/model/orders"
+	"ethgo/util"
 
 	"ethgo/sniffer"
 	"math/big"
@@ -61,12 +65,24 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
+	address := common.HexToAddress(message.String("Address")).String()
+
+	if address != "" {
+		address = t.conf.PrefixChain + address[2:]
+	}
+
+	toAddress := common.HexToAddress(message.String("To")).String()
+	if toAddress != "" {
+		toAddress = t.conf.PrefixChain + toAddress[2:]
+	}
+
 	var yourMap map[string]interface{}
 	data := message.Bytes("Data")
 	if len(data) == 2 {
 		yourMap = make(map[string]interface{})
 	} else {
 		err = json.Unmarshal(data, &yourMap)
+
 		if err != nil {
 			// 处理错误
 			return After(t.conf.NetworkRetryInterval, message)
@@ -80,6 +96,8 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	}
 
 	sizeStr := message.String("Size")
+
+	log.Info(toAddress)
 
 	var event = sniffer.Event{
 		Address:          common.HexToAddress(message.String("Address")),
@@ -104,9 +122,155 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		Size:             sizeStr,
 		BlockReward:      message.String("BlockReward"),
 		AverageGasTipCap: message.String("AverageGasTipCap"),
+		NewAddress:       address,
+		NewToAddress:     toAddress,
 	}
+
 	log.Info(event)
+
+	if event.ContractName == "ERC20" {
+		t.StoreERCInfo(common.HexToAddress(message.String("To")).String())
+	}
 	mysqlOrders.InsertEvent(event)
 	// mysqlOrders.InsertEventData(event)
 	return t.ack(message)
+}
+
+func (t *ChainFinder) StoreERCInfo(event string) error {
+
+	var contract = Contract{
+		Contract: event,
+	}
+	ercName, err := t.ProcessERCName(contract)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	ercTotalSupply, err := t.ProcessERCTotalSupply(contract)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	ethContractTxCount, err := t.ProcessERCContractTxCount(contract)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	fmt.Print(ethContractTxCount)
+
+	address := event
+	if address != "" {
+		address = t.conf.PrefixChain + address[2:]
+	}
+	dataMap, ok := ethContractTxCount.(map[string]interface{})
+	if !ok {
+		return errors.New("invalid data type")
+	}
+	fmt.Print(dataMap["count"].(string))
+	// count, ok := ethContractTxCount.(ContractTxCount)
+
+	// name, ok := ercName.(map[string]interface{})
+	ercSlice := ercName.([]interface{})
+	ercString := ercSlice[0].(string)
+	fmt.Println(ercString)
+
+	ercTotalSupply1 := ercTotalSupply.([]interface{})
+	ercTotalSupplyFloat64 := ercTotalSupply1[0].(float64)
+	ercTotalSupplyString := fmt.Sprintf("%.0f", ercTotalSupplyFloat64)
+	fmt.Println(ercString)
+	var ercTop = sniffer.ErcTop{
+		ContractAddress:    event,
+		ContractName:       ercString,
+		Value:              ercTotalSupplyString,
+		ContractTxCount:    dataMap["count"].(string),
+		NewContractAddress: address,
+	}
+	mysqlOrders.InsertErcTop(ercTop)
+
+	// mysqlOrders.InsertErcTop(ercTop)
+	return nil
+}
+
+func (t *ChainFinder) ProcessERCName(contract Contract) (interface{}, error) {
+
+	var call = Call{
+		Address: contract.Contract,
+		Method:  "name",
+	}
+	body, err := util.Post(t.conf.Callback, call)
+	if err != nil {
+		return nil, err
+	}
+
+	var res Response
+	if err := json.Unmarshal(body, &res); err != nil {
+		return nil, err
+	}
+
+	log.Debugf("应答: %v", string(body))
+
+	if res.Code != http.StatusOK {
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("%v", res.Code)
+		}
+		return nil, errors.New(res.Message)
+	}
+
+	return res.Data, nil
+}
+
+func (t *ChainFinder) ProcessERCTotalSupply(contract Contract) (interface{}, error) {
+
+	var call = Call{
+		Address: contract.Contract,
+		Method:  "totalSupply",
+	}
+	body, err := util.Post(t.conf.Callback, call)
+	if err != nil {
+		return nil, err
+	}
+
+	var res Response
+	if err := json.Unmarshal(body, &res); err != nil {
+		return nil, err
+	}
+
+	log.Debugf("应答: %v", string(body))
+
+	if res.Code != http.StatusOK {
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("%v", res.Code)
+		}
+		return nil, errors.New(res.Message)
+	}
+
+	return res.Data, nil
+}
+
+func (t *ChainFinder) ProcessERCContractTxCount(contract Contract) (interface{}, error) {
+
+	var call = Contract{
+		Contract: contract.Contract,
+	}
+	body, err := util.Post(t.conf.ContractTxCount, call)
+	if err != nil {
+		return nil, err
+	}
+
+	var res Response
+	if err := json.Unmarshal(body, &res); err != nil {
+		return nil, err
+	}
+
+	log.Debugf("应答: %v", string(body))
+
+	if res.Code != http.StatusOK {
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("%v", res.Code)
+		}
+		return nil, errors.New(res.Message)
+	}
+
+	return res.Data, nil
 }

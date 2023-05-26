@@ -35,6 +35,15 @@ type ByBlockNumbers struct {
 	PageSize int `json:"pageSize" example:"100"`
 }
 
+type ByContract struct {
+	Contract string `json:"contract" example:"0x66e3076f604491c0944b3c885d451424fd644c4ebf61c333e0d4622d567af38b"`
+	PageNo   int    `json:"pageNo" example:"100"`
+	PageSize int    `json:"pageSize" example:"100"`
+}
+
+type ChainData struct {
+}
+
 type ByBlockNumber struct {
 	BlockNumber int `json:"BlockNumber" example:"100"`
 }
@@ -45,4 +54,8 @@ type ByTxHash struct {
 
 type ByBlockHash struct {
 	BlockHash string `json:"BlockHash" example:"0x66e3076f604491c0944b3c885d451424fd644c4ebf61c333e0d4622d567af38b"`
+}
+
+type ERCTop struct {
+	N int `json:"n" example:"100"`
 }

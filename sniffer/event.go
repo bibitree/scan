@@ -31,6 +31,8 @@ type Event struct {
 	Size             string                 `json:"size"`
 	BlockReward      string                 `json:"blockReward"`
 	AverageGasTipCap string                 `json:"averageGasTipCap"`
+	NewAddress       string                 `json:"NewAddress"`
+	NewToAddress     string                 `json:"NewToAddress"`
 }
 
 type Event2 struct {
@@ -56,6 +58,14 @@ type Event2 struct {
 	Size             string         `json:"size"`
 	BlockReward      string         `json:"blockReward"`
 	AverageGasTipCap string         `json:"averageGasTipCap"`
+}
+
+type ErcTop struct {
+	ContractAddress    string `json:"contractAddress"`
+	ContractName       string `json:"contractName"`
+	Value              string `json:"value"`
+	NewContractAddress string `json:"nonce"`
+	ContractTxCount    string `json:"contractTxCount"`
 }
 
 func (event *Event) IsEmpty() bool {

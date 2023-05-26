@@ -28,6 +28,16 @@ type Event struct {
 	BlockReward      string                 `json:"blockReward"`
 	AverageGasTipCap string                 `json:"averageGasTipCap"`
 	BlockBeasReward  string                 `json:"blockBeasReward"`
+	NewAddress       string                 `json:"NewAddress"`
+	NewToAddress     string                 `json:"NewToAddress"`
+}
+
+type ErcTop struct {
+	ContractAddress    string `json:"contractAddress"`
+	ContractName       string `json:"contractName"`
+	Value              string `json:"value"`
+	NewContractAddress string `json:"nonce"`
+	ContractTxCount    string `json:"contractTxCount"`
 }
 
 type EventHandler func(*Event) error

@@ -5,18 +5,21 @@ import (
 )
 
 type Config struct {
-	Listen                 string `toml:"listen" json:"listen"`
-	ReadTimeout            int    `toml:"readTimeout" json:"readTimeout"`
-	WriteTimeout           int    `toml:"writeTimeout" json:"writeTimeout"`
-	MaxHeaderBytes         int    `toml:"maxHeaderBytes" json:"maxHeaderBytes"`
-	Account                string `toml:"account" json:"account"`
-	PrivateKey             string `toml:"privateKey" json:"privateKey"`
-	EstimatorJS            string `toml:"estimatorJS" json:"estimatorJS"`
-	ErrorURI               string `toml:"errorURI" json:"errorURI"`
-	FailedURI              string `toml:"failedURI" json:"failedURI"`
-	SucceedURI             string `toml:"succeedURI" json:"succeedURI"`
-	GasPriceUpdateInterval int64  `toml:"gasPriceUpdateInterval" json:"gasPriceUpdateInterval"`
-
+	Listen                    string `toml:"listen" json:"listen"`
+	ReadTimeout               int    `toml:"readTimeout" json:"readTimeout"`
+	WriteTimeout              int    `toml:"writeTimeout" json:"writeTimeout"`
+	MaxHeaderBytes            int    `toml:"maxHeaderBytes" json:"maxHeaderBytes"`
+	Account                   string `toml:"account" json:"account"`
+	PrivateKey                string `toml:"privateKey" json:"privateKey"`
+	EstimatorJS               string `toml:"estimatorJS" json:"estimatorJS"`
+	ErrorURI                  string `toml:"errorURI" json:"errorURI"`
+	FailedURI                 string `toml:"failedURI" json:"failedURI"`
+	SucceedURI                string `toml:"succeedURI" json:"succeedURI"`
+	Callback                  string `toml:"callback" json:"callback"`
+	ContractTxCount           string `toml:"contractTxCount" json:"contractTxCount"`
+	ContractCreationTime      string `toml:"contractCreationTime" json:"contractCreationTime"`
+	GasPriceUpdateInterval    int64  `toml:"gasPriceUpdateInterval" json:"gasPriceUpdateInterval"`
+	PrefixChain               string `toml:"prefixChain" json:"prefixChain"`
 	MaxBumpingGasTimes        int64  `toml:"maxBumpingGasTimes" json:"maxBumpingGasTimes"`
 	ErrorNumberOfConcurrent   int64  `toml:"errorNumberOfConcurrent" json:"errorNumberOfConcurrent"`
 	FailedNumberOfConcurrent  int64  `toml:"failedNumberOfConcurrent" json:"failedNumberOfConcurrent"`
@@ -51,6 +54,18 @@ func (c *Config) Init() error {
 	}
 	if c.SucceedURI == "" {
 		return errors.New("succeedURI cannot be set to empty")
+	}
+	if c.Callback == "" {
+		return errors.New("callback cannot be set to empty")
+	}
+	if c.PrefixChain == "" {
+		return errors.New("prefixChain cannot be set to empty")
+	}
+	if c.ContractTxCount == "" {
+		return errors.New("contractTxCount cannot be set to empty")
+	}
+	if c.ContractCreationTime == "" {
+		return errors.New("contractCreationTime cannot be set to empty")
 	}
 
 	if c.GasPriceUpdateInterval < 1 {
