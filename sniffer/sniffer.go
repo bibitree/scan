@@ -237,6 +237,7 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 			log.Info("err_ getBlockRewar", err)
 			continue
 		}
+		block.Coinbase()
 		if err == nil {
 			for txIndex, tx := range block.Transactions() {
 				msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
