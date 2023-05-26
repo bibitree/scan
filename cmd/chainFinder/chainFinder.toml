@@ -42,7 +42,7 @@ Callback = "http://127.0.0.1:8071/tyche/api/call"
 ContractCreationTime = "http://127.0.0.1:8071/tyche/api/wallet/contractTxCount"
 
 # 链地址的前缀
-PrefixChain ="E"
+PrefixChain ="F"
 
 # 并发控制
 ErrorNumberOfConcurrent = 4
