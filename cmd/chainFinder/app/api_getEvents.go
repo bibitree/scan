@@ -218,15 +218,18 @@ func (app *App) GetChainData(c *ginx.Context) {
 	blockHeight, gasPriceGasPrice, err := mysqlOrders.GetLatestEvent()
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
 	}
 	numberTransactions, numberTransfers, numberTransactionsIn24H, numberaddressesIn24H, err := mysqlOrders.GetEventStatistics()
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
 	}
 
 	totalBlockRewards, totalnumberofAddresses, err := mysqlOrders.GetAllAddressesAndBlockRewardSum()
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
 	}
 	paginate := chainFinder.ChainData{
 		BlockRewards:            "0",

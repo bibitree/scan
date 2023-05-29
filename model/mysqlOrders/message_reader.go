@@ -511,7 +511,7 @@ func GetEventStatistics() (totalDataCount string, emptyContractNameCount string,
 func GetAllAddressesAndBlockRewardSum() (string, string, error) {
 	sqlStr := `SELECT DISTINCT Address, ToAddress, BlockReward FROM event`
 	rows, err := model.MysqlPool.Query(sqlStr)
-	if err != nil {
+	if err != nil && sql.ErrNoRows != err {
 		return "", "", err
 	}
 	defer rows.Close()
