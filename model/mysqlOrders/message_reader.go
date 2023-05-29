@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const BlockBeasReward = "10"
+
 // 声明SQL语句
 func GetEventByTxHash(txHash string) ([]model.Event, error) {
 	sqlStr := `SELECT * FROM event WHERE txHash = ?`
@@ -57,7 +59,7 @@ func GetEventByTxHash(txHash string) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
 	return events, nil
@@ -116,7 +118,7 @@ func GetEventByBlockHash(blockHash string) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
 	if len(events) == 0 {
@@ -178,7 +180,7 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
 	return events, nil
@@ -240,7 +242,7 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
 	return events, nil
@@ -297,7 +299,7 @@ func GetAllEvents(n uint64) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
 	return events, nil
@@ -392,7 +394,7 @@ func GetEventsByToAddressAndBlockNumber(toAddress string, pageNo uint64, pageSiz
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		// event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 
 		events = append(events, event)
 	}
@@ -515,7 +517,7 @@ func GetEventStatistics(number string) (totalDataCount string, emptyContractName
 	return totalDataCount, emptyContractNameCount, last24HoursDataCount, last24HoursUniqueAddressCount, err
 }
 
-func GetAllAddressesAndBlockRewardSum() (string, string, error) {
+func GetAllAddressesAndBlockRewardSum(number string) (string, string, error) {
 	sqlStr := `SELECT DISTINCT Address, ToAddress, BlockReward FROM event WHERE Address <> '0x0000000000000000000000000000000000000000'`
 	rows, err := model.MysqlPool.Query(sqlStr)
 	if err != nil && sql.ErrNoRows != err {
@@ -550,7 +552,18 @@ func GetAllAddressesAndBlockRewardSum() (string, string, error) {
 		}
 		blockRewardSum.Add(blockRewardSum, blockRewardFloat)
 	}
-
+	num, err := strconv.Atoi(number)
+	if err != nil {
+		fmt.Println("Atoi error:", err)
+	} else {
+		num += 1
+	}
+	BlockBeasRewardNum, err := strconv.Atoi(BlockBeasReward)
+	if err != nil {
+		fmt.Println("Atoi error:", err)
+	}
+	num = num * BlockBeasRewardNum
+	blockRewardSum = new(big.Float).Add(blockRewardSum, big.NewFloat(float64(num)))
 	addressesStr := strconv.Itoa(len(addresses))
 	blockRewardSumStr := blockRewardSum.String()
 	return addressesStr, blockRewardSumStr, nil
