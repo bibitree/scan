@@ -13,7 +13,6 @@ import (
 )
 
 func (app *App) GetAllEvents(c *ginx.Context) {
-
 	var request = new(proto.AllEvents)
 	if err := c.BindJSONEx(request); err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
@@ -21,7 +20,7 @@ func (app *App) GetAllEvents(c *ginx.Context) {
 	}
 	events, err := mysqlOrders.GetAllEvents(uint64(request.N))
 	if err != nil {
-		log.Fatal(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 	c.Success(http.StatusOK, "succ", events)
 }
@@ -34,7 +33,7 @@ func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
 	}
 	events, err := mysqlOrders.GetEventsBetweenBlockNumbers(uint64(request.Star), uint64(request.End), uint64(request.PageNo), uint64(request.PageSize))
 	if err != nil {
-		log.Fatal(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 	c.Success(http.StatusOK, "succ", events)
 }
@@ -47,7 +46,7 @@ func (app *App) GetEventsByBlockNumber(c *ginx.Context) {
 	}
 	events, err := mysqlOrders.GetEventByBlockNumber(uint64(request.BlockNumber))
 	if err != nil {
-		log.Fatal(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 	c.Success(http.StatusOK, "succ", events)
 }
@@ -60,7 +59,7 @@ func (app *App) GetEventsByTxHash(c *ginx.Context) {
 	}
 	events, err := mysqlOrders.GetEventByTxHash(request.TxHash)
 	if err != nil {
-		log.Fatal(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 	c.Success(http.StatusOK, "succ", events)
 }
@@ -73,7 +72,7 @@ func (app *App) GetEventsByBlockHash(c *ginx.Context) {
 	}
 	events, err := mysqlOrders.GetEventByBlockHash(request.BlockHash)
 	if err != nil {
-		log.Fatal(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 	c.Success(http.StatusOK, "succ", events)
 }
@@ -86,7 +85,7 @@ func (app *App) GetERCTop(c *ginx.Context) {
 	}
 	events, err := mysqlOrders.GetErcTopData(uint64(request.N))
 	if err != nil {
-		log.Fatal(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 	c.Success(http.StatusOK, "succ", events)
 }
@@ -99,12 +98,11 @@ func (app *App) GetEventsByContract(c *ginx.Context) {
 	}
 	events, n, err := mysqlOrders.GetEventsByToAddressAndBlockNumber(request.Contract, uint64(request.PageNo), uint64(request.PageSize))
 	if err != nil {
-		log.Fatal(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 
 	decimals, err := app.ProcessCall(request.Contract, "decimals")
 	if err != nil {
-		log.Error(err)
 		c.Success(http.StatusOK, "succ", nil)
 		return
 	}
@@ -118,7 +116,7 @@ func (app *App) GetEventsByContract(c *ginx.Context) {
 
 	address, time, err := mysqlOrders.GetEventAddressByToAddress(request.Contract)
 	if err != nil {
-		log.Error(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 	paginate := chainFinder.Paginate{
 		Events:       events,
@@ -147,8 +145,6 @@ func (app *App) ProcessCall(contract string, name string) (interface{}, error) {
 		return nil, err
 	}
 
-	log.Debugf("应答: %v", string(body))
-
 	if res.Code != http.StatusOK {
 		if res.Message == "" {
 			res.Message = fmt.Sprintf("%v", res.Code)
@@ -160,7 +156,6 @@ func (app *App) ProcessCall(contract string, name string) (interface{}, error) {
 }
 
 func (app *App) ProcessERCContractTxCount(contract string) (interface{}, error) {
-
 	var call = chainFinder.Contract{
 		Contract: contract,
 	}
@@ -222,16 +217,16 @@ func (app *App) GetChainData(c *ginx.Context) {
 
 	blockHeight, gasPriceGasPrice, err := mysqlOrders.GetLatestEvent()
 	if err != nil {
-		log.Fatal(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 	numberTransactions, numberTransfers, numberTransactionsIn24H, numberaddressesIn24H, err := mysqlOrders.GetEventStatistics()
 	if err != nil {
-		log.Fatal(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 
 	totalBlockRewards, totalnumberofAddresses, err := mysqlOrders.GetAllAddressesAndBlockRewardSum()
 	if err != nil {
-		log.Fatal(err)
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 	paginate := chainFinder.ChainData{
 		BlockRewards:            "0",

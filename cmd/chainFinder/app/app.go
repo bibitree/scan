@@ -4,6 +4,7 @@ import (
 	"context"
 	"ethgo/chainFinder"
 	"ethgo/model"
+	"ethgo/util/ginx"
 	"fmt"
 	"net/http"
 	"time"
@@ -41,6 +42,7 @@ func (app *App) Run(ctx context.Context) error {
 	engine.Use(gin.Recovery())
 	engine.Use(gin.Logger())
 	engine.RedirectTrailingSlash = false
+	engine.Use(ginx.Cors())
 	app.Router(engine)
 
 	var c = app.conf.ChainFinder

@@ -16,5 +16,4 @@ func (app *App) Router(g *gin.Engine) {
 	g.POST("/chainFinder/api/GetERCTop", ginx.WrapHandler(app.GetERCTop))
 	g.POST("/chainFinder/api/GetEventsByContract", ginx.WrapHandler(app.GetEventsByContract))
 	g.POST("/chainFinder/api/GetChainData", ginx.WrapHandler(app.GetChainData))
-
 }
