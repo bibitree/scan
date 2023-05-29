@@ -100,7 +100,6 @@ func (app *App) GetEventsByContract(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
-
 	decimals, err := app.ProcessCall(request.Contract, "decimals")
 	if err != nil {
 		c.Success(http.StatusOK, "succ", nil)
@@ -220,7 +219,7 @@ func (app *App) GetChainData(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	numberTransactions, numberTransfers, numberTransactionsIn24H, numberaddressesIn24H, err := mysqlOrders.GetEventStatistics()
+	numberTransactions, numberTransfers, numberTransactionsIn24H, numberaddressesIn24H, err := mysqlOrders.GetEventStatistics(blockHeight)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return

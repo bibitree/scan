@@ -392,7 +392,7 @@ func GetEventsByToAddressAndBlockNumber(toAddress string, pageNo uint64, pageSiz
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		// event.BlockBeasReward = "0"
 
 		events = append(events, event)
 	}
@@ -432,7 +432,8 @@ func GetEventAddressByToAddress(toAddress string) (string, uint64, error) {
 
 func GetLatestEvent() (string, string, error) {
 	// 声明SQL语句
-	sqlStr := `SELECT blockNumber, gasPrice FROM event ORDER BY blockNumber DESC LIMIT 1`
+	sqlStr := `SELECT blockNumber, gasPrice FROM event ORDER BY cast(blockNumber as unsigned) DESC LIMIT 1`
+
 	// 查询匹配的数据
 	row := model.MysqlPool.QueryRow(sqlStr)
 
@@ -455,26 +456,32 @@ func GetLatestEvent() (string, string, error) {
 	return blockNumberStr, gasPriceStr, nil
 }
 
-func GetEventStatistics() (totalDataCount string, emptyContractNameCount string, last24HoursDataCount string, last24HoursUniqueAddressCount string, err error) {
+func GetEventStatistics(number string) (totalDataCount string, emptyContractNameCount string, last24HoursDataCount string, last24HoursUniqueAddressCount string, err error) {
 	// 获取数据库所有数据总共有多少条
-	var count int
+	num, err := strconv.Atoi(number)
+	if err != nil {
+		fmt.Println("Atoi error:", err)
+	} else {
+		num += 1
+	}
+	var count int64
 	err = model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event").Scan(&count)
 	if err != nil {
 		return "", "", "", "", err
 	}
-	totalDataCount = strconv.Itoa(count)
+	totalDataCount = strconv.Itoa(int(count - int64(num)))
 
 	// 获取数据库中contractName为空的数据总共有多少条
 	err = model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE ContractName=''").Scan(&count)
 	if err != nil {
 		return totalDataCount, "", "", "", err
 	}
-	emptyContractNameCount = strconv.Itoa(count)
+	emptyContractNameCount = strconv.Itoa(int(count - int64(num)))
 
 	// 获取距离现在24小时之内的数据有多少条
 	now := time.Now()
 	yesterday := now.Add(-24 * time.Hour)
-	rows, err := model.MysqlPool.Query("SELECT COUNT(*) FROM event WHERE Timestamp >= ? AND Timestamp <= ?", yesterday.Unix(), now.Unix())
+	rows, err := model.MysqlPool.Query("SELECT COUNT(*) FROM event WHERE Timestamp >= ? AND Timestamp <= ? AND address != ?", yesterday.Unix(), now.Unix(), "0x0000000000000000000000000000000000000000")
 	if err != nil {
 		return totalDataCount, emptyContractNameCount, "", "", err
 	}
@@ -485,10 +492,10 @@ func GetEventStatistics() (totalDataCount string, emptyContractNameCount string,
 			return totalDataCount, emptyContractNameCount, "", "", err
 		}
 	}
-	last24HoursDataCount = strconv.Itoa(count)
+	last24HoursDataCount = strconv.Itoa(int(count))
 
 	// 获取距离现在24小时之内的所有数据获得其全部的address以及toAddress，并去重之后数量
-	rows, err = model.MysqlPool.Query("SELECT DISTINCT Address, ToAddress FROM event WHERE Timestamp >= ? AND Timestamp <= ?", yesterday.Unix(), now.Unix())
+	rows, err = model.MysqlPool.Query("SELECT DISTINCT Address, ToAddress FROM event WHERE Timestamp >= ? AND Timestamp <= ? AND address != ?", yesterday.Unix(), now.Unix(), "0x0000000000000000000000000000000000000000")
 	if err != nil {
 		return totalDataCount, emptyContractNameCount, last24HoursDataCount, "", err
 	}
@@ -509,7 +516,7 @@ func GetEventStatistics() (totalDataCount string, emptyContractNameCount string,
 }
 
 func GetAllAddressesAndBlockRewardSum() (string, string, error) {
-	sqlStr := `SELECT DISTINCT Address, ToAddress, BlockReward FROM event`
+	sqlStr := `SELECT DISTINCT Address, ToAddress, BlockReward FROM event WHERE Address <> '0x0000000000000000000000000000000000000000'`
 	rows, err := model.MysqlPool.Query(sqlStr)
 	if err != nil && sql.ErrNoRows != err {
 		return "", "", err
@@ -526,8 +533,13 @@ func GetAllAddressesAndBlockRewardSum() (string, string, error) {
 			log.Fatal(err)
 		}
 
-		addresses[address] = true
-		addresses[toAddress] = true
+		if address != "test" {
+			addresses[address] = true
+		}
+
+		if toAddress != "test" {
+			addresses[toAddress] = true
+		}
 
 		blockRewardFloat, _ := new(big.Float).SetString(blockReward)
 		if blockRewardSum == nil {
@@ -538,6 +550,7 @@ func GetAllAddressesAndBlockRewardSum() (string, string, error) {
 		}
 		blockRewardSum.Add(blockRewardSum, blockRewardFloat)
 	}
+
 	addressesStr := strconv.Itoa(len(addresses))
 	blockRewardSumStr := blockRewardSum.String()
 	return addressesStr, blockRewardSumStr, nil
