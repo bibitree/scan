@@ -15,7 +15,7 @@ IdleTimeout = 0
 #URI = "redis://:AyLf3qg%40ia%5EGZ%23yrbd34%25j@192.168.10.179:6001/2"
 URI = "redis://:@127.0.0.1:6379/2"
 Address = "127.0.0.1:3306"
-Password ="a2683570"
+Password ="root"
 Username = "root"
 Database = "chainfindata"
 

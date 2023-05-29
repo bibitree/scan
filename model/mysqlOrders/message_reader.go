@@ -530,11 +530,15 @@ func GetAllAddressesAndBlockRewardSum() (string, string, error) {
 		addresses[toAddress] = true
 
 		blockRewardFloat, _ := new(big.Float).SetString(blockReward)
+		if blockRewardSum == nil {
+			blockRewardSum = big.NewFloat(0)
+		}
+		if blockRewardFloat == nil {
+			blockRewardFloat = big.NewFloat(0)
+		}
 		blockRewardSum.Add(blockRewardSum, blockRewardFloat)
 	}
-
 	addressesStr := strconv.Itoa(len(addresses))
 	blockRewardSumStr := blockRewardSum.String()
-
 	return addressesStr, blockRewardSumStr, nil
 }
