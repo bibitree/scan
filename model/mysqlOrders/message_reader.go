@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const BlockBeasReward = "10"
+
 // 声明SQL语句
 func GetEventByTxHash(txHash string) ([]model.Event, error) {
 	sqlStr := `SELECT * FROM event WHERE txHash = ?`
@@ -57,7 +59,7 @@ func GetEventByTxHash(txHash string) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
 	return events, nil
@@ -116,7 +118,7 @@ func GetEventByBlockHash(blockHash string) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
 	if len(events) == 0 {
@@ -178,7 +180,7 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
 	return events, nil
@@ -240,7 +242,7 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
 	return events, nil
@@ -297,7 +299,7 @@ func GetAllEvents(n uint64) ([]model.Event, error) {
 
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
 	return events, nil
@@ -392,7 +394,7 @@ func GetEventsByToAddressAndBlockNumber(toAddress string, pageNo uint64, pageSiz
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-		event.BlockBeasReward = "0"
+		event.BlockBeasReward = BlockBeasReward
 
 		events = append(events, event)
 	}
