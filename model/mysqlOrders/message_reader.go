@@ -94,6 +94,10 @@ func GetEventByBlockHash(blockHash string) ([]model.Event, error) {
 			log.Fatal(err)
 		}
 
+		if len(event.Address) == 0 { // Check if address is empty
+			continue // Skip this iteration of the loop
+		}
+
 		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
@@ -114,6 +118,9 @@ func GetEventByBlockHash(blockHash string) ([]model.Event, error) {
 		event.TxHash = string(txHash)
 		event.BlockBeasReward = "0"
 		events = append(events, event)
+	}
+	if len(events) == 0 {
+		return nil, nil // 说明数据为空，返回nil，忽略err
 	}
 	return events, nil
 }
@@ -147,6 +154,10 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.Event, error) {
 
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if len(event.Address) == 0 { // Check if address is empty
+			continue // Skip this iteration of the loop
 		}
 
 		err = json.Unmarshal(data, &event.Data)
@@ -207,6 +218,10 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 			log.Fatal(err)
 		}
 
+		if len(event.Address) == 0 { // Check if address is empty
+			continue // Skip this iteration of the loop
+		}
+
 		err = json.Unmarshal(data, &event.Data)
 		if err != nil {
 			log.Fatal(err)
@@ -258,6 +273,10 @@ func GetAllEvents(n uint64) ([]model.Event, error) {
 
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if len(event.Address) == 0 { // Check if address is empty
+			continue // Skip this iteration of the loop
 		}
 
 		err = json.Unmarshal(data, &event.Data)
@@ -423,6 +442,9 @@ func GetLatestEvent() (string, string, error) {
 	// 绑定查询结果到对应变量
 	err := row.Scan(&blockNumber, &gasPrice)
 	if err != nil {
+		if err == sql.ErrNoRows { // 如果查询结果为空，则返回空字符串
+			return "", "", nil
+		}
 		return "", "", err
 	}
 

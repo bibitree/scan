@@ -237,7 +237,20 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 			log.Info("err_ getBlockRewar", err)
 			continue
 		}
-		block.Coinbase()
+		timestamp := block.Time()
+		minerAddress := block.Coinbase().String()
+		size := block.Size().String()
+		// .Status
+		txInfo := TransactionInfo{
+			BlockNumber:      block.NumberU64(),
+			BlockHash:        block.Hash(),
+			Timestamp:        timestamp,
+			MinerAddress:     minerAddress,
+			Size:             size,
+			BlockReward:      blockReward,
+			AverageGasTipCap: averageGasTipCap,
+		}
+		transactions = append(transactions, txInfo)
 		if err == nil {
 			for txIndex, tx := range block.Transactions() {
 				msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
@@ -245,7 +258,6 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 					log.Info("err_ tx_Hash", tx.Hash().String())
 					continue
 				}
-
 				receipt, err := backend.TransactionReceipt(ctx, tx.Hash())
 				var status bool
 				if err == nil && receipt != nil {
@@ -272,7 +284,6 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 			}
 		}
 	}
-
 	return transactions, nil
 }
 
