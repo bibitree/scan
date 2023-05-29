@@ -106,12 +106,12 @@ func (s *Sniffer) Run(ctx context.Context, backend eth.Backend) error {
 		return err
 	}
 
-	latest, err := backend.BlockNumber(ctx)
-	if err != nil {
-		return err
-	}
+	// latest, err := backend.BlockNumber(ctx)
+	// if err != nil {
+	// 	return err
+	// }
 
-	if err := blocknumber.SetNX(latest); err != nil {
+	if err := blocknumber.SetNX(); err != nil {
 		return err
 	}
 
@@ -233,10 +233,6 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 			continue
 		}
 		blockReward, averageGasTipCap, err := getBlockRewar(block)
-		if err != nil {
-			log.Info("err_ getBlockRewar", err)
-			continue
-		}
 		timestamp := block.Time()
 		minerAddress := block.Coinbase().String()
 		size := block.Size().String()
@@ -251,6 +247,10 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 			AverageGasTipCap: averageGasTipCap,
 		}
 		transactions = append(transactions, txInfo)
+		if err != nil {
+			log.Info("err_ getBlockRewar", err)
+			continue
+		}
 		if err == nil {
 			for txIndex, tx := range block.Transactions() {
 				msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
@@ -355,7 +355,9 @@ func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []Tra
 func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx *TransactionInfo, out *Event) error {
 	out.Name = ""                           // 设置Event结构中的事件名
 	out.Data = make(map[string]interface{}) // 准备一个空的数据映射
-
+	if tx.From == (common.Address{}) {
+		return s.unpackBlock(ctx, backend, tx, out)
+	}
 	// 设置Event对象的其他属性
 	out.Address = tx.From
 	out.BlockHash = tx.BlockHash
@@ -435,6 +437,21 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 		}
 		return nil
 	}
+	return nil
+}
+
+func (s *Sniffer) unpackBlock(ctx context.Context, backend eth.Backend, tx *TransactionInfo, out *Event) error {
+	out.Name = ""                           // 设置Event结构中的事件名
+	out.Data = make(map[string]interface{}) // 准备一个空的数据映射
+	out.BlockNumber = strconv.FormatUint(tx.BlockNumber, 10)
+	out.BlockHash = tx.BlockHash
+	out.Timestamp = tx.Timestamp
+	out.MinerAddress = tx.MinerAddress
+	out.Size = tx.Size
+	out.BlockReward = tx.BlockReward
+	out.AverageGasTipCap = tx.AverageGasTipCap
+	out.ContractName = ""
+	out.ChainID = s.chainID
 	return nil
 }
 

@@ -21,10 +21,10 @@ func Set(value uint64) error {
 	return err
 }
 
-func SetNX(value uint64) error {
+func SetNX() error {
 	var red = model.RedisPool.Get()
 	defer red.Close()
 
-	_, err := red.Do("SETNX", keys.BlockNumber(), value+1)
+	_, err := red.Do("SETNX", keys.BlockNumber(), 0)
 	return err
 }
