@@ -25,6 +25,6 @@ func SetNX() error {
 	var red = model.RedisPool.Get()
 	defer red.Close()
 
-	_, err := red.Do("SETNX", keys.BlockNumber(), 0)
+	_, err := red.Do("SETNX", keys.BlockNumber(), 35224126)
 	return err
 }

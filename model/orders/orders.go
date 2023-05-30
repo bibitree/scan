@@ -161,6 +161,36 @@ func Sent(modifier *Modifier) error {
 	return red.Flush()
 }
 
+func CreateChainDataStorag(event sniffer.ChainData) error {
+	var red = model.RedisPool.Get()
+	defer red.Close()
+
+	// Redis MULTI command
+	red.Send("MULTI")
+
+	// Create or update chain data
+	chainDataKey := keys.CreateChainDataStorag()
+	red.Send("HSET", chainDataKey, "BlockRewards", event.BlockRewards)
+	red.Send("HSET", chainDataKey, "SuperNodes", event.SuperNodes)
+	red.Send("HSET", chainDataKey, "BlockHeight", event.BlockHeight)
+	red.Send("HSET", chainDataKey, "TotalBlockRewards", event.TotalBlockRewards)
+	red.Send("HSET", chainDataKey, "GasPriceGasPrice", event.GasPriceGasPrice)
+	red.Send("HSET", chainDataKey, "TotalnumberofAddresses", event.TotalnumberofAddresses)
+	red.Send("HSET", chainDataKey, "Name", event.NumberTransactions)
+	red.Send("HSET", chainDataKey, "TxHash", event.NumberTransfers)
+	red.Send("HSET", chainDataKey, "TxIndex", event.NumberTransactionsIn24H)
+	red.Send("HSET", chainDataKey, "Gas", event.NumberaddressesIn24H)
+	red.Send("HSET", chainDataKey, "Time", time.Now().Unix())
+
+	// Redis EXEC command
+	_, err := red.Do("EXEC")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func CreateTransactionStorage(event sniffer.Event2) error {
 	var red = model.RedisPool.Get()
 	defer red.Close()
@@ -194,6 +224,60 @@ func CreateTransactionStorage(event sniffer.Event2) error {
 
 		red.Send("XADD", args...)
 	}
+	red.Send("EXEC")
+	return red.Flush()
+}
+
+func CreateTransactionTOPStorage(event sniffer.Event2) error {
+	const maxStorage = 100
+	var red = model.RedisPool.Get()
+	defer red.Close()
+	red.Send("MULTI")
+
+	// Construct args with keys and values for the event
+	args := redis.Args{keys.CreateTransactionTOPStorage()}
+	args = args.Add("*")
+	args = args.Add("Address", event.Address.String())
+	args = args.Add("ContractName", event.ContractName)
+	args = args.Add("ChainID", event.ChainID)
+	args = args.Add("Data", event.Data)
+	args = args.Add("BlockHash", event.BlockHash)
+	args = args.Add("BlockNumber", event.BlockNumber)
+	args = args.Add("Name", event.Name)
+	args = args.Add("TxHash", event.TxHash)
+	args = args.Add("TxIndex", event.TxIndex)
+	args = args.Add("Gas", event.Gas)
+	args = args.Add("GasPrice", event.GasPrice)
+	args = args.Add("GasTipCap", event.GasTipCap)
+	args = args.Add("GasFeeCap", event.GasFeeCap)
+	args = args.Add("Value", event.Value)
+	args = args.Add("Nonce", event.Nonce)
+	args = args.Add("To", event.To.String())
+	args = args.Add("Status", event.Status)
+	args = args.Add("Timestamp", event.Timestamp)
+	args = args.Add("MinerAddress", event.MinerAddress)
+	args = args.Add("Size", event.Size)
+	args = args.Add("BlockReward", event.BlockReward)
+	args = args.Add("AverageGasTipCap", event.AverageGasTipCap)
+	args = args.Add("Time", time.Now().Unix())
+
+	// Check if there are more than maxStorage transactions already stored
+	numStored, err := redis.Int(red.Do("XLEN", keys.CreateTransactionTOPStorage()))
+	if err != nil {
+		return err
+	}
+	if numStored >= maxStorage {
+		// Delete the oldest transaction
+		oldestID, err := redis.String(red.Do("XRANGE", keys.CreateTransactionTOPStorage(), "-", "+", "COUNT", 1))
+		if err != nil {
+			return err
+		}
+		red.Send("XDEL", keys.CreateTransactionTOPStorage(), oldestID)
+	}
+
+	// Add the new transaction
+	red.Send("XADD", args...)
+
 	red.Send("EXEC")
 	return red.Flush()
 }

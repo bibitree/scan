@@ -225,3 +225,11 @@ func NewSucceedReader(groupName string, readerName string) (*MessageReader, erro
 func NewTransactionStorageReader(groupName string, readerName string) (*MessageReader, error) {
 	return NewMessageReader(keys.CreateTransactionStorage(), groupName, readerName)
 }
+
+func NewTransactionTOPStorageReader(groupName string, readerName string) (*MessageReader, error) {
+	return NewMessageReader(keys.CreateTransactionTOPStorage(), groupName, readerName)
+}
+
+func NewCreateChainDataStoragReader(groupName string, readerName string) (*MessageReader, error) {
+	return NewMessageReader(keys.CreateChainDataStorag(), groupName, readerName)
+}

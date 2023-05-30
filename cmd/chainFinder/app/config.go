@@ -10,6 +10,15 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+const (
+	TRANSACT_CONSUMER_GROUP_NAME = "TRANSACT-reader-group"
+)
+
+const (
+	DEFAULT_CONSUMER_NAME  = "consumer-name"
+	TRANSACT_CONSUMER_NAME = DEFAULT_CONSUMER_NAME
+)
+
 type Config struct {
 	ChainFinder *chainFinder.Config `toml:"ChainFinder" json:"chainFinder"`
 	Logger      *logx.Config        `toml:"logger" json:"logger"`

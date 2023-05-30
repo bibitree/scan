@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"ethgo/model/mysqlOrders"
 	"ethgo/model/orders"
 	"ethgo/proto"
 	"ethgo/sniffer"
@@ -63,5 +64,43 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 	}
 
 	orders.CreateTransactionStorage(event)
+	if request.ContractName == "" {
+		orders.CreateTransactionTOPStorage(event)
+	}
+	app.SetChainData(c)
 	c.Success(http.StatusOK, "succ", event)
+}
+
+func (app *App) SetChainData(c *ginx.Context) {
+
+	blockHeight, gasPriceGasPrice, err := mysqlOrders.GetLatestEvent()
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	numberTransactions, numberTransfers, numberTransactionsIn24H, numberaddressesIn24H, err := mysqlOrders.GetEventStatistics(blockHeight)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	totalBlockRewards, totalnumberofAddresses, err := mysqlOrders.GetAllAddressesAndBlockRewardSum(blockHeight)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	paginate := sniffer.ChainData{
+		BlockRewards:            "10",
+		SuperNodes:              100,
+		BlockHeight:             blockHeight,
+		GasPriceGasPrice:        gasPriceGasPrice,
+		NumberTransactions:      numberTransactions,
+		NumberTransfers:         numberTransfers,
+		NumberTransactionsIn24H: numberTransactionsIn24H,
+		NumberaddressesIn24H:    numberaddressesIn24H,
+		TotalBlockRewards:       totalBlockRewards,
+		TotalnumberofAddresses:  totalnumberofAddresses,
+	}
+	//CreateChainDataStorag
+	orders.CreateChainDataStorag(paginate)
 }

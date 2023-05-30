@@ -40,11 +40,22 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		return t.BlockStorage(ctx, message)
 	}
 
+	// var yourMap map[string]interface{}
+	data := message.String("ContractName")
+	if data != "" {
+		err := t.ContractStorage(ctx, message)
+		if err != nil {
+			// 处理错误
+			return After(t.conf.NetworkRetryInterval, message)
+		}
+	}
+
 	chainID, err := message.Int64("ChainID")
 	if err != nil {
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
+
 	gasPrice, err := message.Int64("GasPrice")
 	if err != nil {
 		// 发生错误，处理错误逻辑
@@ -77,19 +88,7 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	if toAddress != "" {
 		toAddress = t.conf.PrefixChain + toAddress[2:]
 	}
-
-	var yourMap map[string]interface{}
-	data := message.Bytes("Data")
-	if len(data) == 2 {
-		yourMap = make(map[string]interface{})
-	} else {
-		err = json.Unmarshal(data, &yourMap)
-
-		if err != nil {
-			// 处理错误
-			return After(t.conf.NetworkRetryInterval, message)
-		}
-	}
+	log.Info(toAddress)
 
 	timestamp, err := message.Uint64("Timestamp")
 	if err != nil {
@@ -97,59 +96,34 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
-	sizeStr := message.String("Size")
-
-	log.Info(toAddress)
-
-	var event = sniffer.Event{
-		Address:          common.HexToAddress(message.String("Address")),
-		ContractName:     message.String("ContractName"),
-		ChainID:          big.NewInt(chainID),
-		Data:             yourMap,
-		BlockHash:        common.HexToHash(message.String("BlockHash")),
-		BlockNumber:      message.String("BlockNumber"),
-		Name:             message.String("Name"),
-		TxHash:           common.HexToHash(message.String("TxHash")),
-		TxIndex:          message.String("TxIndex"),
-		Gas:              gas,
-		GasPrice:         big.NewInt(gasPrice),
-		GasTipCap:        big.NewInt(gasTipCap),
-		GasFeeCap:        big.NewInt(gasFeeCap),
-		Value:            message.String("Value"),
-		Nonce:            nonce,
-		To:               common.HexToAddress(message.String("To")),
-		Status:           message.String("Status") == "true",
-		Timestamp:        timestamp,
-		MinerAddress:     message.String("MinerAddress"),
-		Size:             sizeStr,
-		BlockReward:      message.String("BlockReward"),
-		AverageGasTipCap: message.String("AverageGasTipCap"),
-		NewAddress:       address,
-		NewToAddress:     toAddress,
+	var event = sniffer.EventData{
+		Address:      common.HexToAddress(message.String("Address")),
+		ChainID:      big.NewInt(chainID),
+		BlockHash:    common.HexToHash(message.String("BlockHash")),
+		BlockNumber:  message.String("BlockNumber"),
+		TxHash:       common.HexToHash(message.String("TxHash")),
+		TxIndex:      message.String("TxIndex"),
+		Gas:          gas,
+		GasPrice:     big.NewInt(gasPrice),
+		GasTipCap:    big.NewInt(gasTipCap),
+		GasFeeCap:    big.NewInt(gasFeeCap),
+		Value:        message.String("Value"),
+		Nonce:        nonce,
+		To:           common.HexToAddress(message.String("To")),
+		Status:       message.String("Status") == "true",
+		Timestamp:    timestamp,
+		NewAddress:   address,
+		NewToAddress: toAddress,
 	}
 
 	log.Info(event)
-
-	if event.ContractName == "ERC20" {
-		t.StoreERCInfo(common.HexToAddress(message.String("To")).String())
-	}
 	mysqlOrders.InsertEvent(event)
 	return t.ack(message)
 }
 
-func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message) AfterFunc {
-	log.Debugf("ENTER @TransactionStorage 订单")
-	defer log.Debugf("  LEAVE @TransactionStorage 订单")
-
-	address := common.HexToAddress(message.String("Address")).String()
-	if address != "" {
-		address = t.conf.PrefixChain + address[2:]
-	}
-	chainID, err := message.Int64("ChainID")
-	if err != nil {
-		// 发生错误，处理错误逻辑
-		return After(t.conf.NetworkRetryInterval, message)
-	}
+func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Message) AfterFunc {
+	log.Debugf("ENTER @ContractStorage 订单")
+	defer log.Debugf("  LEAVE @ContractStorage 订单")
 
 	toAddress := common.HexToAddress(message.String("To")).String()
 	if toAddress != "" {
@@ -157,6 +131,28 @@ func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message)
 	}
 
 	var yourMap map[string]interface{}
+	log.Info(toAddress)
+
+	var event = sniffer.ContractData{
+		ContractName: message.String("ContractName"),
+		Data:         yourMap,
+		Name:         message.String("Name"),
+		TxHash:       common.HexToHash(message.String("TxHash")),
+		Contrac:      common.HexToAddress(message.String("To")),
+	}
+
+	log.Info(event)
+
+	if event.ContractName == "ERC20" {
+		t.StoreERCInfo(common.HexToAddress(message.String("To")).String())
+	}
+	mysqlOrders.InsertContractData(event)
+	return t.ack(message)
+}
+
+func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message) AfterFunc {
+	log.Debugf("ENTER @BlockStorage 订单")
+	defer log.Debugf("  LEAVE @BlockStorage 订单")
 
 	timestamp, err := message.Uint64("Timestamp")
 	if err != nil {
@@ -166,41 +162,18 @@ func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message)
 
 	sizeStr := message.String("Size")
 
-	log.Info(toAddress)
-
-	var event = sniffer.Event{
-		Address:          common.HexToAddress(message.String("Address")),
-		ContractName:     message.String("ContractName"),
-		ChainID:          big.NewInt(chainID),
-		Data:             yourMap,
-		BlockHash:        common.HexToHash(message.String("BlockHash")),
-		BlockNumber:      message.String("BlockNumber"),
-		Name:             message.String("Name"),
-		TxHash:           common.HexToHash(message.String("TxHash")),
-		TxIndex:          message.String("TxIndex"),
-		Gas:              0,
-		GasPrice:         big.NewInt(0),
-		GasTipCap:        big.NewInt(0),
-		GasFeeCap:        big.NewInt(0),
-		Value:            message.String("Value"),
-		Nonce:            0,
-		To:               common.HexToAddress(message.String("To")),
-		Status:           message.String("Status") == "true",
-		Timestamp:        timestamp,
-		MinerAddress:     message.String("MinerAddress"),
-		Size:             sizeStr,
-		BlockReward:      message.String("BlockReward"),
-		AverageGasTipCap: message.String("AverageGasTipCap"),
-		NewAddress:       address,
-		NewToAddress:     toAddress,
+	var event = sniffer.BlockData{
+		BlockHash:    common.HexToHash(message.String("BlockHash")),
+		BlockNumber:  message.String("BlockNumber"),
+		Timestamp:    timestamp,
+		MinerAddress: message.String("MinerAddress"),
+		Size:         sizeStr,
+		BlockReward:  message.String("BlockReward"),
 	}
 
 	log.Info(event)
 
-	if event.ContractName == "ERC20" {
-		t.StoreERCInfo(common.HexToAddress(message.String("To")).String())
-	}
-	mysqlOrders.InsertEvent(event)
+	mysqlOrders.InsertBlock(event)
 	return t.ack(message)
 }
 

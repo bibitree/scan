@@ -5,6 +5,7 @@ import (
 	"errors"
 	"ethgo/chainFinder"
 	"ethgo/model/mysqlOrders"
+	"ethgo/model/orders"
 	"ethgo/proto"
 	"ethgo/util"
 	"ethgo/util/ginx"
@@ -13,16 +14,16 @@ import (
 )
 
 func (app *App) GetAllEvents(c *ginx.Context) {
-	var request = new(proto.AllEvents)
-	if err := c.BindJSONEx(request); err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
-		return
+	messageReader, err := orders.NewTransactionTOPStorageReader(TRANSACT_CONSUMER_GROUP_NAME, TRANSACT_CONSUMER_NAME)
+	if err != nil {
+		panic(err)
 	}
-	events, err := mysqlOrders.GetAllEvents(uint64(request.N))
+
+	msgs, err := messageReader.Read()
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
-	c.Success(http.StatusOK, "succ", events)
+	c.Success(http.StatusOK, "succ", msgs)
 }
 
 func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
@@ -31,11 +32,20 @@ func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, err := mysqlOrders.GetEventsBetweenBlockNumbers(uint64(request.Star), uint64(request.End), uint64(request.PageNo), uint64(request.PageSize))
+	events, Contract, n, err := mysqlOrders.GetEventsBetweenBlockNumbers(uint64(request.Star), uint64(request.End), uint64(request.PageNo), uint64(request.PageSize))
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
-	c.Success(http.StatusOK, "succ", events)
+	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	paginate := chainFinder.EventData{
+		Event:        events,
+		PageNumber:   n,
+		ContractData: Contracts,
+	}
+	c.Success(http.StatusOK, "succ", paginate)
 }
 
 func (app *App) GetEventsByBlockNumber(c *ginx.Context) {
@@ -44,11 +54,19 @@ func (app *App) GetEventsByBlockNumber(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, err := mysqlOrders.GetEventByBlockNumber(uint64(request.BlockNumber))
+	events, Contract, err := mysqlOrders.GetEventByBlockNumber(uint64(request.BlockNumber))
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
-	c.Success(http.StatusOK, "succ", events)
+	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	eventData := chainFinder.EventData{
+		ContractData: Contracts,
+		Event:        events,
+	}
+	c.Success(http.StatusOK, "succ", eventData)
 }
 
 func (app *App) GetEventsByTxHash(c *ginx.Context) {
@@ -57,11 +75,19 @@ func (app *App) GetEventsByTxHash(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, err := mysqlOrders.GetEventByTxHash(request.TxHash)
+	events, Contract, err := mysqlOrders.GetEventByTxHash(request.TxHash)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
-	c.Success(http.StatusOK, "succ", events)
+	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	eventData := chainFinder.EventData{
+		ContractData: Contracts,
+		Event:        events,
+	}
+	c.Success(http.StatusOK, "succ", eventData)
 }
 
 func (app *App) GetEventsByBlockHash(c *ginx.Context) {
@@ -70,11 +96,19 @@ func (app *App) GetEventsByBlockHash(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, err := mysqlOrders.GetEventByBlockHash(request.BlockHash)
+	events, Contract, err := mysqlOrders.GetEventByBlockHash(request.BlockHash)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
-	c.Success(http.StatusOK, "succ", events)
+	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	eventData := chainFinder.EventData{
+		ContractData: Contracts,
+		Event:        events,
+	}
+	c.Success(http.StatusOK, "succ", eventData)
 }
 
 func (app *App) GetERCTop(c *ginx.Context) {
@@ -96,7 +130,11 @@ func (app *App) GetEventsByContract(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, n, err := mysqlOrders.GetEventsByToAddressAndBlockNumber(request.Contract, uint64(request.PageNo), uint64(request.PageSize))
+	events, Contract, n, err := mysqlOrders.GetEventsByToAddressAndBlockNumber(request.Contract, uint64(request.PageNo), uint64(request.PageSize))
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
@@ -118,11 +156,12 @@ func (app *App) GetEventsByContract(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
 	paginate := chainFinder.Paginate{
-		Events:       events,
+		Event:        events,
 		PageNumber:   n,
 		Decimals:     decimalsString,
 		CreationTime: time,
 		Address:      address,
+		ContractData: Contracts,
 	}
 
 	c.Success(http.StatusOK, "succ", paginate)
@@ -154,31 +193,31 @@ func (app *App) ProcessCall(contract string, name string) (interface{}, error) {
 	return res.Data, nil
 }
 
-func (app *App) ProcessERCContractTxCount(contract string) (interface{}, error) {
-	var call = chainFinder.Contract{
-		Contract: contract,
-	}
-	body, err := util.Post(app.conf.ChainFinder.ContractTxCount, call)
-	if err != nil {
-		return nil, err
-	}
+// func (app *App) ProcessERCContractTxCount(contract string) (interface{}, error) {
+// 	var call = chainFinder.Contract{
+// 		Contract: contract,
+// 	}
+// 	body, err := util.Post(app.conf.ChainFinder.ContractTxCount, call)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	var res chainFinder.Response
-	if err := json.Unmarshal(body, &res); err != nil {
-		return nil, err
-	}
+// 	var res chainFinder.Response
+// 	if err := json.Unmarshal(body, &res); err != nil {
+// 		return nil, err
+// 	}
 
-	log.Debugf("应答: %v", string(body))
+// 	log.Debugf("应答: %v", string(body))
 
-	if res.Code != http.StatusOK {
-		if res.Message == "" {
-			res.Message = fmt.Sprintf("%v", res.Code)
-		}
-		return nil, errors.New(res.Message)
-	}
+// 	if res.Code != http.StatusOK {
+// 		if res.Message == "" {
+// 			res.Message = fmt.Sprintf("%v", res.Code)
+// 		}
+// 		return nil, errors.New(res.Message)
+// 	}
 
-	return res.Data, nil
-}
+// 	return res.Data, nil
+// }
 
 func (app *App) ProcessContractCreationTime(contract string) (interface{}, error) {
 
@@ -208,39 +247,32 @@ func (app *App) ProcessContractCreationTime(contract string) (interface{}, error
 }
 
 func (app *App) GetChainData(c *ginx.Context) {
+	messageReader, err := orders.NewCreateChainDataStoragReader(TRANSACT_CONSUMER_GROUP_NAME, TRANSACT_CONSUMER_NAME)
+	if err != nil {
+		panic(err)
+	}
+
+	msgs, err := messageReader.Read()
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	c.Success(http.StatusOK, "succ", msgs)
+}
+
+func (app *App) GetBlockNum(c *ginx.Context) {
 	var request = new(proto.ByContract)
 	if err := c.BindJSONEx(request); err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
-	blockHeight, gasPriceGasPrice, err := mysqlOrders.GetLatestEvent()
-	if err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
-		return
-	}
-	numberTransactions, numberTransfers, numberTransactionsIn24H, numberaddressesIn24H, err := mysqlOrders.GetEventStatistics(blockHeight)
-	if err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
-		return
-	}
-
-	totalBlockRewards, totalnumberofAddresses, err := mysqlOrders.GetAllAddressesAndBlockRewardSum()
+	blockHeight, _, err := mysqlOrders.GetLatestEvent()
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 	paginate := chainFinder.ChainData{
-		BlockRewards:            "0",
-		SuperNodes:              100,
-		BlockHeight:             blockHeight,
-		GasPriceGasPrice:        gasPriceGasPrice,
-		NumberTransactions:      numberTransactions,
-		NumberTransfers:         numberTransfers,
-		NumberTransactionsIn24H: numberTransactionsIn24H,
-		NumberaddressesIn24H:    numberaddressesIn24H,
-		TotalBlockRewards:       totalBlockRewards,
-		TotalnumberofAddresses:  totalnumberofAddresses,
+		BlockHeight: blockHeight,
 	}
 
 	c.Success(http.StatusOK, "succ", paginate)

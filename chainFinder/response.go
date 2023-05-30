@@ -24,11 +24,12 @@ type ContractTxCount struct {
 }
 
 type Paginate struct {
-	Events       []model.Event `json:"events" example:"0x51E72BDbA3A6Fc6337251581CB95625fa3A7767F"`
-	PageNumber   uint64        `json:"pageNumber" example:"49335849638413224831"`
-	Decimals     string        `json:"decimals" example:"49335849638413224831"`
-	CreationTime uint64        `json:"creationTime" example:"49335849638413224831"`
-	Address      string        `json:"address" example:"49335849638413224831"`
+	Event        []model.EventData    `json:"event" example:"100"`
+	PageNumber   uint64               `json:"pageNumber" example:"49335849638413224831"`
+	Decimals     string               `json:"decimals" example:"49335849638413224831"`
+	CreationTime uint64               `json:"creationTime" example:"49335849638413224831"`
+	Address      string               `json:"address" example:"49335849638413224831"`
+	ContractData []model.ContractData `json:"contractData" example:"0"`
 }
 
 type ChainData struct {
@@ -43,4 +44,11 @@ type ChainData struct {
 	NumberTransfers         string `json:"numberTransfers" example:"49335849638413224831"`
 	NumberTransactionsIn24H string `json:"numberTransactionsIn24H" example:"49335849638413224831"`
 	NumberaddressesIn24H    string `json:"numberaddressesIn24H" example:"49335849638413224831"`
+}
+
+type EventData struct {
+	// 合约地址
+	ContractData []model.ContractData `json:"contractData" example:"0"`
+	Event        []model.EventData    `json:"event" example:"100"`
+	PageNumber   uint64               `json:"pageNumber" example:"49335849638413224831"`
 }
