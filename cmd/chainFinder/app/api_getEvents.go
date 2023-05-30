@@ -19,7 +19,7 @@ func (app *App) GetAllEvents(c *ginx.Context) {
 		panic(err)
 	}
 
-	msgs, err := messageReader.Read()
+	msgs, err := messageReader.Read(orders.WithLimit(100))
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
@@ -252,7 +252,7 @@ func (app *App) GetChainData(c *ginx.Context) {
 		panic(err)
 	}
 
-	msgs, err := messageReader.Read()
+	msgs, err := messageReader.Read(orders.WithLimit(100))
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
