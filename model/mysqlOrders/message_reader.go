@@ -113,20 +113,21 @@ func GetEventByTxHash(txHash string) ([]model.EventData, []string, error) {
 	return events, txHashList, nil
 }
 
-func GetEventByBlockHash(blockHash string) ([]model.EventData, []string, error) {
+func GetEventByBlockHash(blockHash string) ([]model.EventData, []string, []string, error) {
 	// 声明SQL语句
 	sqlStr := `SELECT * FROM event WHERE blockHash = ?`
 
 	// 查询匹配的数据
 	rows, err := model.MysqlPool.Query(sqlStr, blockHash)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	defer rows.Close()
 
 	events := make([]model.EventData, 0)
 	txHashList := make([]string, 0)
+	blockNumberSet := make(map[string]bool)
 
 	for rows.Next() {
 		event := model.EventData{}
@@ -157,25 +158,31 @@ func GetEventByBlockHash(blockHash string) ([]model.EventData, []string, error) 
 
 		events = append(events, event)
 		txHashList = append(txHashList, event.TxHash.String())
+		blockNumberSet[event.BlockNumber] = true
 	}
-	return events, txHashList, nil
+	// 从 set 中提取所有不重复的 blockNumber，并转换为 string list
+	blockNumberList := make([]string, 0, len(blockNumberSet))
+	for blockNumber := range blockNumberSet {
+		blockNumberList = append(blockNumberList, blockNumber)
+	}
+	return events, txHashList, blockNumberList, nil
 }
 
-func GetEventByBlockNumber(blockNumber uint64) ([]model.EventData, []string, error) {
+func GetEventByBlockNumber(blockNumber uint64) ([]model.EventData, []string, []string, error) {
 	// 声明SQL语句
 	sqlStr := `SELECT * FROM event WHERE blockNumber = ?`
 
 	// 查询匹配的数据
 	rows, err := model.MysqlPool.Query(sqlStr, blockNumber)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	defer rows.Close()
 
 	events := make([]model.EventData, 0)
 	txHashList := make([]string, 0)
-
+	blockNumberSet := make(map[string]bool)
 	for rows.Next() {
 		event := model.EventData{}
 		var chainID, blockHashBytes, txHash []byte
@@ -205,8 +212,14 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.EventData, []string, err
 
 		events = append(events, event)
 		txHashList = append(txHashList, event.TxHash.String())
+		blockNumberSet[event.BlockNumber] = true
 	}
-	return events, txHashList, nil
+	// 从 set 中提取所有不重复的 blockNumber，并转换为 string list
+	blockNumberList := make([]string, 0, len(blockNumberSet))
+	for blockNumber := range blockNumberSet {
+		blockNumberList = append(blockNumberList, blockNumber)
+	}
+	return events, txHashList, blockNumberList, nil
 }
 
 func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageSize uint64) ([]model.EventData, []string, uint64, error) {
@@ -538,7 +551,7 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 	// 将传入的TxHash列表转换为字符串形式，以便查询数据库
 	txHashStr := fmt.Sprintf("'%s'", strings.Join(txHashes, "','"))
 	// 构造sql语句
-	sqlStr := fmt.Sprintf("SELECT * FROM event WHERE txHash in (%s)", txHashStr)
+	sqlStr := fmt.Sprintf("SELECT * FROM ercevent WHERE txHash in (%s)", txHashStr)
 	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -557,6 +570,32 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 		}
 		// 解析data字段
 		json.Unmarshal([]byte(data), &event.Data)
+		events = append(events, event)
+	}
+	return events, nil
+}
+
+func GetBlockDataByBlockNumber(txHashes []string) ([]model.BlockData, error) {
+	events := make([]model.BlockData, 0)
+	// 将传入的TxHash列表转换为字符串形式，以便查询数据库
+	txHashStr := fmt.Sprintf("'%s'", strings.Join(txHashes, "','"))
+	// 构造sql语句
+	sqlStr := fmt.Sprintf("SELECT * FROM block WHERE txHash in (%s)", txHashStr)
+	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// 遍历查询结果并将其转换为ContractData类型
+	for rows.Next() {
+		var event model.BlockData
+		err = rows.Scan(&event.BlockHash, &event.BlockNumber, &event.BlockReward, &event.MinerAddress, &event.Size, &event.Timestamp)
+		if err != nil {
+			return nil, err
+		}
 		events = append(events, event)
 	}
 	return events, nil

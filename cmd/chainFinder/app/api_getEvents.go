@@ -54,7 +54,7 @@ func (app *App) GetEventsByBlockNumber(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, Contract, err := mysqlOrders.GetEventByBlockNumber(uint64(request.BlockNumber))
+	events, Contract, BlockNumber, err := mysqlOrders.GetEventByBlockNumber(uint64(request.BlockNumber))
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
@@ -62,9 +62,15 @@ func (app *App) GetEventsByBlockNumber(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
+	BlockNumberS, err := mysqlOrders.GetBlockDataByBlockNumber(BlockNumber)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+
 	eventData := chainFinder.EventData{
 		ContractData: Contracts,
 		Event:        events,
+		BlockData:    BlockNumberS,
 	}
 	c.Success(http.StatusOK, "succ", eventData)
 }
@@ -96,7 +102,7 @@ func (app *App) GetEventsByBlockHash(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, Contract, err := mysqlOrders.GetEventByBlockHash(request.BlockHash)
+	events, Contract, BlockNumber, err := mysqlOrders.GetEventByBlockHash(request.BlockHash)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
@@ -104,9 +110,15 @@ func (app *App) GetEventsByBlockHash(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
+	BlockNumberS, err := mysqlOrders.GetBlockDataByBlockNumber(BlockNumber)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+
 	eventData := chainFinder.EventData{
 		ContractData: Contracts,
 		Event:        events,
+		BlockData:    BlockNumberS,
 	}
 	c.Success(http.StatusOK, "succ", eventData)
 }
