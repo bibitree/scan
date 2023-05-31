@@ -33,7 +33,7 @@ func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, Contract, n, distinctBlockNumbers, err := mysqlOrders.GetEventsBetweenBlockNumbers(uint64(request.Star), uint64(request.End), uint64(request.PageNo), uint64(request.PageSize))
+	events, Contract, n, _, err := mysqlOrders.GetEventsBetweenBlockNumbers(uint64(request.Star), uint64(request.End), uint64(request.PageNo), uint64(request.PageSize))
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
@@ -41,7 +41,7 @@ func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
-	BlockNumberS, err := mysqlOrders.GetBlockDataByBlockNumber(distinctBlockNumbers)
+	BlockNumberS, err := mysqlOrders.GetBlockDataByBlockNumber2(uint64(request.Star), uint64(request.End), uint64(request.PageNo), uint64(request.PageSize))
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}

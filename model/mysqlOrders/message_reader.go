@@ -265,6 +265,35 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.EventData, []string, []s
 	return events, txHashList, blockNumberList, nil
 }
 
+func GetBlockDataByBlockNumber2(start uint64, end uint64, pageNo uint64, pageSize uint64) ([]model.BlockData2, error) {
+	events := make([]model.BlockData2, 0)
+
+	// 构造查询block表的sql语句
+	sqlStr := fmt.Sprintf("SELECT * FROM block WHERE blockNumber BETWEEN %d AND %d LIMIT %d, %d", start, end, (pageNo-1)*pageSize, pageSize)
+
+	// 使用查询数据库，并且在查询时使用超时参数
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// 遍历查询结果并将其转换为ContractData类型
+	for rows.Next() {
+		var event model.BlockData2
+		var id uint64
+		err = rows.Scan(&id, &event.BlockHash, &event.BlockNumber, &event.BlockReward, &event.MinerAddress, &event.Size, &event.Timestamp)
+		if err != nil {
+			return nil, err
+		}
+		event.BlockBeasReward = BlockBeasReward
+		events = append(events, event)
+	}
+	return events, nil
+}
+
 func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageSize uint64) ([]model.EventData, []string, uint64, []string, error) {
 	// 计算偏移量
 	offset := (pageNo - 1) * pageSize
