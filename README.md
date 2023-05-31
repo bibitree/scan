@@ -30,6 +30,8 @@ CREATE TABLE `event` (
    `newToAddress` varchar(255) NOT NULL,  
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+ALTER TABLE `event` ADD INDEX `idx_address` (`address`);
+ALTER TABLE `event` ADD INDEX `idx_toAddress` (`toAddress`);
 
 CREATE TABLE `block` (
    `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -41,6 +43,7 @@ CREATE TABLE `block` (
    `timestamp` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+ALTER TABLE `event` ADD INDEX `idx_blockNumber` (`blockNumber`);
 
 
 CREATE TABLE `ercevent` (
@@ -52,6 +55,7 @@ CREATE TABLE `ercevent` (
    `toAddress` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+ALTER TABLE `event` ADD INDEX `idx_txHash` (`txHash`);
 
 CREATE TABLE `ercTop` (
    `id` int(11) NOT NULL AUTO_INCREMENT,
