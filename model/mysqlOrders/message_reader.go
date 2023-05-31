@@ -113,7 +113,7 @@ func GetEventByTxHash(txHash string) ([]model.EventData, []string, error) {
 
 // 声明SQL语句
 func GetEventsByAddress(address string) ([]model.EventData, []string, error) {
-	sqlStr := `SELECT * FROM event WHERE address = ? OR toAddress = ?`
+	sqlStr := `SELECT * FROM event WHERE address = ? OR toAddress = ? ORDER BY blockNumber DESC` // Add ORDER BY clause to sort by blockNumber in descending order
 	// 查询匹配的数据
 	rows, err := model.MysqlPool.Query(sqlStr, address, address)
 	if err != nil {
@@ -139,17 +139,13 @@ func GetEventsByAddress(address string) ([]model.EventData, []string, error) {
 		}
 		gasPriceParsed, _ := new(big.Int).SetString(gasPrice, 10)
 		event.GasPrice = gasPriceParsed
-
 		gasTipCapParsed, _ := new(big.Int).SetString(gasTipCap, 10)
 		event.GasTipCap = gasTipCapParsed
-
 		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
 		event.GasFeeCap = gasFeeCapParsed
-
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)
 		event.TxHash = string(txHash)
-
 		events = append(events, event)
 		txHashList = append(txHashList, string(event.TxHash))
 	}
@@ -158,7 +154,7 @@ func GetEventsByAddress(address string) ([]model.EventData, []string, error) {
 
 func GetEventByBlockHash(blockHash string) ([]model.EventData, []string, []string, error) {
 	// 声明SQL语句
-	sqlStr := `SELECT * FROM event WHERE blockHash = ?`
+	sqlStr := `SELECT * FROM event WHERE blockHash = ? ORDER BY blockNumber DESC`
 
 	// 查询匹配的数据
 	rows, err := model.MysqlPool.Query(sqlStr, blockHash)
@@ -213,7 +209,7 @@ func GetEventByBlockHash(blockHash string) ([]model.EventData, []string, []strin
 
 func GetEventByBlockNumber(blockNumber uint64) ([]model.EventData, []string, []string, error) {
 	// 声明SQL语句
-	sqlStr := `SELECT * FROM event WHERE blockNumber = ?`
+	sqlStr := `SELECT * FROM event WHERE blockNumber = ? ORDER BY blockNumber DESC`
 
 	// 查询匹配的数据
 	rows, err := model.MysqlPool.Query(sqlStr, blockNumber)
@@ -268,8 +264,8 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.EventData, []string, []s
 func GetBlockDataByBlockNumber2(start uint64, end uint64, pageNo uint64, pageSize uint64) ([]model.BlockData2, error) {
 	events := make([]model.BlockData2, 0)
 
-	// 构造查询block表的sql语句
-	sqlStr := fmt.Sprintf("SELECT * FROM block WHERE blockNumber BETWEEN %d AND %d LIMIT %d, %d", start, end, (pageNo-1)*pageSize, pageSize)
+	// 构造查询block表的sql语句，按照blockNumber从大到小排序
+	sqlStr := fmt.Sprintf("SELECT * FROM block WHERE blockNumber BETWEEN %d AND %d ORDER BY blockNumber DESC LIMIT %d, %d", start, end, (pageNo-1)*pageSize, pageSize)
 
 	// 使用查询数据库，并且在查询时使用超时参数
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -301,7 +297,7 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 
 	// 声明SQL语句和参数
 	sqlStr := `SELECT COUNT(*) FROM event WHERE blockNumber BETWEEN ? AND ?`
-	countSqlStr := `SELECT * FROM event WHERE blockNumber BETWEEN ? AND ? LIMIT ?,?`
+	countSqlStr := `SELECT * FROM event WHERE blockNumber BETWEEN ? AND ? ORDER BY blockNumber DESC LIMIT ?,?`
 	args := []interface{}{start, end}
 
 	// 查询匹配的数据
