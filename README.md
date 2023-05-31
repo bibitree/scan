@@ -34,7 +34,6 @@ ALTER TABLE `event` ADD INDEX `idx_address` (`address`);
 ALTER TABLE `event` ADD INDEX `idx_toAddress` (`toAddress`);
 ALTER TABLE `event` ADD INDEX `idx_blockNumber` (`blockNumber`);
 
-
 CREATE TABLE `block` (
    `id` int(11) NOT NULL AUTO_INCREMENT,
    `blockHash` varchar(66) NOT NULL,
@@ -45,19 +44,20 @@ CREATE TABLE `block` (
    `timestamp` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
-ALTER TABLE `event` ADD INDEX `idx_blockNumber` (`blockNumber`);
+ALTER TABLE `block` ADD INDEX `idx_blockNumber` (`blockNumber`);
 
 
 CREATE TABLE `ercevent` (
    `id` int(11) NOT NULL AUTO_INCREMENT,
    `contractName` varchar(255) NOT NULL,
+   `eventName` varchar(255) NOT NULL,
    `data` json NOT NULL,   
    `name` varchar(255) NOT NULL,
    `txHash` varchar(66) DEFAULT NULL,
    `toAddress` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
-ALTER TABLE `event` ADD INDEX `idx_txHash` (`txHash`);
+ALTER TABLE `ercevent` ADD INDEX `idx_txHash` (`txHash`);
 
 CREATE TABLE `ercTop` (
    `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -66,5 +66,13 @@ CREATE TABLE `ercTop` (
    `value` varchar(255) DEFAULT NULL,
    `newContracaddress` varchar(255) NOT NULL,
    `contractTxCount` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `addressTop` (
+   `id`         int(11) NOT NULL AUTO_INCREMENT,
+   `address`    varchar(42)  NOT NULL,
+   `Balance`    varchar(255) NOT NULL,
+   `Count`      varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
