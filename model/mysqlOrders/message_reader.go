@@ -628,7 +628,7 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 		var data string
 		// var id string
 		var id uint64
-		err = rows.Scan(&id, &event.ContractName, &data, &event.Name, &event.TxHash, &event.Contrac)
+		err = rows.Scan(&id, &event.ContractName, &event.EventName, &data, &event.Name, &event.TxHash, &event.Contrac)
 		if err != nil {
 			return nil, err
 		}
@@ -639,13 +639,15 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 	return events, nil
 }
 
-func GetBlockDataByBlockNumber(blockNumber []string) ([]model.BlockData, error) {
-	events := make([]model.BlockData, 0)
+func GetBlockDataByBlockNumber(blockNumber []string) ([]model.BlockData2, error) {
+	events := make([]model.BlockData2, 0)
 	// 将传入的TxHash列表转换为字符串形式，以便查询数据库
 	blockNumberStr := fmt.Sprintf("'%s'", strings.Join(blockNumber, "','"))
-	// 构造sql语句
+	// 构造查询event数据库中BlockNumber与本次循环中BlockNumber相同的交易数量的sql语句
+	countSqlStr := "SELECT COUNT(*) AS Count FROM event WHERE blockNumber = ?"
+	// 构造查询block表的sql语句
 	sqlStr := fmt.Sprintf("SELECT * FROM block WHERE blockNumber in (%s)", blockNumberStr)
-	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
+	// 使用查询数据库，并且在查询时使用超时参数
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr)
@@ -655,13 +657,73 @@ func GetBlockDataByBlockNumber(blockNumber []string) ([]model.BlockData, error) 
 	defer rows.Close()
 	// 遍历查询结果并将其转换为ContractData类型
 	for rows.Next() {
-		var event model.BlockData
+		var event model.BlockData2
 		var id uint64
 		err = rows.Scan(&id, &event.BlockHash, &event.BlockNumber, &event.BlockReward, &event.MinerAddress, &event.Size, &event.Timestamp)
 		if err != nil {
 			return nil, err
 		}
+		event.BlockBeasReward = BlockBeasReward
+		// 查询交易数量并加入到BlockData2结构中
+		countRows, err := model.MysqlPool.QueryContext(ctx, countSqlStr, event.BlockNumber)
+		if err != nil {
+			return nil, err
+		}
+		defer countRows.Close()
+		if countRows.Next() {
+			var count int
+			err = countRows.Scan(&count)
+			if err != nil {
+				return nil, err
+			}
+			event.Count = count
+		}
 		events = append(events, event)
 	}
 	return events, nil
+}
+
+func GetTopAddresses(pageNo uint64, pageSize uint64) ([]model.AddressData, uint64, error) {
+	var sqlStr string
+	var params []interface{}
+	sqlStr = "SELECT address, Balance, Count FROM addressTop ORDER BY Balance DESC"
+	// 根据传入的参数设置limit值
+	if pageNo <= 0 {
+		pageNo = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	start := (pageNo - 1) * pageSize
+	sqlStr += " LIMIT ?,?"
+	params = append(params, start, pageSize)
+	rows, err := model.MysqlPool.Query(sqlStr, params...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+	var addresses []model.AddressData
+	for rows.Next() {
+		var addressData model.AddressData
+		if err := rows.Scan(&addressData.Address, &addressData.Balance, &addressData.Count); err != nil {
+			return nil, 0, err
+		}
+		addresses = append(addresses, addressData)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+	totalRows, err := model.MysqlPool.Query("SELECT COUNT(*) FROM addressTop")
+	if err != nil {
+		return nil, 0, err
+	}
+	defer totalRows.Close()
+	var total uint64
+	for totalRows.Next() {
+		if err := totalRows.Scan(&total); err != nil {
+			return nil, 0, err
+		}
+	}
+	totalPages := uint64(math.Ceil(float64(total) / float64(pageSize)))
+	return addresses, totalPages, nil
 }

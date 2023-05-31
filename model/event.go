@@ -34,6 +34,7 @@ type Event struct {
 
 type ContractData struct {
 	ContractName string                 `json:"contractName"`
+	EventName    string                 `json:"eventName"`
 	Data         map[string]interface{} `json:"data"`
 	Name         string                 `json:"name"`
 	TxHash       string                 `json:"txHash"`
@@ -47,6 +48,23 @@ type BlockData struct {
 	MinerAddress string `json:"minerAddress"`
 	Size         string `json:"size"`
 	Timestamp    uint64 `json:"timestamp"`
+}
+
+type BlockData2 struct {
+	BlockHash       string `json:"blockHash"`
+	BlockNumber     string `json:"blockNumber"`
+	BlockReward     string `json:"blockReward"`
+	MinerAddress    string `json:"minerAddress"`
+	Size            string `json:"size"`
+	Timestamp       uint64 `json:"timestamp"`
+	BlockBeasReward string `json:"blockBeasReward"`
+	Count           int    `json:"count"`
+}
+
+type AddressData struct {
+	Address string `json:"address"`
+	Balance string `json:"balance"`
+	Count   string `json:"count"`
 }
 
 type EventData struct {

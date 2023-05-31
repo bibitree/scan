@@ -35,6 +35,11 @@ type ByBlockNumbers struct {
 	PageSize int `json:"pageSize" example:"100"`
 }
 
+type ByAddresss struct {
+	PageNo   int `json:"pageNo" example:"100"`
+	PageSize int `json:"pageSize" example:"100"`
+}
+
 type ByContract struct {
 	Contract string `json:"contract" example:"0x66e3076f604491c0944b3c885d451424fd644c4ebf61c333e0d4622d567af38b"`
 	PageNo   int    `json:"pageNo" example:"100"`

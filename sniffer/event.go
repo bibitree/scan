@@ -37,10 +37,16 @@ type Event struct {
 
 type ContractData struct {
 	ContractName string                 `json:"contractName"`
+	EventName    string                 `json:"eventName"`
 	Data         map[string]interface{} `json:"data"`
 	Name         string                 `json:"name"`
 	TxHash       common.Hash            `json:"txHash"`
 	Contrac      common.Address         `json:"to"`
+}
+
+type AddressData struct {
+	Address string `json:"address"`
+	Balance string `json:"balance"`
 }
 
 type BlockData struct {

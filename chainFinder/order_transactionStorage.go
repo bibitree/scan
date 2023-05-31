@@ -52,6 +52,15 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		}
 	}
 
+	Value := message.String("Value")
+	if data != "0" && data != "" {
+		err := t.AddressStorage(ctx, message)
+		if err != nil {
+			// 处理错误
+			return After(t.conf.NetworkRetryInterval, message)
+		}
+	}
+
 	chainID, err := message.Int64("ChainID")
 	if err != nil {
 		// 发生错误，处理错误逻辑
@@ -109,7 +118,7 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		GasPrice:     big.NewInt(gasPrice),
 		GasTipCap:    big.NewInt(gasTipCap),
 		GasFeeCap:    big.NewInt(gasFeeCap),
-		Value:        message.String("Value"),
+		Value:        Value,
 		Nonce:        nonce,
 		To:           common.HexToAddress(message.String("To")),
 		Status:       message.String("Status") == "true",
@@ -120,6 +129,22 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 
 	log.Info(event)
 	mysqlOrders.InsertEvent(event)
+	return t.ack(message)
+}
+
+func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Message) AfterFunc {
+	log.Debugf("ENTER @ContractStorage 订单")
+	defer log.Debugf("  LEAVE @ContractStorage 订单")
+
+	log.Info(message.String("Address"))
+
+	var event = sniffer.AddressData{
+		Address: message.String("To"),
+		Balance: message.String("Value"),
+	}
+
+	log.Info(event)
+	mysqlOrders.InsertAddressData(event)
 	return t.ack(message)
 }
 
@@ -145,9 +170,14 @@ func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Messa
 		}
 	}
 	log.Info(toAddress)
+	var name string
+	if message.String("ContractName") == "ERC20" {
+		name, _ = t.StoreERCInfo(common.HexToAddress(message.String("To")).String())
+	}
 
 	var event = sniffer.ContractData{
-		ContractName: message.String("ContractName"),
+		ContractName: name,
+		EventName:    message.String("ContractName"),
 		Data:         yourMap,
 		Name:         message.String("Name"),
 		TxHash:       common.HexToHash(message.String("TxHash")),
@@ -155,10 +185,6 @@ func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Messa
 	}
 
 	log.Info(event)
-
-	if event.ContractName == "ERC20" {
-		t.StoreERCInfo(common.HexToAddress(message.String("To")).String())
-	}
 	mysqlOrders.InsertContractData(event)
 	return t.ack(message)
 }
@@ -190,7 +216,7 @@ func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message)
 	return t.ack(message)
 }
 
-func (t *ChainFinder) StoreERCInfo(event string) error {
+func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 
 	var contract = Contract{
 		Contract: event,
@@ -198,18 +224,18 @@ func (t *ChainFinder) StoreERCInfo(event string) error {
 	ercName, err := t.ProcessERCName(contract)
 	if err != nil {
 		log.Error(err)
-		return err
+		return "", err
 	}
 	ercTotalSupply, err := t.ProcessERCTotalSupply(contract)
 	if err != nil {
 		log.Error(err)
-		return err
+		return "", err
 	}
 
 	ethContractTxCount, err := t.ProcessERCContractTxCount(contract)
 	if err != nil {
 		log.Error(err)
-		return err
+		return "", err
 	}
 	fmt.Print(ethContractTxCount)
 
@@ -219,7 +245,7 @@ func (t *ChainFinder) StoreERCInfo(event string) error {
 	}
 	dataMap, ok := ethContractTxCount.(map[string]interface{})
 	if !ok {
-		return errors.New("invalid data type")
+		return "", errors.New("invalid data type")
 	}
 	fmt.Print(dataMap["count"].(string))
 	// count, ok := ethContractTxCount.(ContractTxCount)
@@ -243,7 +269,7 @@ func (t *ChainFinder) StoreERCInfo(event string) error {
 	mysqlOrders.InsertErcTop(ercTop)
 
 	// mysqlOrders.InsertErcTop(ercTop)
-	return nil
+	return ercString, nil
 }
 
 func (t *ChainFinder) ProcessERCName(contract Contract) (interface{}, error) {

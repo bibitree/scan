@@ -54,6 +54,44 @@ func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
 	c.Success(http.StatusOK, "succ", paginate)
 }
 
+func (app *App) GetEventsByAddress(c *ginx.Context) {
+	var request = new(proto.ByAddress)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	events, Contract, err := mysqlOrders.GetEventsByAddress(request.Address)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	eventData := chainFinder.EventData{
+		ContractData: Contracts,
+		Event:        events,
+	}
+	c.Success(http.StatusOK, "succ", eventData)
+}
+
+func (app *App) GetAddressList(c *ginx.Context) {
+	var request = new(proto.ByAddresss)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	events, pageNumber, err := mysqlOrders.GetTopAddresses(uint64(request.PageNo), uint64(request.PageSize))
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	addressData := chainFinder.AddressData{
+		AddressData: events,
+		PageNumber:  pageNumber,
+	}
+	c.Success(http.StatusOK, "succ", addressData)
+}
+
 func (app *App) GetEventsByBlockNumber(c *ginx.Context) {
 	var request = new(proto.ByBlockNumber)
 	if err := c.BindJSONEx(request); err != nil {
@@ -88,27 +126,6 @@ func (app *App) GetEventsByTxHash(c *ginx.Context) {
 		return
 	}
 	events, Contract, err := mysqlOrders.GetEventByTxHash(request.TxHash)
-	if err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
-	}
-	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
-	if err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
-	}
-	eventData := chainFinder.EventData{
-		ContractData: Contracts,
-		Event:        events,
-	}
-	c.Success(http.StatusOK, "succ", eventData)
-}
-
-func (app *App) GetEventsByAddress(c *ginx.Context) {
-	var request = new(proto.ByAddress)
-	if err := c.BindJSONEx(request); err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
-		return
-	}
-	events, Contract, err := mysqlOrders.GetEventsByAddress(request.Address)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}

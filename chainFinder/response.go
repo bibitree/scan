@@ -50,6 +50,12 @@ type EventData struct {
 	// 合约地址
 	ContractData []model.ContractData `json:"contractData" example:"0"`
 	Event        []model.EventData    `json:"event" example:"100"`
-	BlockData    []model.BlockData    `json:"blockData" example:"100"`
+	BlockData    []model.BlockData2   `json:"blockData" example:"100"`
 	PageNumber   uint64               `json:"pageNumber" example:"49335849638413224831"`
+}
+
+type AddressData struct {
+	// 合约地址
+	AddressData []model.AddressData `json:"contractData" example:"0"`
+	PageNumber  uint64              `json:"pageNumber" example:"49335849638413224831"`
 }

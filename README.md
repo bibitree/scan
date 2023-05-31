@@ -32,6 +32,8 @@ CREATE TABLE `event` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 ALTER TABLE `event` ADD INDEX `idx_address` (`address`);
 ALTER TABLE `event` ADD INDEX `idx_toAddress` (`toAddress`);
+ALTER TABLE `event` ADD INDEX `idx_blockNumber` (`blockNumber`);
+
 
 CREATE TABLE `block` (
    `id` int(11) NOT NULL AUTO_INCREMENT,
