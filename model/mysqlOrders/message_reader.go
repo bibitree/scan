@@ -689,7 +689,7 @@ func GetBlockDataByBlockNumber(blockNumber []string) ([]model.BlockData2, error)
 	for rows.Next() {
 		var event model.BlockData2
 		var id uint64
-		err = rows.Scan(&id, &event.BlockHash, &event.BlockNumber, &event.BlockReward, &event.MinerAddress, &event.Size, &event.Timestamp)
+		err = rows.Scan(&id, &event.BlockHash, &event.BlockNumber, &event.BlockReward, &event.MinerAddress, &event.Size, &event.Timestamp, &event.GasLimit)
 		if err != nil {
 			return nil, err
 		}
