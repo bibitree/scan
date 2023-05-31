@@ -93,7 +93,7 @@ func InsertBlock(block sniffer.BlockData) error {
 		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, block.BlockHash.Hex(), block.BlockNumber, block.BlockReward,
 			block.MinerAddress, block.Size, block.Timestamp)
 		if err != nil {
-			log.Error("插入数据时出错: ", err)
+			log.Info("插入数据时出错: ", err)
 			return err
 		}
 	}

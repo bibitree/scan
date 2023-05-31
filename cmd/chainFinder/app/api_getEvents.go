@@ -14,16 +14,17 @@ import (
 )
 
 func (app *App) GetAllEvents(c *ginx.Context) {
-	messageReader, err := orders.NewTransactionTOPStorageReader(TRANSACT_CONSUMER_GROUP_NAME, TRANSACT_CONSUMER_NAME)
+	var request = new(proto.AllEvents)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	// ReadTransactionTOPStorage()
+	messageReader, err := orders.ReadTransactionTOPStorage()
 	if err != nil {
 		panic(err)
 	}
-
-	msgs, err := messageReader.Read(orders.WithLimit(100))
-	if err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
-	}
-	c.Success(http.StatusOK, "succ", msgs)
+	c.Success(http.StatusOK, "succ", messageReader)
 }
 
 func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
@@ -259,12 +260,17 @@ func (app *App) ProcessContractCreationTime(contract string) (interface{}, error
 }
 
 func (app *App) GetChainData(c *ginx.Context) {
+	var request = new(proto.ByBlockNumbers)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
 	messageReader, err := orders.NewCreateChainDataStoragReader(TRANSACT_CONSUMER_GROUP_NAME, TRANSACT_CONSUMER_NAME)
 	if err != nil {
 		panic(err)
 	}
 
-	msgs, err := messageReader.Read(orders.WithLimit(100))
+	msgs, err := messageReader.Read()
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}

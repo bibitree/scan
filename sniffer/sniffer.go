@@ -355,7 +355,7 @@ func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []Tra
 func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx *TransactionInfo, out *Event) error {
 	out.Name = ""                           // 设置Event结构中的事件名
 	out.Data = make(map[string]interface{}) // 准备一个空的数据映射
-	if tx.From == (common.Address{}) {
+	if tx.Tx.Hash().String() == "0x0000000000000000000000000000000000000000000000000000000000000000" {
 		return s.unpackBlock(ctx, backend, tx, out)
 	}
 	// 设置Event对象的其他属性

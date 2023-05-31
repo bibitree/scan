@@ -12,8 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 const BlockBeasReward = "10"
@@ -57,11 +55,11 @@ func GetAllEvents(n uint64) ([]model.EventData, []string, error) {
 		event.GasFeeCap = gasFeeCapParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
-		event.BlockHash = common.BytesToHash(blockHashBytes)
-		event.TxHash = common.BytesToHash(txHash)
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
 
 		events = append(events, event)
-		txHashList = append(txHashList, event.TxHash.String())
+		txHashList = append(txHashList, string(event.TxHash))
 	}
 
 	return events, txHashList, nil
@@ -104,11 +102,11 @@ func GetEventByTxHash(txHash string) ([]model.EventData, []string, error) {
 		event.GasFeeCap = gasFeeCapParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
-		event.BlockHash = common.BytesToHash(blockHashBytes)
-		event.TxHash = common.BytesToHash(txHash)
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
 
 		events = append(events, event)
-		txHashList = append(txHashList, event.TxHash.String())
+		txHashList = append(txHashList, string(event.TxHash))
 	}
 	return events, txHashList, nil
 }
@@ -153,11 +151,11 @@ func GetEventByBlockHash(blockHash string) ([]model.EventData, []string, []strin
 		event.GasFeeCap = gasFeeCapParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
-		event.BlockHash = common.BytesToHash(blockHashBytes)
-		event.TxHash = common.BytesToHash(txHash)
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
 
 		events = append(events, event)
-		txHashList = append(txHashList, event.TxHash.String())
+		txHashList = append(txHashList, string(event.TxHash))
 		blockNumberSet[event.BlockNumber] = true
 	}
 	// 从 set 中提取所有不重复的 blockNumber，并转换为 string list
@@ -207,11 +205,11 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.EventData, []string, []s
 		event.GasFeeCap = gasFeeCapParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
-		event.BlockHash = common.BytesToHash(blockHashBytes)
-		event.TxHash = common.BytesToHash(txHash)
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
 
 		events = append(events, event)
-		txHashList = append(txHashList, event.TxHash.String())
+		txHashList = append(txHashList, string(event.TxHash))
 		blockNumberSet[event.BlockNumber] = true
 	}
 	// 从 set 中提取所有不重复的 blockNumber，并转换为 string list
@@ -278,11 +276,11 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 		event.GasFeeCap = gasFeeCapParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
-		event.BlockHash = common.BytesToHash(blockHashBytes)
-		event.TxHash = common.BytesToHash(txHash)
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
 
 		events = append(events, event)
-		txHashList = append(txHashList, event.TxHash.String())
+		txHashList = append(txHashList, string(event.TxHash))
 	}
 	return events, txHashList, pageCount, nil
 }
@@ -369,11 +367,11 @@ func GetEventsByToAddressAndBlockNumber(toAddress string, pageNo uint64, pageSiz
 		event.GasFeeCap = gasFeeCapParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
-		event.BlockHash = common.BytesToHash(blockHashBytes)
-		event.TxHash = common.BytesToHash(txHash)
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
 
 		events = append(events, event)
-		txHashList = append(txHashList, event.TxHash.String())
+		txHashList = append(txHashList, string(event.TxHash))
 	}
 
 	return events, txHashList, totalPage, nil
@@ -435,7 +433,7 @@ func GetLatestEvent() (string, string, error) {
 	return blockNumberStr, gasPriceStr, nil
 }
 
-func GetEventStatistics(number string) (totalDataCount string, emptyContractNameCount string, last24HoursDataCount string, last24HoursUniqueAddressCount string, err error) {
+func GetEventStatistics(number string) (totalDataCount string, emptyContractNameCount string, last24HoursDataCount string, last24HoursUniqueAddressCount string, uniqueAddressCount string, err error) {
 	// 获取数据库所有数据总共有多少条
 	num, err := strconv.Atoi(number)
 	if err != nil {
@@ -446,14 +444,14 @@ func GetEventStatistics(number string) (totalDataCount string, emptyContractName
 	var count int64
 	err = model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event").Scan(&count)
 	if err != nil {
-		return "", "", "", "", err
+		return "", "", "", "", "", err
 	}
 	totalDataCount = strconv.Itoa(int(count - int64(num)))
 
 	// 获取数据库中contractName为空的数据总共有多少条
-	err = model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE ContractName=''").Scan(&count)
+	err = model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE txHash=''").Scan(&count)
 	if err != nil {
-		return totalDataCount, "", "", "", err
+		return totalDataCount, "", "", "", "", err
 	}
 	emptyContractNameCount = strconv.Itoa(int(count - int64(num)))
 
@@ -462,13 +460,13 @@ func GetEventStatistics(number string) (totalDataCount string, emptyContractName
 	yesterday := now.Add(-24 * time.Hour)
 	rows, err := model.MysqlPool.Query("SELECT COUNT(*) FROM event WHERE Timestamp >= ? AND Timestamp <= ? AND address != ?", yesterday.Unix(), now.Unix(), "0x0000000000000000000000000000000000000000")
 	if err != nil {
-		return totalDataCount, emptyContractNameCount, "", "", err
+		return totalDataCount, emptyContractNameCount, "", "", "", err
 	}
 	defer rows.Close()
 	if rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {
-			return totalDataCount, emptyContractNameCount, "", "", err
+			return totalDataCount, emptyContractNameCount, "", "", "", err
 		}
 	}
 	last24HoursDataCount = strconv.Itoa(int(count))
@@ -476,7 +474,7 @@ func GetEventStatistics(number string) (totalDataCount string, emptyContractName
 	// 获取距离现在24小时之内的所有数据获得其全部的address以及toAddress，并去重之后数量
 	rows, err = model.MysqlPool.Query("SELECT DISTINCT Address, ToAddress FROM event WHERE Timestamp >= ? AND Timestamp <= ? AND address != ?", yesterday.Unix(), now.Unix(), "0x0000000000000000000000000000000000000000")
 	if err != nil {
-		return totalDataCount, emptyContractNameCount, last24HoursDataCount, "", err
+		return totalDataCount, emptyContractNameCount, last24HoursDataCount, "", "", err
 	}
 	defer rows.Close()
 	uniqueAddresses := make(map[string]bool)
@@ -484,42 +482,49 @@ func GetEventStatistics(number string) (totalDataCount string, emptyContractName
 		var address, toAddress string
 		err = rows.Scan(&address, &toAddress)
 		if err != nil {
-			return totalDataCount, emptyContractNameCount, last24HoursDataCount, "", err
+			return totalDataCount, emptyContractNameCount, last24HoursDataCount, "", "", err
 		}
 		uniqueAddresses[address] = true
 		uniqueAddresses[toAddress] = true
 	}
 	last24HoursUniqueAddressCount = strconv.Itoa(len(uniqueAddresses))
 
-	return totalDataCount, emptyContractNameCount, last24HoursDataCount, last24HoursUniqueAddressCount, err
-}
-
-func GetAllAddressesAndBlockRewardSum(number string) (string, string, error) {
-	sqlStr := `SELECT DISTINCT Address, ToAddress, BlockReward FROM event WHERE Address <> '0x0000000000000000000000000000000000000000'`
-	rows, err := model.MysqlPool.Query(sqlStr)
-	if err != nil && sql.ErrNoRows != err {
-		return "", "", err
+	// 获取距离现在24小时之内的所有数据获得其全部的address以及toAddress，并去重之后数量
+	rows, err = model.MysqlPool.Query("SELECT DISTINCT Address, ToAddress FROM event ")
+	if err != nil {
+		return totalDataCount, emptyContractNameCount, last24HoursDataCount, last24HoursUniqueAddressCount, "", err
 	}
 	defer rows.Close()
+	allUniqueAddresses := make(map[string]bool)
+	for rows.Next() {
+		var address, toAddress string
+		err = rows.Scan(&address, &toAddress)
+		if err != nil {
+			return totalDataCount, emptyContractNameCount, last24HoursDataCount, last24HoursUniqueAddressCount, "", err
+		}
+		allUniqueAddresses[address] = true
+		allUniqueAddresses[toAddress] = true
+	}
+	uniqueAddressCount = strconv.Itoa(len(allUniqueAddresses))
 
-	addresses := make(map[string]bool)
+	return totalDataCount, emptyContractNameCount, last24HoursDataCount, last24HoursUniqueAddressCount, uniqueAddressCount, err
+}
+
+func GetAllAddressesAndBlockRewardSum(number string) (string, error) {
+	sqlStr := `SELECT DISTINCT blockReward FROM block WHERE blockNumber = ?`
+	rows, err := model.MysqlPool.Query(sqlStr, number)
+	if err != nil && sql.ErrNoRows != err {
+		return "", err
+	}
+	defer rows.Close()
 	var blockRewardSum *big.Float = big.NewFloat(0)
 
 	for rows.Next() {
-		var address, toAddress, blockReward string
-		err := rows.Scan(&address, &toAddress, &blockReward)
+		var blockReward string
+		err := rows.Scan(&blockReward)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		if address != "test" {
-			addresses[address] = true
-		}
-
-		if toAddress != "test" {
-			addresses[toAddress] = true
-		}
-
 		blockRewardFloat, _ := new(big.Float).SetString(blockReward)
 		if blockRewardSum == nil {
 			blockRewardSum = big.NewFloat(0)
@@ -529,21 +534,24 @@ func GetAllAddressesAndBlockRewardSum(number string) (string, string, error) {
 		}
 		blockRewardSum.Add(blockRewardSum, blockRewardFloat)
 	}
+
 	num, err := strconv.Atoi(number)
 	if err != nil {
 		fmt.Println("Atoi error:", err)
 	} else {
 		num += 1
 	}
+
 	BlockBeasRewardNum, err := strconv.Atoi(BlockBeasReward)
 	if err != nil {
 		fmt.Println("Atoi error:", err)
 	}
 	num = num * BlockBeasRewardNum
+
 	blockRewardSum = new(big.Float).Add(blockRewardSum, big.NewFloat(float64(num)))
-	addressesStr := strconv.Itoa(len(addresses))
 	blockRewardSumStr := blockRewardSum.String()
-	return blockRewardSumStr, addressesStr, nil
+
+	return blockRewardSumStr, nil
 }
 
 func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {

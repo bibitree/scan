@@ -2,6 +2,7 @@ package orders
 
 import (
 	"ethgo/model"
+	"ethgo/sniffer"
 	"ethgo/util/redisx"
 	"strconv"
 	"strings"
@@ -200,6 +201,33 @@ func NewMessageReader(streamName, groupName, readerName string) (*MessageReader,
 		groupName:  groupName,
 		readerName: readerName,
 	}, nil
+}
+
+func ReadTransactionTOPStorage() ([]sniffer.Event2, error) {
+	var transactions []sniffer.Event2
+	red := model.RedisPool.Get()
+	defer red.Close()
+
+	reply, err := redis.Values(red.Do("XRANGE", keys.CreateTransactionTOPStorage(), "-", "+"))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, data := range reply {
+		transaction, err := redis.Values(data, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		var event sniffer.Event2
+		if err = redis.ScanStruct(transaction, &event); err != nil {
+			return nil, err
+		}
+
+		transactions = append(transactions, event)
+	}
+
+	return transactions, nil
 }
 
 func NewErrorReader(groupName string, readerName string) (*MessageReader, error) {

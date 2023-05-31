@@ -52,23 +52,23 @@ type BlockData struct {
 }
 
 type EventData struct {
-	Address      common.Address `json:"address"`
-	ChainID      *big.Int       `json:"chainID"`
-	BlockHash    common.Hash    `json:"blockHash"`
-	BlockNumber  string         `json:"blockNumber"`
-	TxHash       common.Hash    `json:"txHash"`
-	TxIndex      string         `json:"txIndex"`
-	Gas          uint64         `json:"gas"`
-	GasPrice     *big.Int       `json:"gasPrice"`
-	GasTipCap    *big.Int       `json:"gasTipCap"`
-	GasFeeCap    *big.Int       `json:"gasFeeCap"`
-	Value        string         `json:"value"`
-	Nonce        uint64         `json:"nonce"`
-	To           common.Address `json:"to"`
-	Status       bool           `json:"status"`
-	Timestamp    uint64         `json:"timestamp"`
-	NewAddress   string         `json:"NewAddress"`
-	NewToAddress string         `json:"NewToAddress"`
+	Address      string   `json:"address"`
+	ChainID      *big.Int `json:"chainID"`
+	BlockHash    string   `json:"blockHash"`
+	BlockNumber  string   `json:"blockNumber"`
+	TxHash       string   `json:"txHash"`
+	TxIndex      string   `json:"txIndex"`
+	Gas          uint64   `json:"gas"`
+	GasPrice     *big.Int `json:"gasPrice"`
+	GasTipCap    *big.Int `json:"gasTipCap"`
+	GasFeeCap    *big.Int `json:"gasFeeCap"`
+	Value        string   `json:"value"`
+	Nonce        uint64   `json:"nonce"`
+	To           string   `json:"to"`
+	Status       bool     `json:"status"`
+	Timestamp    uint64   `json:"timestamp"`
+	NewAddress   string   `json:"NewAddress"`
+	NewToAddress string   `json:"NewToAddress"`
 }
 
 type ErcTop struct {

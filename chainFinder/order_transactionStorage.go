@@ -36,7 +36,9 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	if address != "" {
 		address = t.conf.PrefixChain + address[2:]
 	}
-	if address != "0x0000000000000000000000000000000000000000" {
+
+	txHash := common.HexToHash(message.String("TxHash")).String()
+	if txHash == "0x0000000000000000000000000000000000000000000000000000000000000000" {
 		return t.BlockStorage(ctx, message)
 	}
 

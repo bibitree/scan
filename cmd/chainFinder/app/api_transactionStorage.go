@@ -38,6 +38,10 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 		return
 	}
 
+	if request.TxIndex == "" {
+		request.TxIndex = "0"
+	}
+
 	var event = sniffer.Event2{
 		Address:          common.HexToAddress(request.Address),
 		ContractName:     request.ContractName,
@@ -64,7 +68,9 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 	}
 
 	orders.CreateTransactionStorage(event)
-	if request.ContractName == "" {
+
+	txhash := request.TxHash.String()
+	if txhash == "0x0000000000000000000000000000000000000000000000000000000000000000" {
 		orders.CreateTransactionTOPStorage(event)
 	}
 	app.SetChainData(c)
@@ -78,13 +84,13 @@ func (app *App) SetChainData(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	numberTransactions, numberTransfers, numberTransactionsIn24H, numberaddressesIn24H, err := mysqlOrders.GetEventStatistics(blockHeight)
+	numberTransactions, numberTransfers, numberTransactionsIn24H, numberaddressesIn24H, totalnumberofAddresses, err := mysqlOrders.GetEventStatistics(blockHeight)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
-	totalBlockRewards, totalnumberofAddresses, err := mysqlOrders.GetAllAddressesAndBlockRewardSum(blockHeight)
+	totalBlockRewards, err := mysqlOrders.GetAllAddressesAndBlockRewardSum(blockHeight)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
