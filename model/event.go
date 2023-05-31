@@ -48,17 +48,20 @@ type BlockData struct {
 	MinerAddress string `json:"minerAddress"`
 	Size         string `json:"size"`
 	Timestamp    uint64 `json:"timestamp"`
+	GasLimit     uint64 `json:"gasLimit"`
 }
 
 type BlockData2 struct {
 	BlockHash       string `json:"blockHash"`
 	BlockNumber     string `json:"blockNumber"`
 	BlockReward     string `json:"blockReward"`
+	AllBlockReward  uint64 `json:"AllBlockReward"`
 	MinerAddress    string `json:"minerAddress"`
 	Size            string `json:"size"`
 	Timestamp       uint64 `json:"timestamp"`
 	BlockBeasReward string `json:"blockBeasReward"`
 	Count           int    `json:"count"`
+	GasLimit        uint64 `json:"gasLimit"`
 }
 
 type AddressData struct {

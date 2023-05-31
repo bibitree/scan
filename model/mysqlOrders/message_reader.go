@@ -284,13 +284,14 @@ func GetBlockDataByBlockNumber2(start uint64, end uint64, pageNo uint64, pageSiz
 	for rows.Next() {
 		var event model.BlockData2
 		var id uint64
-		err = rows.Scan(&id, &event.BlockHash, &event.BlockNumber, &event.BlockReward, &event.MinerAddress, &event.Size, &event.Timestamp)
+		err = rows.Scan(&id, &event.BlockHash, &event.BlockNumber, &event.BlockReward, &event.MinerAddress, &event.Size, &event.Timestamp, &event.GasLimit)
 		if err != nil {
 			return nil, err
 		}
 		event.BlockBeasReward = BlockBeasReward
 		events = append(events, event)
 	}
+
 	return events, nil
 }
 
