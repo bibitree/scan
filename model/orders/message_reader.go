@@ -251,10 +251,10 @@ func ReadChainDataStorag() (sniffer.ChainData, error) {
 		totalBlockRewards, _ := redis.Float64(red.Do("HGET", chainDataKey, "TotalBlockRewards"))
 		gasPrice, _ := redis.Float64(red.Do("HGET", chainDataKey, "GasPriceGasPrice"))
 		totalAddrs, _ := redis.String(red.Do("HGET", chainDataKey, "TotalnumberofAddresses"))
-		numTransfers, _ := redis.Int(red.Do("HGET", chainDataKey, "Name"))
-		numTxs, _ := redis.Int(red.Do("HGET", chainDataKey, "TxHash"))
-		numTxs24Hr, _ := redis.Int(red.Do("HGET", chainDataKey, "TxIndex"))
-		numAddresses24Hr, _ := redis.Int(red.Do("HGET", chainDataKey, "Gas"))
+		numTransfers, _ := redis.Int(red.Do("HGET", chainDataKey, "NumberTransactions"))
+		numTxs, _ := redis.Int(red.Do("HGET", chainDataKey, "NumberTransfers"))
+		numTxs24Hr, _ := redis.Int(red.Do("HGET", chainDataKey, "NumberTransactionsIn24H"))
+		NumberaddressesIn24H, _ := redis.Int(red.Do("HGET", chainDataKey, "NumberaddressesIn24H"))
 
 		chainData = sniffer.ChainData{
 			BlockHeight:             blockHeight,
@@ -266,7 +266,7 @@ func ReadChainDataStorag() (sniffer.ChainData, error) {
 			NumberTransfers:         strconv.Itoa(numTransfers),
 			NumberTransactions:      strconv.Itoa(numTxs),
 			NumberTransactionsIn24H: strconv.Itoa(numTxs24Hr),
-			NumberaddressesIn24H:    strconv.Itoa(numAddresses24Hr),
+			NumberaddressesIn24H:    strconv.Itoa(NumberaddressesIn24H),
 		}
 	}
 
