@@ -260,21 +260,21 @@ func (app *App) ProcessContractCreationTime(contract string) (interface{}, error
 }
 
 func (app *App) GetChainData(c *ginx.Context) {
-	var request = new(proto.ByBlockNumbers)
+	var request = new(proto.ChainData)
 	if err := c.BindJSONEx(request); err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	messageReader, err := orders.NewCreateChainDataStoragReader(TRANSACT_CONSUMER_GROUP_NAME, TRANSACT_CONSUMER_NAME)
+	messageReader, err := orders.ReadChainDataStorag()
 	if err != nil {
 		panic(err)
 	}
 
-	msgs, err := messageReader.Read()
-	if err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
-	}
-	c.Success(http.StatusOK, "succ", msgs)
+	// msgs, err := messageReader.Read()
+	// if err != nil {
+	// 	c.Failure(http.StatusBadRequest, err.Error(), nil)
+	// }
+	c.Success(http.StatusOK, "succ", messageReader)
 }
 
 func (app *App) GetBlockNum(c *ginx.Context) {

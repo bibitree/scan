@@ -230,6 +230,49 @@ func ReadTransactionTOPStorage() ([]sniffer.Event2, error) {
 	return transactions, nil
 }
 
+func ReadChainDataStorag() (sniffer.ChainData, error) {
+	var chainData sniffer.ChainData
+	red := model.RedisPool.Get()
+	defer red.Close()
+
+	chainDataKey := keys.CreateChainDataStorag()
+
+	// Check if the hash key exists
+	exists, err := redis.Bool(red.Do("EXISTS", chainDataKey))
+	if err != nil {
+		return chainData, err
+	}
+
+	// If the hash key exists, get the data
+	if exists {
+		blockRewards, _ := redis.Float64(red.Do("HGET", chainDataKey, "BlockRewards"))
+		superNodes, _ := redis.Uint64(red.Do("HGET", chainDataKey, "SuperNodes"))
+		blockHeight, _ := redis.String(red.Do("HGET", chainDataKey, "BlockHeight"))
+		totalBlockRewards, _ := redis.Float64(red.Do("HGET", chainDataKey, "TotalBlockRewards"))
+		gasPrice, _ := redis.Float64(red.Do("HGET", chainDataKey, "GasPriceGasPrice"))
+		totalAddrs, _ := redis.String(red.Do("HGET", chainDataKey, "TotalnumberofAddresses"))
+		numTransfers, _ := redis.Int(red.Do("HGET", chainDataKey, "Name"))
+		numTxs, _ := redis.Int(red.Do("HGET", chainDataKey, "TxHash"))
+		numTxs24Hr, _ := redis.Int(red.Do("HGET", chainDataKey, "TxIndex"))
+		numAddresses24Hr, _ := redis.Int(red.Do("HGET", chainDataKey, "Gas"))
+
+		chainData = sniffer.ChainData{
+			BlockHeight:             blockHeight,
+			BlockRewards:            strconv.FormatFloat(blockRewards, 'f', -1, 64),
+			SuperNodes:              superNodes,
+			TotalBlockRewards:       strconv.FormatFloat(totalBlockRewards, 'f', -1, 64),
+			GasPriceGasPrice:        strconv.FormatFloat(gasPrice, 'f', -1, 64),
+			TotalnumberofAddresses:  totalAddrs,
+			NumberTransfers:         strconv.Itoa(numTransfers),
+			NumberTransactions:      strconv.Itoa(numTxs),
+			NumberTransactionsIn24H: strconv.Itoa(numTxs24Hr),
+			NumberaddressesIn24H:    strconv.Itoa(numAddresses24Hr),
+		}
+	}
+
+	return chainData, nil
+}
+
 func NewErrorReader(groupName string, readerName string) (*MessageReader, error) {
 	return NewMessageReader(keys.Error(), groupName, readerName)
 }
