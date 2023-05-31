@@ -199,6 +199,12 @@ func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message)
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
+	gasLimit, err := message.Uint64("GasLimit")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+
 	sizeStr := message.String("Size")
 
 	var event = sniffer.BlockData{
@@ -208,6 +214,7 @@ func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message)
 		MinerAddress: message.String("MinerAddress"),
 		Size:         sizeStr,
 		BlockReward:  message.String("BlockReward"),
+		GasLimit:     gasLimit,
 	}
 
 	log.Info(event)

@@ -31,8 +31,9 @@ type Event struct {
 	Size             string                 `json:"size"`
 	BlockReward      string                 `json:"blockReward"`
 	AverageGasTipCap string                 `json:"averageGasTipCap"`
-	NewAddress       string                 `json:"NewAddress"`
-	NewToAddress     string                 `json:"NewToAddress"`
+	NewAddress       string                 `json:"newAddress"`
+	NewToAddress     string                 `json:"newToAddress"`
+	GasLimit         uint64                 `json:"gasLimit"`
 }
 
 type ContractData struct {
@@ -56,6 +57,7 @@ type BlockData struct {
 	MinerAddress string      `json:"minerAddress"`
 	Size         string      `json:"size"`
 	Timestamp    uint64      `json:"timestamp"`
+	GasLimit     uint64      `json:"gasLimit"`
 }
 
 type EventData struct {
@@ -101,6 +103,7 @@ type Event2 struct {
 	Size             string         `json:"size"`
 	BlockReward      string         `json:"blockReward"`
 	AverageGasTipCap string         `json:"averageGasTipCap"`
+	GasLimit         uint64         `json:"gasLimit"`
 }
 
 type Event3 struct {

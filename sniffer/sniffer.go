@@ -40,6 +40,7 @@ type TransactionInfo struct {
 	Size             string
 	BlockReward      string
 	AverageGasTipCap string
+	GasLimit         uint64
 }
 
 type Contract struct {
@@ -237,6 +238,7 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 		minerAddress := block.Coinbase().String()
 		size := block.Size().String()
 		// .Status
+
 		txInfo := TransactionInfo{
 			BlockNumber:      block.NumberU64(),
 			BlockHash:        block.Hash(),
@@ -245,6 +247,7 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 			Size:             size,
 			BlockReward:      blockReward,
 			AverageGasTipCap: averageGasTipCap,
+			GasLimit:         block.GasLimit(),
 		}
 		transactions = append(transactions, txInfo)
 		if err != nil {
@@ -279,6 +282,7 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 					Size:             size,
 					BlockReward:      blockReward,
 					AverageGasTipCap: averageGasTipCap,
+					GasLimit:         block.GasLimit(),
 				}
 				transactions = append(transactions, txInfo)
 			}
@@ -370,7 +374,7 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	out.GasFeeCap = tx.Tx.GasFeeCap()
 	out.Value = tx.Tx.Value().String()
 	out.Nonce = tx.Tx.Nonce()
-
+	out.GasLimit = tx.GasLimit
 	to := tx.Tx.To()
 	out.Size = tx.Size
 	out.Status = tx.Status
@@ -452,6 +456,7 @@ func (s *Sniffer) unpackBlock(ctx context.Context, backend eth.Backend, tx *Tran
 	out.AverageGasTipCap = tx.AverageGasTipCap
 	out.ContractName = ""
 	out.ChainID = s.chainID
+	out.GasLimit = tx.GasLimit
 	return nil
 }
 

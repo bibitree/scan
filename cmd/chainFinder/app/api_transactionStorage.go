@@ -65,6 +65,7 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 		Size:             request.Size,
 		BlockReward:      request.BlockReward,
 		AverageGasTipCap: request.AverageGasTipCap,
+		GasLimit:         request.GasLimit,
 	}
 
 	orders.CreateTransactionStorage(event)

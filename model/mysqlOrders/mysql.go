@@ -121,13 +121,13 @@ func InsertBlock(block sniffer.BlockData) error {
 		return err
 	}
 	if count == 0 { // 如果不存在相同的blockHash，直接插入新数据
-		sqlStr := `INSERT INTO block(blockHash, blockNumber, blockReward, minerAddress, size, timestamp) VALUES (?, ?, ?, ?, ?, ?)`
+		sqlStr := `INSERT INTO block(blockHash, blockNumber, blockReward, minerAddress, size, timestamp,gasLimit) VALUES (?, ?, ?, ?, ?, ?, ?)`
 		// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		// 使用ExecContext执行sql语句，如果执行成功则返回nil
 		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, block.BlockHash.Hex(), block.BlockNumber, block.BlockReward,
-			block.MinerAddress, block.Size, block.Timestamp)
+			block.MinerAddress, block.Size, block.Timestamp, block.GasLimit)
 		if err != nil {
 			log.Info("插入数据时出错: ", err)
 			return err

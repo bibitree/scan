@@ -64,4 +64,5 @@ type Event struct {
 	Size             string                 `json:"size"`
 	BlockReward      string                 `json:"blockReward"`
 	AverageGasTipCap string                 `json:"averageGasTipCap"`
+	GasLimit         uint64                 `json:"gasLimit"`
 }
