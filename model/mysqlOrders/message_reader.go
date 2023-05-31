@@ -489,15 +489,14 @@ func GetEventAddressByToAddress(toAddress string) (string, uint64, error) {
 
 func GetLatestEvent() (string, string, error) {
 	// 声明SQL语句
-	sqlStr := `SELECT blockNumber, gasPrice FROM block ORDER BY cast(blockNumber as unsigned) DESC LIMIT 1`
+	sqlStr := `SELECT blockNumber FROM block ORDER BY cast(blockNumber as unsigned) DESC LIMIT 1`
 	// 查询匹配的数据
 	row := model.MysqlPool.QueryRow(sqlStr)
 
 	var blockNumber int64
-	var gasPrice int64
 
 	// 绑定查询结果到对应变量
-	err := row.Scan(&blockNumber, &gasPrice)
+	err := row.Scan(&blockNumber)
 	if err != nil {
 		if err == sql.ErrNoRows { // 如果查询结果为空，则返回空字符串
 			return "", "", nil
@@ -507,7 +506,7 @@ func GetLatestEvent() (string, string, error) {
 
 	// 将查询结果转化为string并返回
 	blockNumberStr := strconv.FormatInt(blockNumber, 10)
-	gasPriceStr := strconv.FormatInt(gasPrice, 10)
+	gasPriceStr := "1.3"
 
 	return blockNumberStr, gasPriceStr, nil
 }
