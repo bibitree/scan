@@ -42,6 +42,7 @@ CREATE TABLE `block` (
    `minerAddress` varchar(42) DEFAULT NULL,
    `size` varchar(255) NOT NULL, 
    `timestamp` bigint(20) NOT NULL,
+   `GasLimit` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 ALTER TABLE `block` ADD INDEX `idx_blockNumber` (`blockNumber`);
