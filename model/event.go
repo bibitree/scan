@@ -2,8 +2,6 @@ package model
 
 import (
 	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type Event struct {
@@ -38,17 +36,17 @@ type ContractData struct {
 	ContractName string                 `json:"contractName"`
 	Data         map[string]interface{} `json:"data"`
 	Name         string                 `json:"name"`
-	TxHash       common.Hash            `json:"txHash"`
-	Contrac      common.Address         `json:"to"`
+	TxHash       string                 `json:"txHash"`
+	Contrac      string                 `json:"to"`
 }
 
 type BlockData struct {
-	BlockHash    common.Hash `json:"blockHash"`
-	BlockNumber  string      `json:"blockNumber"`
-	BlockReward  string      `json:"blockReward"`
-	MinerAddress string      `json:"minerAddress"`
-	Size         string      `json:"size"`
-	Timestamp    uint64      `json:"timestamp"`
+	BlockHash    string `json:"blockHash"`
+	BlockNumber  string `json:"blockNumber"`
+	BlockReward  string `json:"blockReward"`
+	MinerAddress string `json:"minerAddress"`
+	Size         string `json:"size"`
+	Timestamp    uint64 `json:"timestamp"`
 }
 
 type EventData struct {

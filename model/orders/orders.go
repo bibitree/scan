@@ -1,10 +1,10 @@
 package orders
 
 import (
+	"encoding/json"
 	"errors"
 	"ethgo/model"
 	"ethgo/sniffer"
-	"strconv"
 	"sync"
 	"time"
 
@@ -163,28 +163,47 @@ func Sent(modifier *Modifier) error {
 }
 
 func CreateChainDataStorag(event sniffer.ChainData) error {
-	var red = model.RedisPool.Get()
+	red := model.RedisPool.Get()
 	defer red.Close()
 
-	// Redis MULTI command
-	red.Send("MULTI")
-
-	// Create or update chain data
 	chainDataKey := keys.CreateChainDataStorag()
-	red.Send("HSET", chainDataKey, "BlockRewards", event.BlockRewards)
-	red.Send("HSET", chainDataKey, "SuperNodes", event.SuperNodes)
-	red.Send("HSET", chainDataKey, "BlockHeight", event.BlockHeight)
-	red.Send("HSET", chainDataKey, "TotalBlockRewards", event.TotalBlockRewards)
-	red.Send("HSET", chainDataKey, "GasPriceGasPrice", event.GasPriceGasPrice)
-	red.Send("HSET", chainDataKey, "TotalnumberofAddresses", event.TotalnumberofAddresses)
-	red.Send("HSET", chainDataKey, "NumberTransactions", event.NumberTransactions)
-	red.Send("HSET", chainDataKey, "NumberTransfers", event.NumberTransfers)
-	red.Send("HSET", chainDataKey, "NumberTransactionsIn24H", event.NumberTransactionsIn24H)
-	red.Send("HSET", chainDataKey, "NumberaddressesIn24H", event.NumberaddressesIn24H)
-	red.Send("HSET", chainDataKey, "Time", time.Now().Unix())
 
-	// Redis EXEC command
-	_, err := red.Do("EXEC")
+	// check if the hash key exists
+	exists, err := redis.Bool(red.Do("EXISTS", chainDataKey))
+	if err != nil {
+		return err
+	}
+
+	// if the hash key exists, update the data
+	if exists {
+		red.Send("HMSET", chainDataKey,
+			"BlockRewards", event.BlockRewards,
+			"SuperNodes", event.SuperNodes,
+			"BlockHeight", event.BlockHeight,
+			"TotalBlockRewards", event.TotalBlockRewards,
+			"GasPriceGasPrice", event.GasPriceGasPrice,
+			"TotalnumberofAddresses", event.TotalnumberofAddresses,
+			"NumberTransactions", event.NumberTransactions,
+			"NumberTransfers", event.NumberTransfers,
+			"NumberTransactionsIn24H", event.NumberTransactionsIn24H,
+			"NumberaddressesIn24H", event.NumberaddressesIn24H,
+			"Time", time.Now().Unix(),
+		)
+	} else { // if not exists, create the hash key
+		red.Send("HSET", chainDataKey, "BlockRewards", event.BlockRewards)
+		red.Send("HSET", chainDataKey, "SuperNodes", event.SuperNodes)
+		red.Send("HSET", chainDataKey, "BlockHeight", event.BlockHeight)
+		red.Send("HSET", chainDataKey, "TotalBlockRewards", event.TotalBlockRewards)
+		red.Send("HSET", chainDataKey, "GasPriceGasPrice", event.GasPriceGasPrice)
+		red.Send("HSET", chainDataKey, "TotalnumberofAddresses", event.TotalnumberofAddresses)
+		red.Send("HSET", chainDataKey, "NumberTransactions", event.NumberTransactions)
+		red.Send("HSET", chainDataKey, "NumberTransfers", event.NumberTransfers)
+		red.Send("HSET", chainDataKey, "NumberTransactionsIn24H", event.NumberTransactionsIn24H)
+		red.Send("HSET", chainDataKey, "NumberaddressesIn24H", event.NumberaddressesIn24H)
+		red.Send("HSET", chainDataKey, "Time", time.Now().Unix())
+	}
+
+	_, err = red.Do("EXEC")
 	if err != nil {
 		return err
 	}
@@ -230,62 +249,60 @@ func CreateTransactionStorage(event sniffer.Event2) error {
 }
 
 func CreateTransactionTOPStorage(event sniffer.Event2) error {
-	const maxStorage = 100
 	var red = model.RedisPool.Get()
 	defer red.Close()
 	red.Send("MULTI")
 
 	// Construct args with keys and values for the event
 	args := redis.Args{keys.CreateTransactionTOPStorage()}
+	byteArray, _ := json.Marshal(event)
 	args = args.Add("*")
-	args = args.Add("Address", event.Address.String())
-	args = args.Add("ContractName", event.ContractName)
-	args = args.Add("ChainID", event.ChainID)
-	args = args.Add("Data", event.Data)
-	args = args.Add("BlockHash", event.BlockHash)
-	args = args.Add("BlockNumber", event.BlockNumber)
-	args = args.Add("Name", event.Name)
-	args = args.Add("TxHash", event.TxHash)
-	args = args.Add("TxIndex", event.TxIndex)
-	args = args.Add("Gas", event.Gas)
-	args = args.Add("GasPrice", event.GasPrice)
-	args = args.Add("GasTipCap", event.GasTipCap)
-	args = args.Add("GasFeeCap", event.GasFeeCap)
-	args = args.Add("Value", event.Value)
-	args = args.Add("Nonce", event.Nonce)
-	args = args.Add("To", event.To.String())
-	args = args.Add("Status", event.Status)
-	args = args.Add("Timestamp", event.Timestamp)
-	args = args.Add("MinerAddress", event.MinerAddress)
-	args = args.Add("Size", event.Size)
-	args = args.Add("BlockReward", event.BlockReward)
-	args = args.Add("AverageGasTipCap", event.AverageGasTipCap)
-	args = args.Add("Time", time.Now().Unix())
-
-	// Check if there are more than maxStorage transactions already stored
-	numStored, err := redis.String(red.Do("XLEN", keys.CreateTransactionTOPStorage()))
-	if err != nil {
-		return err
-	}
-	numStoredNum, err := strconv.Atoi(numStored)
-	if err != nil {
-		return err
-	}
-
-	if numStoredNum >= maxStorage {
-		// Delete the oldest transaction
-		oldestID, err := redis.String(red.Do("XRANGE", keys.CreateTransactionTOPStorage(), "-", "+", "COUNT", 1))
-		if err != nil {
-			return err
-		}
-		red.Send("XDEL", keys.CreateTransactionTOPStorage(), oldestID)
-	}
-
-	// Add the new transaction
+	args = args.Add("event", byteArray)
 	red.Send("XADD", args...)
-
 	red.Send("EXEC")
 	return red.Flush()
+	// args = args.Add("*")
+	// args = args.Add("Address", event.Address)
+	// args = args.Add("ContractName", event.ContractName)
+	// args = args.Add("ChainID", event.ChainID)
+	// args = args.Add("Data", event.Data)
+	// args = args.Add("BlockHash", event.BlockHash)
+	// args = args.Add("BlockNumber", event.BlockNumber)
+	// args = args.Add("Name", event.Name)
+	// args = args.Add("TxHash", event.TxHash)
+	// args = args.Add("TxIndex", event.TxIndex)
+	// args = args.Add("Gas", event.Gas)
+	// args = args.Add("GasPrice", event.GasPrice)
+	// args = args.Add("GasTipCap", event.GasTipCap)
+	// args = args.Add("GasFeeCap", event.GasFeeCap)
+	// args = args.Add("Value", event.Value)
+	// args = args.Add("Nonce", event.Nonce)
+	// args = args.Add("To", event.To)
+	// args = args.Add("Status", event.Status)
+	// args = args.Add("Timestamp", event.Timestamp)
+	// args = args.Add("MinerAddress", event.MinerAddress)
+	// args = args.Add("Size", event.Size)
+	// args = args.Add("BlockReward", event.BlockReward)
+	// args = args.Add("AverageGasTipCap", event.AverageGasTipCap)
+	// args = args.Add("Time", time.Now().Unix())
+
+	// // Check if there are more than maxStorage transactions already stored
+	// numStored, err := redis.Int(red.Do("XLEN", keys.CreateTransactionTOPStorage()))
+	// if err != nil {
+	// 	return err
+	// }
+
+	// if numStored >= maxStorage {
+	// 	// Delete the oldest transaction
+	// 	oldestID, err := redis.Strings(red.Do("XRANGE", keys.CreateTransactionTOPStorage(), "-", "+", "COUNT", 1))
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	red.Send("XDEL", keys.CreateTransactionTOPStorage(), oldestID[0])
+	// }
+
+	// Add the new transaction
+
 }
 
 func Pending(id, contractAddr, inputData string) error {

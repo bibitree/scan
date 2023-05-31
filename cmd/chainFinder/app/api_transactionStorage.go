@@ -70,7 +70,7 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 	orders.CreateTransactionStorage(event)
 
 	txhash := request.TxHash.String()
-	if txhash == "0x0000000000000000000000000000000000000000000000000000000000000000" {
+	if txhash != "0x0000000000000000000000000000000000000000000000000000000000000000" {
 		orders.CreateTransactionTOPStorage(event)
 	}
 	app.SetChainData(c)

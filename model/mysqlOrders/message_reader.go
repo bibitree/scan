@@ -111,6 +111,51 @@ func GetEventByTxHash(txHash string) ([]model.EventData, []string, error) {
 	return events, txHashList, nil
 }
 
+// 声明SQL语句
+func GetEventsByAddress(address string) ([]model.EventData, []string, error) {
+	sqlStr := `SELECT * FROM event WHERE address = ? OR toAddress = ?`
+	// 查询匹配的数据
+	rows, err := model.MysqlPool.Query(sqlStr, address, address)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	// 将查询结果遍历转化为Event类型并返回
+	events := make([]model.EventData, 0)
+	txHashList := make([]string, 0)
+	for rows.Next() {
+		event := model.EventData{}
+		var chainID, blockHashBytes, txHash []byte
+		var id uint64
+		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		err := rows.Scan(&id, &event.Address, &chainID,
+			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Value, &event.Nonce, &event.To,
+			&event.Status, &event.Timestamp, &event.NewAddress,
+			&event.NewToAddress)
+		if err != nil {
+			log.Fatal(err)
+		}
+		gasPriceParsed, _ := new(big.Int).SetString(gasPrice, 10)
+		event.GasPrice = gasPriceParsed
+
+		gasTipCapParsed, _ := new(big.Int).SetString(gasTipCap, 10)
+		event.GasTipCap = gasTipCapParsed
+
+		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
+		event.GasFeeCap = gasFeeCapParsed
+
+		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
+		event.BlockHash = string(blockHashBytes)
+		event.TxHash = string(txHash)
+
+		events = append(events, event)
+		txHashList = append(txHashList, string(event.TxHash))
+	}
+	return events, txHashList, nil
+}
+
 func GetEventByBlockHash(blockHash string) ([]model.EventData, []string, []string, error) {
 	// 声明SQL语句
 	sqlStr := `SELECT * FROM event WHERE blockHash = ?`
@@ -220,7 +265,7 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.EventData, []string, []s
 	return events, txHashList, blockNumberList, nil
 }
 
-func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageSize uint64) ([]model.EventData, []string, uint64, error) {
+func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageSize uint64) ([]model.EventData, []string, uint64, []string, error) {
 	// 计算偏移量
 	offset := (pageNo - 1) * pageSize
 
@@ -251,7 +296,7 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 	// 将查询结果遍历转化为Event类型并返回
 	events := make([]model.EventData, 0)
 	txHashList := make([]string, 0)
-
+	blockNumberList := make([]string, 0)
 	for rows.Next() {
 		event := model.EventData{}
 		var chainID, blockHashBytes, txHash []byte
@@ -281,8 +326,17 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 
 		events = append(events, event)
 		txHashList = append(txHashList, string(event.TxHash))
+		blockNumberList = append(blockNumberList, event.BlockNumber)
 	}
-	return events, txHashList, pageCount, nil
+	blockNumberSet := make(map[string]bool) // 新建一个 set 来去除重复的 BlockNumber
+	for _, blockNumber := range blockNumberList {
+		blockNumberSet[blockNumber] = true
+	}
+	distinctBlockNumbers := make([]string, 0) // 新建一个列表来存储去重后的 BlockNumber
+	for blockNumber := range blockNumberSet {
+		distinctBlockNumbers = append(distinctBlockNumbers, blockNumber)
+	}
+	return events, txHashList, pageCount, distinctBlockNumbers, nil
 }
 
 func GetErcTopData(n uint64) ([]model.ErcTop, error) {
@@ -572,7 +626,9 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 	for rows.Next() {
 		var event model.ContractData
 		var data string
-		err = rows.Scan(&event.ContractName, &data, &event.Name, &event.TxHash, &event.Contrac)
+		// var id string
+		var id uint64
+		err = rows.Scan(&id, &event.ContractName, &data, &event.Name, &event.TxHash, &event.Contrac)
 		if err != nil {
 			return nil, err
 		}
@@ -583,12 +639,12 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 	return events, nil
 }
 
-func GetBlockDataByBlockNumber(txHashes []string) ([]model.BlockData, error) {
+func GetBlockDataByBlockNumber(blockNumber []string) ([]model.BlockData, error) {
 	events := make([]model.BlockData, 0)
 	// 将传入的TxHash列表转换为字符串形式，以便查询数据库
-	txHashStr := fmt.Sprintf("'%s'", strings.Join(txHashes, "','"))
+	blockNumberStr := fmt.Sprintf("'%s'", strings.Join(blockNumber, "','"))
 	// 构造sql语句
-	sqlStr := fmt.Sprintf("SELECT * FROM block WHERE txHash in (%s)", txHashStr)
+	sqlStr := fmt.Sprintf("SELECT * FROM block WHERE blockNumber in (%s)", blockNumberStr)
 	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -600,7 +656,8 @@ func GetBlockDataByBlockNumber(txHashes []string) ([]model.BlockData, error) {
 	// 遍历查询结果并将其转换为ContractData类型
 	for rows.Next() {
 		var event model.BlockData
-		err = rows.Scan(&event.BlockHash, &event.BlockNumber, &event.BlockReward, &event.MinerAddress, &event.Size, &event.Timestamp)
+		var id uint64
+		err = rows.Scan(&id, &event.BlockHash, &event.BlockNumber, &event.BlockReward, &event.MinerAddress, &event.Size, &event.Timestamp)
 		if err != nil {
 			return nil, err
 		}

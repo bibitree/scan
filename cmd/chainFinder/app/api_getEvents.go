@@ -20,7 +20,7 @@ func (app *App) GetAllEvents(c *ginx.Context) {
 		return
 	}
 	// ReadTransactionTOPStorage()
-	messageReader, err := orders.ReadTransactionTOPStorage()
+	messageReader, err := orders.GetLatestTransactionTOPStorage(request.N)
 	if err != nil {
 		panic(err)
 	}
@@ -33,7 +33,7 @@ func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, Contract, n, err := mysqlOrders.GetEventsBetweenBlockNumbers(uint64(request.Star), uint64(request.End), uint64(request.PageNo), uint64(request.PageSize))
+	events, Contract, n, distinctBlockNumbers, err := mysqlOrders.GetEventsBetweenBlockNumbers(uint64(request.Star), uint64(request.End), uint64(request.PageNo), uint64(request.PageSize))
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
@@ -41,10 +41,15 @@ func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}
+	BlockNumberS, err := mysqlOrders.GetBlockDataByBlockNumber(distinctBlockNumbers)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
 	paginate := chainFinder.EventData{
 		Event:        events,
 		PageNumber:   n,
 		ContractData: Contracts,
+		BlockData:    BlockNumberS,
 	}
 	c.Success(http.StatusOK, "succ", paginate)
 }
@@ -83,6 +88,27 @@ func (app *App) GetEventsByTxHash(c *ginx.Context) {
 		return
 	}
 	events, Contract, err := mysqlOrders.GetEventByTxHash(request.TxHash)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+	}
+	eventData := chainFinder.EventData{
+		ContractData: Contracts,
+		Event:        events,
+	}
+	c.Success(http.StatusOK, "succ", eventData)
+}
+
+func (app *App) GetEventsByAddress(c *ginx.Context) {
+	var request = new(proto.ByAddress)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	events, Contract, err := mysqlOrders.GetEventsByAddress(request.Address)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 	}

@@ -133,6 +133,17 @@ func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Messa
 	}
 
 	var yourMap map[string]interface{}
+	data := message.Bytes("Data")
+	if len(data) == 2 {
+		yourMap = make(map[string]interface{})
+	} else {
+		err := json.Unmarshal(data, &yourMap)
+
+		if err != nil {
+			// 处理错误
+			return After(t.conf.NetworkRetryInterval, message)
+		}
+	}
 	log.Info(toAddress)
 
 	var event = sniffer.ContractData{

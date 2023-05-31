@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"encoding/json"
 	"ethgo/model"
 	"ethgo/sniffer"
 	"ethgo/util/redisx"
@@ -203,8 +204,8 @@ func NewMessageReader(streamName, groupName, readerName string) (*MessageReader,
 	}, nil
 }
 
-func ReadTransactionTOPStorage() ([]sniffer.Event2, error) {
-	var transactions []sniffer.Event2
+func ReadTransactionTOPStorage() ([]sniffer.Event3, error) {
+	var transactions []sniffer.Event3
 	red := model.RedisPool.Get()
 	defer red.Close()
 
@@ -219,7 +220,7 @@ func ReadTransactionTOPStorage() ([]sniffer.Event2, error) {
 			return nil, err
 		}
 
-		var event sniffer.Event2
+		var event sniffer.Event3
 		if err = redis.ScanStruct(transaction, &event); err != nil {
 			return nil, err
 		}
@@ -230,8 +231,46 @@ func ReadTransactionTOPStorage() ([]sniffer.Event2, error) {
 	return transactions, nil
 }
 
+func GetLatestTransactionTOPStorage(num int) ([]sniffer.Event2, error) {
+	var red = model.RedisPool.Get()
+	defer red.Close()
+	red.Send("XREVRANGE", keys.CreateTransactionTOPStorage(), "+", "-", "COUNT", num)
+	red.Send("XLEN", keys.CreateTransactionTOPStorage())
+	red.Flush()
+
+	resp, err := redis.Values(red.Receive()) // get latest transaction
+	if err != nil {
+		return nil, err
+	}
+	events := make([]sniffer.Event2, 0)
+
+	for _, msg := range resp {
+		streamMsg := msg.([]interface{})
+		streamEvents := streamMsg[1].([]interface{})
+
+		skipFirst := true
+		for _, streamEvent := range streamEvents {
+			if skipFirst {
+				skipFirst = false
+				continue
+			}
+			eventBytes := streamEvent.([]byte)
+
+			event := sniffer.Event2{}
+			err = json.Unmarshal(eventBytes, &event)
+			if err != nil {
+				return nil, err
+			}
+			events = append(events, event)
+		}
+	}
+
+	return events, nil
+}
+
 func ReadChainDataStorag() (sniffer.ChainData, error) {
 	var chainData sniffer.ChainData
+
 	red := model.RedisPool.Get()
 	defer red.Close()
 
@@ -245,32 +284,31 @@ func ReadChainDataStorag() (sniffer.ChainData, error) {
 
 	// If the hash key exists, get the data
 	if exists {
-		// redis.(chainDataKey)
-		blockRewards, err := redis.Float64(red.Do("HGET", chainDataKey, "BlockRewards"))
+		blockRewards, err := redis.String(red.Do("HGET", chainDataKey, "BlockRewards"))
 		if err != nil {
 			return chainData, err
 		}
 		superNodes, _ := redis.Uint64(red.Do("HGET", chainDataKey, "SuperNodes"))
 		blockHeight, _ := redis.String(red.Do("HGET", chainDataKey, "BlockHeight"))
-		totalBlockRewards, _ := redis.Float64(red.Do("HGET", chainDataKey, "TotalBlockRewards"))
-		gasPrice, _ := redis.Float64(red.Do("HGET", chainDataKey, "GasPriceGasPrice"))
+		totalBlockRewards, _ := redis.String(red.Do("HGET", chainDataKey, "TotalBlockRewards"))
+		gasPrice, _ := redis.String(red.Do("HGET", chainDataKey, "GasPriceGasPrice"))
 		totalAddrs, _ := redis.String(red.Do("HGET", chainDataKey, "TotalnumberofAddresses"))
-		numTransfers, _ := redis.Int(red.Do("HGET", chainDataKey, "NumberTransactions"))
-		numTxs, _ := redis.Int(red.Do("HGET", chainDataKey, "NumberTransfers"))
-		numTxs24Hr, _ := redis.Int(red.Do("HGET", chainDataKey, "NumberTransactionsIn24H"))
-		NumberaddressesIn24H, _ := redis.Int(red.Do("HGET", chainDataKey, "NumberaddressesIn24H"))
+		numTransfers, _ := redis.String(red.Do("HGET", chainDataKey, "NumberTransactions"))
+		numTxs, _ := redis.String(red.Do("HGET", chainDataKey, "NumberTransfers"))
+		numTxs24Hr, _ := redis.String(red.Do("HGET", chainDataKey, "NumberTransactionsIn24H"))
+		NumberaddressesIn24H, _ := redis.String(red.Do("HGET", chainDataKey, "NumberaddressesIn24H"))
 
 		chainData = sniffer.ChainData{
-			BlockHeight:             blockHeight,
-			BlockRewards:            strconv.FormatFloat(blockRewards, 'f', -1, 64),
+			BlockRewards:            blockRewards,
 			SuperNodes:              superNodes,
-			TotalBlockRewards:       strconv.FormatFloat(totalBlockRewards, 'f', -1, 64),
-			GasPriceGasPrice:        strconv.FormatFloat(gasPrice, 'f', -1, 64),
+			BlockHeight:             blockHeight,
+			TotalBlockRewards:       totalBlockRewards,
+			GasPriceGasPrice:        gasPrice,
 			TotalnumberofAddresses:  totalAddrs,
-			NumberTransfers:         strconv.Itoa(numTransfers),
-			NumberTransactions:      strconv.Itoa(numTxs),
-			NumberTransactionsIn24H: strconv.Itoa(numTxs24Hr),
-			NumberaddressesIn24H:    strconv.Itoa(NumberaddressesIn24H),
+			NumberTransfers:         numTransfers,
+			NumberTransactions:      numTxs,
+			NumberTransactionsIn24H: numTxs24Hr,
+			NumberaddressesIn24H:    NumberaddressesIn24H,
 		}
 	}
 
