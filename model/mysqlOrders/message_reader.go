@@ -530,14 +530,15 @@ func GetEventStatistics(number string) (totalDataCount string, emptyContractName
 	if err != nil {
 		return "", "", "", "", "", err
 	}
-	totalDataCount = strconv.Itoa(int(count - int64(num)))
+	totalDataCount = strconv.Itoa(int(count))
 
+	var count2 int64
 	// 获取数据库中contractName为空的数据总共有多少条
-	err = model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE txHash=''").Scan(&count)
+	err = model.MysqlPool.QueryRow("SELECT COUNT(*) FROM ercevent").Scan(&count2)
 	if err != nil {
 		return totalDataCount, "", "", "", "", err
 	}
-	emptyContractNameCount = strconv.Itoa(int(count - int64(num)))
+	emptyContractNameCount = strconv.Itoa(int(count) - int(count2))
 
 	// 获取距离现在24小时之内的数据有多少条
 	now := time.Now()
