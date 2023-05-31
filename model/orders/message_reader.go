@@ -245,7 +245,11 @@ func ReadChainDataStorag() (sniffer.ChainData, error) {
 
 	// If the hash key exists, get the data
 	if exists {
-		blockRewards, _ := redis.Float64(red.Do("HGET", chainDataKey, "BlockRewards"))
+		// redis.(chainDataKey)
+		blockRewards, err := redis.Float64(red.Do("HGET", chainDataKey, "BlockRewards"))
+		if err != nil {
+			return chainData, err
+		}
 		superNodes, _ := redis.Uint64(red.Do("HGET", chainDataKey, "SuperNodes"))
 		blockHeight, _ := redis.String(red.Do("HGET", chainDataKey, "BlockHeight"))
 		totalBlockRewards, _ := redis.Float64(red.Do("HGET", chainDataKey, "TotalBlockRewards"))

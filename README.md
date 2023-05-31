@@ -25,6 +25,7 @@ CREATE TABLE `event` (
    `nonce` bigint(20) DEFAULT NULL,
    `toAddress` varchar(255) DEFAULT NULL,
    `status` tinyint(1) NOT NULL,
+   `timestamp` bigint(20) NOT NULL,
    `newAddress` varchar(255) NOT NULL,  
    `newToAddress` varchar(255) NOT NULL,  
   PRIMARY KEY (`id`)

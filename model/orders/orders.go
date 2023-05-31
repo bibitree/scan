@@ -4,6 +4,7 @@ import (
 	"errors"
 	"ethgo/model"
 	"ethgo/sniffer"
+	"strconv"
 	"sync"
 	"time"
 
@@ -262,11 +263,16 @@ func CreateTransactionTOPStorage(event sniffer.Event2) error {
 	args = args.Add("Time", time.Now().Unix())
 
 	// Check if there are more than maxStorage transactions already stored
-	numStored, err := redis.Int(red.Do("XLEN", keys.CreateTransactionTOPStorage()))
+	numStored, err := redis.String(red.Do("XLEN", keys.CreateTransactionTOPStorage()))
 	if err != nil {
 		return err
 	}
-	if numStored >= maxStorage {
+	numStoredNum, err := strconv.Atoi(numStored)
+	if err != nil {
+		return err
+	}
+
+	if numStoredNum >= maxStorage {
 		// Delete the oldest transaction
 		oldestID, err := redis.String(red.Do("XRANGE", keys.CreateTransactionTOPStorage(), "-", "+", "COUNT", 1))
 		if err != nil {
