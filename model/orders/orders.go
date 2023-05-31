@@ -176,10 +176,10 @@ func CreateChainDataStorag(event sniffer.ChainData) error {
 	red.Send("HSET", chainDataKey, "TotalBlockRewards", event.TotalBlockRewards)
 	red.Send("HSET", chainDataKey, "GasPriceGasPrice", event.GasPriceGasPrice)
 	red.Send("HSET", chainDataKey, "TotalnumberofAddresses", event.TotalnumberofAddresses)
-	red.Send("HSET", chainDataKey, "Name", event.NumberTransactions)
-	red.Send("HSET", chainDataKey, "TxHash", event.NumberTransfers)
-	red.Send("HSET", chainDataKey, "TxIndex", event.NumberTransactionsIn24H)
-	red.Send("HSET", chainDataKey, "Gas", event.NumberaddressesIn24H)
+	red.Send("HSET", chainDataKey, "NumberTransactions", event.NumberTransactions)
+	red.Send("HSET", chainDataKey, "NumberTransfers", event.NumberTransfers)
+	red.Send("HSET", chainDataKey, "NumberTransactionsIn24H", event.NumberTransactionsIn24H)
+	red.Send("HSET", chainDataKey, "NumberaddressesIn24H", event.NumberaddressesIn24H)
 	red.Send("HSET", chainDataKey, "Time", time.Now().Unix())
 
 	// Redis EXEC command
