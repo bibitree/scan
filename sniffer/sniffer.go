@@ -144,7 +144,7 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			log.With(err).Error("Failed to blocknumber.Get")
 			goto WAIT
 		}
-
+		log.Info("获取本地最新块%d,", fromBlockNumber)
 		// End of the range.
 		//获取当前安全块
 		toBlockNumber, err := s.getSecurityBlockNumber(ctx, backend)
@@ -152,7 +152,7 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			log.With(err).Error("Failed to getSecurityBlockNumber")
 			goto WAIT
 		}
-
+		log.Info("获取当前安全块%d,", toBlockNumber)
 		if fromBlockNumber > toBlockNumber {
 			// Is latest block number.
 			// 如果本地块号大于安全块号，则表示本地已经是最新块，进入等待状态。
