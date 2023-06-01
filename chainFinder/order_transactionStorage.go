@@ -229,12 +229,15 @@ func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message)
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
-
-	blockReward, err := message.Float64("BlockReward")
-	if err != nil {
-		// 发生错误，处理错误逻辑
-		return After(t.conf.NetworkRetryInterval, message)
+	var blockReward float64
+	if message.String("BlockReward") != "" {
+		blockReward, err = message.Float64("BlockReward")
+		if err != nil {
+			// 发生错误，处理错误逻辑
+			return After(t.conf.NetworkRetryInterval, message)
+		}
 	}
+
 	a := int64(blockReward * 1e18)
 	var event = sniffer.BlockData{
 		BlockHash:    common.HexToHash(message.String("BlockHash")),
