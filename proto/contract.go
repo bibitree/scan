@@ -47,7 +47,7 @@ type Event struct {
 	ChainID          *big.Int               `json:"chainID"`
 	Data             map[string]interface{} `json:"data"`
 	BlockHash        common.Hash            `json:"blockHash"`
-	BlockNumber      string                 `json:"blockNumber"`
+	BlockNumber      uint64                 `json:"blockNumber"`
 	Name             string                 `json:"name"`
 	TxHash           common.Hash            `json:"txHash"`
 	TxIndex          string                 `json:"txIndex"`

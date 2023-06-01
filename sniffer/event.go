@@ -52,7 +52,7 @@ type AddressData struct {
 
 type BlockData struct {
 	BlockHash    common.Hash `json:"blockHash"`
-	BlockNumber  string      `json:"blockNumber"`
+	BlockNumber  uint64      `json:"blockNumber"`
 	BlockReward  string      `json:"blockReward"`
 	MinerAddress string      `json:"minerAddress"`
 	Size         string      `json:"size"`
@@ -64,7 +64,7 @@ type EventData struct {
 	Address      common.Address `json:"address"`
 	ChainID      *big.Int       `json:"chainID"`
 	BlockHash    common.Hash    `json:"blockHash"`
-	BlockNumber  string         `json:"blockNumber"`
+	BlockNumber  uint64         `json:"blockNumber"`
 	TxHash       common.Hash    `json:"txHash"`
 	TxIndex      string         `json:"txIndex"`
 	Gas          uint64         `json:"gas"`
@@ -86,7 +86,7 @@ type Event2 struct {
 	ChainID          *big.Int       `json:"chainID"`
 	Data             []byte         `json:"data"`
 	BlockHash        common.Hash    `json:"blockHash"`
-	BlockNumber      string         `json:"blockNumber"`
+	BlockNumber      uint64         `json:"blockNumber"`
 	Name             string         `json:"name"`
 	TxHash           common.Hash    `json:"txHash"`
 	TxIndex          string         `json:"txIndex"`

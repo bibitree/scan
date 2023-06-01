@@ -107,11 +107,17 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
+	blockNumber, err := message.Uint64("BlockNumber")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+
 	var event = sniffer.EventData{
 		Address:      common.HexToAddress(message.String("Address")),
 		ChainID:      big.NewInt(chainID),
 		BlockHash:    common.HexToHash(message.String("BlockHash")),
-		BlockNumber:  message.String("BlockNumber"),
+		BlockNumber:  blockNumber,
 		TxHash:       common.HexToHash(message.String("TxHash")),
 		TxIndex:      message.String("TxIndex"),
 		Gas:          gas,
@@ -205,11 +211,17 @@ func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message)
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
+	blockNumber, err := message.Uint64("BlockNumber")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+
 	sizeStr := message.String("Size")
 
 	var event = sniffer.BlockData{
 		BlockHash:    common.HexToHash(message.String("BlockHash")),
-		BlockNumber:  message.String("BlockNumber"),
+		BlockNumber:  blockNumber,
 		Timestamp:    timestamp,
 		MinerAddress: message.String("MinerAddress"),
 		Size:         sizeStr,
