@@ -366,7 +366,7 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	out.Address = tx.From
 	out.BlockHash = tx.BlockHash
 	out.TxHash = tx.Tx.Hash()
-	out.BlockNumber = strconv.FormatUint(tx.BlockNumber, 10)
+	out.BlockNumber = tx.BlockNumber
 	out.TxIndex = strconv.FormatUint(uint64(tx.TxIndex), 10)
 	out.Gas = tx.Tx.Gas()
 	out.GasPrice = tx.Tx.GasPrice()
@@ -433,7 +433,7 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 					out.Address = txLogs[0].Address
 					out.BlockHash = txLogs[0].BlockHash
 					out.TxHash = txLogs[0].TxHash
-					out.BlockNumber = strconv.FormatUint(txLogs[0].BlockNumber, 10)
+					out.BlockNumber = txLogs[0].BlockNumber
 					out.TxIndex = strconv.FormatUint(uint64(txLogs[0].TxIndex), 10)
 					return nil // 成功解析后结束函数
 				}
@@ -447,7 +447,7 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 func (s *Sniffer) unpackBlock(ctx context.Context, backend eth.Backend, tx *TransactionInfo, out *Event) error {
 	out.Name = ""                           // 设置Event结构中的事件名
 	out.Data = make(map[string]interface{}) // 准备一个空的数据映射
-	out.BlockNumber = strconv.FormatUint(tx.BlockNumber, 10)
+	out.BlockNumber = tx.BlockNumber
 	out.BlockHash = tx.BlockHash
 	out.Timestamp = tx.Timestamp
 	out.MinerAddress = tx.MinerAddress
