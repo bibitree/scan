@@ -46,36 +46,36 @@ type ContractData struct {
 }
 
 type AddressData struct {
-	Address string `json:"address"`
-	Balance string `json:"balance"`
+	Address string   `json:"address"`
+	Balance *big.Int `json:"balance"`
 }
 
 type BlockData struct {
 	BlockHash    common.Hash `json:"blockHash"`
-	BlockNumber  uint64      `json:"blockNumber"`
-	BlockReward  string      `json:"blockReward"`
+	BlockNumber  *big.Int    `json:"blockNumber"`
+	BlockReward  *big.Int    `json:"blockReward"`
 	MinerAddress string      `json:"minerAddress"`
 	Size         string      `json:"size"`
-	Timestamp    uint64      `json:"timestamp"`
-	GasLimit     uint64      `json:"gasLimit"`
+	Timestamp    int         `json:"timestamp"`
+	GasLimit     int         `json:"gasLimit"`
 }
 
 type EventData struct {
 	Address      common.Address `json:"address"`
-	ChainID      *big.Int       `json:"chainID"`
+	ChainID      int            `json:"chainID"`
 	BlockHash    common.Hash    `json:"blockHash"`
-	BlockNumber  uint64         `json:"blockNumber"`
+	BlockNumber  *big.Int       `json:"blockNumber"`
 	TxHash       common.Hash    `json:"txHash"`
-	TxIndex      string         `json:"txIndex"`
-	Gas          uint64         `json:"gas"`
+	TxIndex      int            `json:"txIndex"`
+	Gas          *big.Int       `json:"gas"`
 	GasPrice     *big.Int       `json:"gasPrice"`
 	GasTipCap    *big.Int       `json:"gasTipCap"`
 	GasFeeCap    *big.Int       `json:"gasFeeCap"`
 	Value        string         `json:"value"`
-	Nonce        uint64         `json:"nonce"`
+	Nonce        *big.Int       `json:"nonce"`
 	To           common.Address `json:"to"`
-	Status       bool           `json:"status"`
-	Timestamp    uint64         `json:"timestamp"`
+	Status       int            `json:"status"`
+	Timestamp    int            `json:"timestamp"`
 	NewAddress   string         `json:"NewAddress"`
 	NewToAddress string         `json:"NewToAddress"`
 }
@@ -150,7 +150,7 @@ type ErcTop struct {
 	ContractName       string `json:"contractName"`
 	Value              string `json:"value"`
 	NewContractAddress string `json:"nonce"`
-	ContractTxCount    string `json:"contractTxCount"`
+	ContractTxCount    int    `json:"contractTxCount"`
 }
 
 func (event *Event) IsEmpty() bool {

@@ -53,15 +53,15 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	}
 
 	Value := message.String("Value")
-	if data != "0" && data != "" {
-		err := t.AddressStorage(ctx, message)
+	if Value != "0" && Value != "" {
+		err := t.AddressStorage(ctx, message, Value)
 		if err != nil {
 			// 处理错误
 			return After(t.conf.NetworkRetryInterval, message)
 		}
 	}
 
-	chainID, err := message.Int64("ChainID")
+	chainID, err := message.Int("ChainID")
 	if err != nil {
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
@@ -83,13 +83,13 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
-	nonce, err := message.Uint64("Nonce")
+	nonce, err := message.Int64("Nonce")
 	if err != nil {
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
-	gas, err := message.Uint64("Gas")
+	gas, err := message.Int64("Gas")
 	if err != nil {
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
@@ -101,33 +101,44 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	}
 	log.Info(toAddress)
 
-	timestamp, err := message.Uint64("Timestamp")
+	timestamp, err := message.Int("Timestamp")
 	if err != nil {
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
-	blockNumber, err := message.Uint64("BlockNumber")
+	blockNumber, err := message.Int64("BlockNumber")
 	if err != nil {
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
+	txIndex, err := message.Int("TxIndex")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+
+	var Status int
+	Status = 0
+	if message.String("Status") == "1" {
+		Status = 1
+	}
 	var event = sniffer.EventData{
 		Address:      common.HexToAddress(message.String("Address")),
-		ChainID:      big.NewInt(chainID),
+		ChainID:      chainID,
 		BlockHash:    common.HexToHash(message.String("BlockHash")),
-		BlockNumber:  blockNumber,
+		BlockNumber:  big.NewInt(blockNumber),
 		TxHash:       common.HexToHash(message.String("TxHash")),
-		TxIndex:      message.String("TxIndex"),
-		Gas:          gas,
+		TxIndex:      txIndex,
+		Gas:          big.NewInt(gas),
 		GasPrice:     big.NewInt(gasPrice),
 		GasTipCap:    big.NewInt(gasTipCap),
 		GasFeeCap:    big.NewInt(gasFeeCap),
 		Value:        Value,
-		Nonce:        nonce,
+		Nonce:        big.NewInt(nonce),
 		To:           common.HexToAddress(message.String("To")),
-		Status:       message.String("Status") == "true",
+		Status:       Status,
 		Timestamp:    timestamp,
 		NewAddress:   address,
 		NewToAddress: toAddress,
@@ -138,15 +149,17 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	return t.ack(message)
 }
 
-func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Message) AfterFunc {
+func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Message, value string) AfterFunc {
 	log.Debugf("ENTER @ContractStorage 订单")
 	defer log.Debugf("  LEAVE @ContractStorage 订单")
 
 	log.Info(message.String("Address"))
 
+	i := new(big.Int)
+	i.SetString(value, 10)
 	var event = sniffer.AddressData{
 		Address: message.String("To"),
-		Balance: message.String("Value"),
+		Balance: i,
 	}
 
 	log.Info(event)
@@ -199,38 +212,40 @@ func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message)
 	log.Debugf("ENTER @BlockStorage 订单")
 	defer log.Debugf("  LEAVE @BlockStorage 订单")
 
-	timestamp, err := message.Uint64("Timestamp")
+	timestamp, err := message.Int("Timestamp")
 	if err != nil {
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
-	gasLimit, err := message.Uint64("GasLimit")
+	gasLimit, err := message.Int("GasLimit")
 	if err != nil {
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
-	blockNumber, err := message.Uint64("BlockNumber")
+	blockNumber, err := message.Int64("BlockNumber")
 	if err != nil {
 		// 发生错误，处理错误逻辑
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
-	sizeStr := message.String("Size")
-
+	blockReward, err := message.Float64("BlockReward")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+	a := int64(blockReward * 1e18)
 	var event = sniffer.BlockData{
 		BlockHash:    common.HexToHash(message.String("BlockHash")),
-		BlockNumber:  blockNumber,
+		BlockNumber:  big.NewInt(blockNumber),
 		Timestamp:    timestamp,
 		MinerAddress: message.String("MinerAddress"),
-		Size:         sizeStr,
-		BlockReward:  message.String("BlockReward"),
+		Size:         message.String("Size"),
+		BlockReward:  big.NewInt(a),
 		GasLimit:     gasLimit,
 	}
-
 	log.Info(event)
-
 	mysqlOrders.InsertBlock(event)
 	return t.ack(message)
 }
@@ -251,7 +266,7 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 		return "", err
 	}
 
-	ethContractTxCount, err := t.ProcessERCContractTxCount(contract)
+	ethContractTxCount, err := mysqlOrders.GetEventsByContractAddress(event)
 	if err != nil {
 		log.Error(err)
 		return "", err
@@ -262,11 +277,11 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 	if address != "" {
 		address = t.conf.PrefixChain + address[2:]
 	}
-	dataMap, ok := ethContractTxCount.(map[string]interface{})
-	if !ok {
-		return "", errors.New("invalid data type")
-	}
-	fmt.Print(dataMap["count"].(string))
+	// dataMap, ok := ethContractTxCount.(map[string]interface{})
+	// if !ok {
+	// 	return "", errors.New("invalid data type")
+	// }
+	// fmt.Print(dataMap["count"].(int))
 	// count, ok := ethContractTxCount.(ContractTxCount)
 
 	// name, ok := ercName.(map[string]interface{})
@@ -282,12 +297,10 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 		ContractAddress:    event,
 		ContractName:       ercString,
 		Value:              ercTotalSupplyString,
-		ContractTxCount:    dataMap["count"].(string),
+		ContractTxCount:    len(ethContractTxCount),
 		NewContractAddress: address,
 	}
 	mysqlOrders.InsertErcTop(ercTop)
-
-	// mysqlOrders.InsertErcTop(ercTop)
 	return ercString, nil
 }
 

@@ -92,7 +92,7 @@ func InsertAddressData(addressData sniffer.AddressData) error {
 		defer cancel()
 
 		// 使用ExecContext执行sql语句，如果执行成功则返回nil
-		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Address, addressData.Balance, "1")
+		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Address, addressData.Balance.String(), "1")
 		if err != nil {
 			log.Error("插入数据时出错: ", err)
 			return err
@@ -102,7 +102,7 @@ func InsertAddressData(addressData sniffer.AddressData) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Balance, addressData.Address)
+		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Balance.String(), addressData.Address)
 		if err != nil {
 			log.Error("更新数据时出错: ", err)
 			return err
@@ -115,7 +115,7 @@ func InsertAddressData(addressData sniffer.AddressData) error {
 func InsertBlock(block sniffer.BlockData) error {
 	// 查询是否存在相同的blockHash
 	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM block WHERE blockHash=?", block.BlockHash).Scan(&count)
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM block WHERE blockHash=?", block.BlockHash.Hex()).Scan(&count)
 	if err != nil {
 		log.Error("查询是否存在相同的blockHash时出错: ", err)
 		return err
@@ -126,7 +126,7 @@ func InsertBlock(block sniffer.BlockData) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		// 使用ExecContext执行sql语句，如果执行成功则返回nil
-		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, block.BlockHash.Hex(), block.BlockNumber, block.BlockReward,
+		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, block.BlockHash.Hex(), block.BlockNumber.String(), block.BlockReward.String(),
 			block.MinerAddress, block.Size, block.Timestamp, block.GasLimit)
 		if err != nil {
 			log.Info("插入数据时出错: ", err)
@@ -150,10 +150,10 @@ func InsertEvent(event sniffer.EventData) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		// 使用ExecContext执行sql语句，如果执行成功则返回nil
-		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, event.Address.Hex(), event.ChainID.String(),
-			event.BlockHash.Hex(), event.BlockNumber, event.TxHash.Hex(), event.TxIndex,
-			event.Gas, event.GasPrice.String(), event.GasTipCap.String(),
-			event.GasFeeCap.String(), event.Value, event.Nonce,
+		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, event.Address.Hex(), event.ChainID,
+			event.BlockHash.Hex(), event.BlockNumber.String(), event.TxHash.Hex(), event.TxIndex,
+			event.Gas.String(), event.GasPrice.String(), event.GasTipCap.String(),
+			event.GasFeeCap.String(), event.Value, event.Nonce.String(),
 			event.To.Hex(), event.Status, event.Timestamp,
 			event.NewAddress, event.NewToAddress) // 添加新字段
 		if err != nil {

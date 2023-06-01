@@ -83,8 +83,16 @@ func (t *Message) Int64(key string) (int64, error) {
 	return strconv.ParseInt(t.String(key), 10, 64)
 }
 
+func (t *Message) Int(key string) (int, error) {
+	return strconv.Atoi(t.String(key))
+}
+
 func (t *Message) Uint64(key string) (uint64, error) {
 	return strconv.ParseUint(t.String(key), 10, 64)
+}
+
+func (t *Message) Float64(key string) (float64, error) {
+	return strconv.ParseFloat(t.String(key), 64)
 }
 
 func (t *Message) Source() string {
