@@ -627,18 +627,18 @@ func GetAllAddressesAndBlockRewardSum(number string) (string, error) {
 		blockRewardSum.Add(blockRewardSum, blockRewardFloat)
 	}
 
-	num, err := strconv.Atoi(number)
+	num, err := strconv.ParseInt(number, 10, 64)
 	if err != nil {
 		fmt.Println("Atoi error:", err)
 	} else {
 		num += 1
 	}
 
-	BlockBeasRewardNum, err := strconv.Atoi(BlockBeasReward)
+	BlockBeasRewardNum, err := strconv.ParseInt(BlockBeasReward, 10, 64)
 	if err != nil {
 		fmt.Println("Atoi error:", err)
 	}
-	num = num * BlockBeasRewardNum
+	num = num * BlockBeasRewardNum * 1e18
 
 	blockRewardSum = new(big.Float).Add(blockRewardSum, big.NewFloat(float64(num)))
 	blockRewardSumStr := blockRewardSum.String()
