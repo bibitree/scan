@@ -2,16 +2,26 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
+	"ethgo/chainFinder"
 	"ethgo/model/mysqlOrders"
 	"ethgo/model/orders"
 	"ethgo/proto"
 	"ethgo/sniffer"
+	"ethgo/util"
 	"ethgo/util/ginx"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 )
+
+type Response struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+}
 
 // Transact
 // @Description 缓存数据
@@ -66,6 +76,8 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 		BlockReward:      request.BlockReward,
 		AverageGasTipCap: request.AverageGasTipCap,
 		GasLimit:         request.GasLimit,
+		Bytecode:         request.Bytecode,
+		ContractAddr:     request.ContractAddr,
 	}
 
 	orders.CreateTransactionStorage(event)
@@ -80,7 +92,7 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 
 func (app *App) SetChainData(c *ginx.Context) {
 
-	blockHeight, gasPriceGasPrice, err := mysqlOrders.GetLatestEvent()
+	blockHeight, _, err := mysqlOrders.GetLatestEvent()
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
@@ -96,6 +108,12 @@ func (app *App) SetChainData(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
+	gasPriceGasPrice, err := app.ProcessGasPrice(c)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
 	paginate := sniffer.ChainData{
 		BlockRewards:            "10",
 		SuperNodes:              100,
@@ -110,4 +128,29 @@ func (app *App) SetChainData(c *ginx.Context) {
 	}
 	//CreateChainDataStorag
 	orders.CreateChainDataStorag(paginate)
+}
+
+func (app *App) ProcessGasPrice(c *ginx.Context) (string, error) {
+
+	var gasPrice = chainFinder.GasPrice{}
+	body, err := util.Post(app.conf.ChainFinder.GetGasPrice, gasPrice)
+	if err != nil {
+		return "", err
+	}
+
+	var res Response
+	if err := json.Unmarshal(body, &res); err != nil {
+		return "", err
+	}
+
+	log.Debugf("应答: %v", string(body))
+
+	if res.Code != http.StatusOK {
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("%v", res.Code)
+		}
+		return "", errors.New(res.Message)
+	}
+
+	return res.Data.(string), nil
 }

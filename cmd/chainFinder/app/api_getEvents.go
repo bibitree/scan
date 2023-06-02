@@ -11,6 +11,8 @@ import (
 	"ethgo/util/ginx"
 	"fmt"
 	"net/http"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func (app *App) GetAllEvents(c *ginx.Context) {
@@ -337,4 +339,18 @@ func (app *App) GetBlockNum(c *ginx.Context) {
 	}
 
 	c.Success(http.StatusOK, "succ", paginate)
+}
+
+func (app *App) GetCreateContractData(c *ginx.Context) {
+	var request = new(proto.GetCreateContractDataByContract)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	createContractData, err := mysqlOrders.GetCreateContractData(common.HexToAddress(request.Contract))
+	if err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	c.Success(http.StatusOK, "succ", createContractData)
 }

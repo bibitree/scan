@@ -65,4 +65,6 @@ type Event struct {
 	BlockReward      string                 `json:"blockReward"`
 	AverageGasTipCap string                 `json:"averageGasTipCap"`
 	GasLimit         uint64                 `json:"gasLimit"`
+	Bytecode         []byte                 `json:"bytecode"`
+	ContractAddr     common.Address         `json:"contractAddr"`
 }

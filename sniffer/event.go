@@ -34,6 +34,8 @@ type Event struct {
 	NewAddress       string                 `json:"newAddress"`
 	NewToAddress     string                 `json:"newToAddress"`
 	GasLimit         uint64                 `json:"gasLimit"`
+	Bytecode         []byte                 `json:"bytecode"`
+	ContractAddr     common.Address         `json:"contractAddr"`
 }
 
 type ContractData struct {
@@ -43,6 +45,12 @@ type ContractData struct {
 	Name         string                 `json:"name"`
 	TxHash       common.Hash            `json:"txHash"`
 	Contrac      common.Address         `json:"to"`
+}
+
+type CreateContractData struct {
+	Bytecode       []byte         `json:"bytecode"`
+	ContractAddr   common.Address `json:"contractAddr"`
+	BytecodeString string         `json:"bytecodeString"`
 }
 
 type AddressData struct {
@@ -104,6 +112,8 @@ type Event2 struct {
 	BlockReward      string         `json:"blockReward"`
 	AverageGasTipCap string         `json:"averageGasTipCap"`
 	GasLimit         uint64         `json:"gasLimit"`
+	Bytecode         []byte         `json:"bytecode"`
+	ContractAddr     common.Address `json:"contractAddr"`
 }
 
 type Event3 struct {

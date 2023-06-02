@@ -41,7 +41,7 @@ FailedURI = "http://127.0.0.1:8081/event/failed"
 Callback = "http://127.0.0.1:8071/tyche/api/call"
 ContractCreationTime = "http://127.0.0.1:8071/tyche/api/wallet/contractTxCount"
 ContractTxCount = "http://127.0.0.1:8071/tyche/api/wallet/contractTxCount"
-
+GetGasPrice = "http://127.0.0.1:8071/tyche/api/wallet/GetGasPrice"
 # 链地址的前缀
 PrefixChain ="F"
 

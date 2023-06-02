@@ -46,6 +46,10 @@ type ByContract struct {
 	PageSize int    `json:"pageSize" example:"100"`
 }
 
+type GetCreateContractDataByContract struct {
+	Contract string `json:"contract" example:"0x66e3076f604491c0944b3c885d451424fd644c4ebf61c333e0d4622d567af38b"`
+}
+
 type ChainData struct {
 }
 

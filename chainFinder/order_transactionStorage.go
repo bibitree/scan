@@ -45,20 +45,17 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	// var yourMap map[string]interface{}
 	data := message.String("ContractName")
 	if data != "" {
-		err := t.ContractStorage(ctx, message)
-		if err != nil {
-			// 处理错误
-			return After(t.conf.NetworkRetryInterval, message)
-		}
+		t.ContractStorage(ctx, message)
+	}
+
+	contractAddr := common.HexToAddress(message.String("ContractAddr"))
+	if (contractAddr != common.Address{}) {
+		t.CreateContractStorage(ctx, message)
 	}
 
 	Value := message.String("Value")
 	if Value != "0" && Value != "" {
-		err := t.AddressStorage(ctx, message, Value)
-		if err != nil {
-			// 处理错误
-			return After(t.conf.NetworkRetryInterval, message)
-		}
+		t.AddressStorage(ctx, message, Value)
 	}
 
 	chainID, err := message.Int("ChainID")
@@ -149,7 +146,7 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	return t.ack(message)
 }
 
-func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Message, value string) AfterFunc {
+func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Message, value string) {
 	log.Debugf("ENTER @ContractStorage 订单")
 	defer log.Debugf("  LEAVE @ContractStorage 订单")
 
@@ -164,10 +161,9 @@ func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Messag
 
 	log.Info(event)
 	mysqlOrders.InsertAddressData(event)
-	return t.ack(message)
 }
 
-func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Message) AfterFunc {
+func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Message) {
 	log.Debugf("ENTER @ContractStorage 订单")
 	defer log.Debugf("  LEAVE @ContractStorage 订单")
 
@@ -185,7 +181,7 @@ func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Messa
 
 		if err != nil {
 			// 处理错误
-			return After(t.conf.NetworkRetryInterval, message)
+			return
 		}
 	}
 	log.Info(toAddress)
@@ -205,7 +201,19 @@ func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Messa
 
 	log.Info(event)
 	mysqlOrders.InsertContractData(event)
-	return t.ack(message)
+}
+
+func (t *ChainFinder) CreateContractStorage(ctx context.Context, message *orders.Message) {
+	log.Debugf("ENTER @ContractStorage 订单")
+	defer log.Debugf("  LEAVE @ContractStorage 订单")
+
+	var event = sniffer.CreateContractData{
+		Bytecode:     message.Bytes("Bytecode"),
+		ContractAddr: common.HexToAddress(message.String("ContractAddr")),
+	}
+
+	log.Info(event)
+	mysqlOrders.InsertCreateContractData(event)
 }
 
 func (t *ChainFinder) BlockStorage(ctx context.Context, message *orders.Message) AfterFunc {
@@ -263,6 +271,8 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 		log.Error(err)
 		return "", err
 	}
+	ercSlice := ercName.([]interface{})
+	ercString := ercSlice[0].(string)
 	ercTotalSupply, err := t.ProcessERCTotalSupply(contract)
 	if err != nil {
 		log.Error(err)
@@ -280,16 +290,7 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 	if address != "" {
 		address = t.conf.PrefixChain + address[2:]
 	}
-	// dataMap, ok := ethContractTxCount.(map[string]interface{})
-	// if !ok {
-	// 	return "", errors.New("invalid data type")
-	// }
-	// fmt.Print(dataMap["count"].(int))
-	// count, ok := ethContractTxCount.(ContractTxCount)
 
-	// name, ok := ercName.(map[string]interface{})
-	ercSlice := ercName.([]interface{})
-	ercString := ercSlice[0].(string)
 	fmt.Println(ercString)
 
 	ercTotalSupply1 := ercTotalSupply.([]interface{})

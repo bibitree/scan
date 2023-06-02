@@ -18,6 +18,9 @@ type Call struct {
 	Args    interface{} `json:"args" swaggertype:"object,string" example:"id:1020"`
 }
 
+type GasPrice struct {
+}
+
 type ContractTxCount struct {
 	Contract string `json:"contract" example:"0x51E72BDbA3A6Fc6337251581CB95625fa3A7767F"`
 	Count    string `json:"count" example:"49335849638413224831"`

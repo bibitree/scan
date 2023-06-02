@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"ethgo/model"
+	"ethgo/sniffer"
 	"fmt"
 	"log"
 	"math"
@@ -12,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const BlockBeasReward = "10"
@@ -638,9 +641,10 @@ func GetAllAddressesAndBlockRewardSum(number string) (string, error) {
 	if err != nil {
 		fmt.Println("Atoi error:", err)
 	}
-	num = num * BlockBeasRewardNum * 1e18
+	num1 := new(big.Int).Mul(big.NewInt(num), big.NewInt(BlockBeasRewardNum))
+	num1 = num1.Mul(num1, big.NewInt(int64(1e18)))
 
-	blockRewardSum = new(big.Float).Add(blockRewardSum, big.NewFloat(float64(num)))
+	blockRewardSum = new(big.Float).Add(blockRewardSum, new(big.Float).SetInt(num1))
 	blockRewardSumStr := blockRewardSum.String()
 
 	return blockRewardSumStr, nil
@@ -680,7 +684,7 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 func GetEventsByContractAddress(contractAddress string) ([]model.ContractData, error) {
 	events := make([]model.ContractData, 0)
 	// 构造sql语句，查询与指定合约地址匹配的数据
-	sqlStr := fmt.Sprintf("SELECT * FROM ercevent WHERE contrac = '%s'", contractAddress)
+	sqlStr := fmt.Sprintf("SELECT * FROM ercevent WHERE toAddress = '%s'", contractAddress)
 	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -810,4 +814,24 @@ func GetEventDataCountByAddress(address string) (uint64, error) {
 	}
 
 	return count, nil
+}
+
+func GetCreateContractData(contracaddress common.Address) (*sniffer.CreateContractData, error) {
+	// 查询指定 contracaddress 对应的数据
+	var bytecode []byte
+	err := model.MysqlPool.QueryRow("SELECT bytecode FROM newContracData WHERE contracaddress=?", contracaddress.String()).Scan(&bytecode)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// 如果没有找到对应的数据，返回 nil 和一个错误对象
+			return nil, fmt.Errorf("data not found for contracaddress %s", contracaddress.String())
+		}
+		// 处理其他错误
+		return nil, err
+	}
+
+	// 创建一个新的 CreateContractData 对象，并返回
+	return &sniffer.CreateContractData{
+		ContractAddr:   contracaddress,
+		BytecodeString: fmt.Sprintf("%x", bytecode),
+	}, nil
 }

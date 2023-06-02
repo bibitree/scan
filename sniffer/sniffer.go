@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type Sniffer struct {
@@ -389,58 +390,70 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	}
 	out.ContractName = ""
 	out.ChainID = s.chainID
-	if len(tx.Tx.Data()) > 0 {
-
-		txLogs, err := s.filterLogs(ctx, backend, big.NewInt(int64(tx.BlockNumber)), out.To)
-		if err != nil {
-			return err
+	if (out.To == common.Address{}) {
+		// 如果交易的接收方为 nil，则表示这是一个合约创建交易
+		out.Bytecode = tx.Tx.Data()
+		out.ContractAddr = crypto.CreateAddress(out.Address, tx.Tx.Nonce())
+		if out.ContractAddr == (common.Address{}) {
+			out.Bytecode = nil
+			out.ContractAddr = common.Address{}
 		}
-		if len(txLogs) == 0 {
+	} else {
+		if len(tx.Tx.Data()) > 0 {
+
+			txLogs, err := s.filterLogs(ctx, backend, big.NewInt(int64(tx.BlockNumber)), out.To)
+			if err != nil {
+				return err
+			}
+			if len(txLogs) == 0 {
+				return nil
+			}
+
+			for _, log := range txLogs {
+				if log.TxHash != tx.Tx.Hash() {
+					return nil
+				}
+				if len(log.Topics) == 0 {
+					continue
+				}
+				// if len(log.Topics) >= 0 {
+				// 	continue
+				// }
+
+				// 遍历所有待匹配地址
+				for _, address := range s.addresses {
+					// 在嗅探器对象的合约映射中查找是否存在与地址匹配的合约对象
+					contract := s.contracts[address]
+
+					// 根据日志中第一个topic查找对应的事件
+					event, err := contract.EventByID(log.Topics[0])
+					if err == nil { // 如果找到了对应的事件
+						out.ContractName = contract.Name        // 设置Event结构中的合约名
+						out.ChainID = s.chainID                 // 设置Event结构中的链ID
+						out.Name = event.Name                   // 设置Event结构中的事件名
+						out.Data = make(map[string]interface{}) // 准备一个空的数据映射
+						// 解压日志中的数据成为Event结构中的映射
+						err := contract.UnpackLogIntoMap(out.Data, out.Name, log)
+
+						if err != nil {
+							fmt.Println("+++++++++++++++++++++++++", out.TxHash.String())
+							continue
+						}
+						// 设置Event对象的其他属性
+						out.Address = txLogs[0].Address
+						out.BlockHash = txLogs[0].BlockHash
+						out.TxHash = txLogs[0].TxHash
+						out.BlockNumber = txLogs[0].BlockNumber
+						out.TxIndex = strconv.FormatUint(uint64(txLogs[0].TxIndex), 10)
+						return nil // 成功解析后结束函数
+					}
+				}
+			}
 			return nil
 		}
 
-		for _, log := range txLogs {
-			if log.TxHash != tx.Tx.Hash() {
-				return nil
-			}
-			if len(log.Topics) == 0 {
-				continue
-			}
-			// if len(log.Topics) >= 0 {
-			// 	continue
-			// }
-
-			// 遍历所有待匹配地址
-			for _, address := range s.addresses {
-				// 在嗅探器对象的合约映射中查找是否存在与地址匹配的合约对象
-				contract := s.contracts[address]
-
-				// 根据日志中第一个topic查找对应的事件
-				event, err := contract.EventByID(log.Topics[0])
-				if err == nil { // 如果找到了对应的事件
-					out.ContractName = contract.Name        // 设置Event结构中的合约名
-					out.ChainID = s.chainID                 // 设置Event结构中的链ID
-					out.Name = event.Name                   // 设置Event结构中的事件名
-					out.Data = make(map[string]interface{}) // 准备一个空的数据映射
-					// 解压日志中的数据成为Event结构中的映射
-					err := contract.UnpackLogIntoMap(out.Data, out.Name, log)
-
-					if err != nil {
-						fmt.Println("+++++++++++++++++++++++++", out.TxHash.String())
-						continue
-					}
-					// 设置Event对象的其他属性
-					out.Address = txLogs[0].Address
-					out.BlockHash = txLogs[0].BlockHash
-					out.TxHash = txLogs[0].TxHash
-					out.BlockNumber = txLogs[0].BlockNumber
-					out.TxIndex = strconv.FormatUint(uint64(txLogs[0].TxIndex), 10)
-					return nil // 成功解析后结束函数
-				}
-			}
-		}
-		return nil
 	}
+
 	return nil
 }
 
