@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	// "ethgo/model/mysqlOrders"
 	"ethgo/model/mysqlOrders"
@@ -296,11 +297,14 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 	ercTotalSupply1 := ercTotalSupply.([]interface{})
 	ercTotalSupplyFloat64 := ercTotalSupply1[0].(float64)
 	ercTotalSupplyString := fmt.Sprintf("%.0f", ercTotalSupplyFloat64)
+	ercTotalSupplyInt64, err := strconv.ParseInt(ercTotalSupplyString, 10, 64)
+	bigInt := new(big.Int)
+	bigInt.SetString(ercTotalSupplyString, 10)
 	fmt.Println(ercString)
 	var ercTop = sniffer.ErcTop{
 		ContractAddress:    event,
 		ContractName:       ercString,
-		Value:              ercTotalSupplyString,
+		Value:              ercTotalSupplyInt64,
 		ContractTxCount:    len(ethContractTxCount),
 		NewContractAddress: address,
 	}
