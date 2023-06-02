@@ -519,7 +519,7 @@ func GetLatestEvent() (string, string, error) {
 
 	// 将查询结果转化为string并返回
 	blockNumberStr := strconv.FormatInt(blockNumber, 10)
-	gasPriceStr := "1300000000000000000"
+	gasPriceStr := "1300000000"
 
 	return blockNumberStr, gasPriceStr, nil
 }
