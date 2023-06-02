@@ -91,23 +91,25 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 }
 
 func (app *App) SetChainData(c *ginx.Context) {
-
+	log.Debugf("ENTER @TransactionStorage SetChainData")
 	blockHeight, _, err := mysqlOrders.GetLatestEvent()
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
+	log.Debugf("ENTER @TransactionStorage SetChainData blockHeight")
 	numberTransactions, numberTransfers, numberTransactionsIn24H, numberaddressesIn24H, totalnumberofAddresses, err := mysqlOrders.GetEventStatistics(blockHeight)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-
+	log.Debugf("ENTER @TransactionStorage SetChainData numberTransactions")
 	totalBlockRewards, err := mysqlOrders.GetAllAddressesAndBlockRewardSum(blockHeight)
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
+	log.Debugf("ENTER @TransactionStorage SetChainData totalBlockRewards")
 	gasPriceGasPrice, err := app.ProcessGasPrice(c)
 	if err != nil {
 		log.Error(err)
