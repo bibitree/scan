@@ -440,7 +440,7 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 							continue
 						}
 						// 设置Event对象的其他属性
-						out.Address = txLogs[0].Address
+						// out.Address = txLogs[0].Address
 						out.BlockHash = txLogs[0].BlockHash
 						out.TxHash = txLogs[0].TxHash
 						out.BlockNumber = txLogs[0].BlockNumber
