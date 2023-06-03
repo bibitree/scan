@@ -109,6 +109,7 @@ func (app *App) GetEventsByBlockNumber(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
+
 	BlockNumberS, err := mysqlOrders.GetBlockDataByBlockNumber([]string{strconv.Itoa(request.BlockNumber)})
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
