@@ -11,6 +11,7 @@ import (
 	"ethgo/util/ginx"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -108,7 +109,7 @@ func (app *App) GetEventsByBlockNumber(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	BlockNumberS, err := mysqlOrders.GetBlockDataByBlockNumber([]string{string(request.BlockNumber)})
+	BlockNumberS, err := mysqlOrders.GetBlockDataByBlockNumber([]string{strconv.Itoa(request.BlockNumber)})
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
@@ -148,7 +149,7 @@ func (app *App) GetEventsByBlockHash(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, Contract, _, err := mysqlOrders.GetEventByBlockHash(request.BlockHash)
+	events, Contract, blockNumber, err := mysqlOrders.GetEventByBlockHash(request.BlockHash)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
@@ -156,7 +157,7 @@ func (app *App) GetEventsByBlockHash(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	BlockNumberS, err := mysqlOrders.GetBlockDataByBlockNumber([]string{string(request.BlockHash)})
+	BlockNumberS, err := mysqlOrders.GetBlockDataByBlockNumber(blockNumber)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
