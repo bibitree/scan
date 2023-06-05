@@ -52,6 +52,14 @@ func (c *Context) BindJSONEx(obj interface{}) error {
 	return json.Unmarshal(removeComments(data), obj)
 }
 
+func (c *Context) BindJSONEx1(data []byte, obj interface{}) error {
+	if c.Request == nil || c.Request.Body == nil {
+		return fmt.Errorf("invalid request")
+	}
+
+	return json.Unmarshal(removeComments(data), obj)
+}
+
 func Cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method

@@ -12,9 +12,6 @@ import (
 	"ethgo/util/ginx"
 	"fmt"
 	"net/http"
-	"strings"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type Response struct {
@@ -31,63 +28,71 @@ type Response struct {
 // @Success 200 {object} proto.Response{data=object}
 // @Router /tyche/api/transact [post]
 func (app *App) AcceptTransactionStorage(c *ginx.Context) {
-	var request = new(proto.Event)
-	if err := c.BindJSONEx(request); err != nil {
+	// var events = new(proto.Evensts)
+	data, err := c.GetRawData()
+	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
-	var data, err = json.MarshalIndent(request.Data, "", "  ")
-	if err != nil {
-		panic(err)
+	fmt.Println(string(data))
+	var events []*proto.Event
+	if err := json.Unmarshal(data, &events); err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(events)
 	}
+	// if err := c.BindJSONEx1(data, events); err != nil {
+	// 	c.Failure(http.StatusBadRequest, err.Error(), nil)
+	// 	return
+	// }
 
-	request.Address = strings.ToLower(request.Address)
-	if !common.IsHexAddress(request.Address) {
-		c.Failure(http.StatusBadRequest, "无效的参数: address", nil)
-		return
-	}
+	for _, ev := range events {
+		var data, err = json.MarshalIndent(ev.Data, "", "  ")
+		if err != nil {
+			panic(err)
+		}
+		if ev.TxIndex == "" {
+			ev.TxIndex = "0"
+		}
 
-	if request.TxIndex == "" {
-		request.TxIndex = "0"
-	}
+		var event = sniffer.Event2{
+			Address:          ev.Address,
+			ContractName:     ev.ContractName,
+			ChainID:          ev.ChainID,
+			Data:             data,
+			BlockHash:        ev.BlockHash,
+			BlockNumber:      ev.BlockNumber,
+			Name:             ev.Name,
+			TxHash:           ev.TxHash,
+			TxIndex:          ev.TxIndex,
+			Gas:              ev.Gas,
+			GasPrice:         ev.GasPrice,
+			GasTipCap:        ev.GasTipCap,
+			GasFeeCap:        ev.GasFeeCap,
+			Value:            ev.Value,
+			Nonce:            ev.Nonce,
+			To:               ev.To,
+			Status:           ev.Status,
+			Timestamp:        ev.Timestamp,
+			MinerAddress:     ev.MinerAddress,
+			Size:             ev.Size,
+			BlockReward:      ev.BlockReward,
+			AverageGasTipCap: ev.AverageGasTipCap,
+			GasLimit:         ev.GasLimit,
+			Bytecode:         ev.Bytecode,
+			ContractAddr:     ev.ContractAddr,
+		}
 
-	var event = sniffer.Event2{
-		Address:          common.HexToAddress(request.Address),
-		ContractName:     request.ContractName,
-		ChainID:          request.ChainID,
-		Data:             data,
-		BlockHash:        request.BlockHash,
-		BlockNumber:      request.BlockNumber,
-		Name:             request.Name,
-		TxHash:           request.TxHash,
-		TxIndex:          request.TxIndex,
-		Gas:              request.Gas,
-		GasPrice:         request.GasPrice,
-		GasTipCap:        request.GasTipCap,
-		GasFeeCap:        request.GasFeeCap,
-		Value:            request.Value,
-		Nonce:            request.Nonce,
-		To:               common.HexToAddress(request.To),
-		Status:           request.Status,
-		Timestamp:        request.Timestamp,
-		MinerAddress:     request.MinerAddress,
-		Size:             request.Size,
-		BlockReward:      request.BlockReward,
-		AverageGasTipCap: request.AverageGasTipCap,
-		GasLimit:         request.GasLimit,
-		Bytecode:         request.Bytecode,
-		ContractAddr:     request.ContractAddr,
-	}
+		orders.CreateTransactionStorage(event)
 
-	orders.CreateTransactionStorage(event)
-
-	txhash := request.TxHash.String()
-	if txhash != "0x0000000000000000000000000000000000000000000000000000000000000000" {
-		orders.CreateTransactionTOPStorage(event)
+		txhash := ev.TxHash.String()
+		if txhash != "0x0000000000000000000000000000000000000000000000000000000000000000" {
+			orders.CreateTransactionTOPStorage(event)
+		}
 	}
 	app.SetChainData(c)
-	c.Success(http.StatusOK, "succ", event)
+	c.Success(http.StatusOK, "succ", nil)
 }
 
 func (app *App) SetChainData(c *ginx.Context) {

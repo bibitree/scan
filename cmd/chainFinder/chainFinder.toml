@@ -15,7 +15,7 @@ IdleTimeout = 0
 #URI = "redis://:AyLf3qg%40ia%5EGZ%23yrbd34%25j@192.168.10.179:6001/2"
 URI = "redis://:@127.0.0.1:6379/2"
 Address = "127.0.0.1:3306"
-Password ="a2683570"
+Password ="root"
 Username = "root"
 Database = "chainfindata"
 
@@ -74,7 +74,8 @@ CallbackRetryInterval = 15
 # Addr = "http://127.0.0.1:8545"
 # Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
 # Addr = "http://47.98.198.159:8989"
-Addr = "https://matic-mumbai.chainstacklabs.com"
+#Addr = "https://matic-mumbai.chainstacklabs.com"
+ Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
 DefaultGasLimit = 5500000
 TransactionsPerSecond = 20
 
