@@ -100,7 +100,6 @@ func InsertCreateContractData(event sniffer.CreateContractData) error {
 	return nil
 }
 
-// 查询是否存在相同的address
 func InsertAddressData(addressData sniffer.AddressData) error {
 	var count int
 	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM addressTop WHERE address=?", addressData.Address).Scan(&count)
@@ -111,22 +110,20 @@ func InsertAddressData(addressData sniffer.AddressData) error {
 
 	if count == 0 { // 如果不存在相同的address，直接插入新数据
 		sqlStr := `INSERT INTO addressTop(address, Balance, Count) VALUES (?, ?, ?)`
-		// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		// 使用ExecContext执行sql语句，如果执行成功则返回nil
 		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Address, addressData.Balance.String(), "1")
 		if err != nil {
 			log.Error("插入数据时出错: ", err)
 			return err
 		}
 	} else { // 如果已存在相同的address，更新Balance和Count
-		sqlStr := `UPDATE addressTop SET Balance=Balance+?, Count=Count+1 WHERE address=?`
+		sqlStr := `UPDATE addressTop SET Balance=?, Count=Count+1 WHERE address=?`
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Balance.String(), addressData.Address)
+		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Balance.String(), addressData.Address)
 		if err != nil {
 			log.Error("更新数据时出错: ", err)
 			return err

@@ -164,8 +164,8 @@ func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Messag
 		log.Error(err)
 		return
 	}
-	balanceSupplyData := balanceSupply.(interface{})
-	balanceSupplyUint64 := balanceSupplyData.(string)
+	// balanceSupplyData := balanceSupply.(interface{})
+	balanceSupplyUint64 := balanceSupply.(string)
 	num, err := strconv.ParseInt(balanceSupplyUint64, 10, 64)
 	if err != nil {
 		panic(err)
@@ -312,6 +312,10 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 	ercTotalSupplyFloat64 := ercTotalSupply1[0].(float64)
 	ercTotalSupplyString := fmt.Sprintf("%.0f", ercTotalSupplyFloat64)
 	ercTotalSupplyInt64, err := strconv.ParseInt(ercTotalSupplyString, 10, 64)
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
 	bigInt := new(big.Int)
 	bigInt.SetString(ercTotalSupplyString, 10)
 	fmt.Println(ercString)
