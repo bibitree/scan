@@ -164,11 +164,15 @@ func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Messag
 		log.Error(err)
 		return
 	}
-	balanceSupplyData := balanceSupply.([]interface{})
-	balanceSupplyUint64 := balanceSupplyData[0].(*big.Int)
+	balanceSupplyData := balanceSupply.(interface{})
+	balanceSupplyUint64 := balanceSupplyData.(string)
+	num, err := strconv.ParseInt(balanceSupplyUint64, 10, 64)
+	if err != nil {
+		panic(err)
+	}
 	var event = sniffer.AddressData{
 		Address: message.String("To"),
-		Balance: balanceSupplyUint64,
+		Balance: big.NewInt(num),
 	}
 	log.Info(event)
 	mysqlOrders.InsertAddressData(event)
