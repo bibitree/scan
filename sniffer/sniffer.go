@@ -8,8 +8,10 @@ import (
 	"ethgo/util/ethx"
 	"fmt"
 	"math/big"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -225,24 +227,110 @@ func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, blockNumb
 	return backend.FilterLogs(ctx, query)
 }
 
-func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]TransactionInfo, error) {
-	transactions := make([]TransactionInfo, 0)
+func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) (transactions []TransactionInfo, err error) {
 
-	for blockNumber := big.NewInt(int64(fromBlockNumber)); blockNumber.Cmp(new(big.Int).SetUint64(toBlockNumber)) <= 0; blockNumber.Add(blockNumber, big.NewInt(1)) {
-		block, err := backend.BlockByNumber(ctx, blockNumber)
+	var wg sync.WaitGroup
+	var trxChan = make(chan []TransactionInfo)
+	var errChan = make(chan error)
+	var done = make(chan bool, 1)
+	for blockNumber := fromBlockNumber; blockNumber <= toBlockNumber; blockNumber++ {
+		wg.Add(1)
+
+		blockNumberBig := big.NewInt(0).SetUint64(blockNumber)
+		go func() {
+			defer wg.Done()
+
+			transactions, er := getBlockTransactions(ctx, backend, blockNumberBig)
+			if er != nil {
+				errChan <- er
+				return
+			}
+			trxChan <- transactions
+
+		}()
+	}
+
+	go func() {
+		for {
+			select {
+			case trx := <-trxChan:
+				transactions = append(transactions, trx...)
+			case e := <-errChan:
+				log.Error("getTransactionsInBlocks.getBlockTransactions:", e)
+				err = e
+				done <- true
+			case <-done:
+				close(trxChan)
+				close(errChan)
+				close(done)
+				return
+			}
+		}
+	}()
+
+	wg.Wait()
+	done <- true
+
+	sort.Slice(transactions, func(i, j int) bool {
+		return transactions[i].BlockNumber < transactions[j].BlockNumber
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return transactions, nil
+}
+
+func getBlockTransactions(ctx context.Context, backend eth.Backend, blockNumber *big.Int) (transactions []TransactionInfo, err error) {
+	block, err := backend.BlockByNumber(ctx, blockNumber)
+	if err != nil {
+		log.Error("getBlockTransactions.BlockByNumber", err)
+		return nil, err
+	}
+	blockReward, averageGasTipCap, err := getBlockRewar(block)
+	if err != nil {
+		log.Error("getBlockTransactions.getBlockRewar", err)
+		return nil, err
+	}
+	timestamp := block.Time()
+	minerAddress := block.Coinbase().String()
+	size := block.Size().String()
+	// .Status
+
+	txInfo := TransactionInfo{
+		BlockNumber:      block.NumberU64(),
+		BlockHash:        block.Hash(),
+		Timestamp:        timestamp,
+		MinerAddress:     minerAddress,
+		Size:             size,
+		BlockReward:      blockReward,
+		AverageGasTipCap: averageGasTipCap,
+		GasLimit:         block.GasLimit(),
+	}
+	transactions = append(transactions, txInfo)
+
+	for txIndex, tx := range block.Transactions() {
+		msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
 		if err != nil {
-			log.Info("err_ getBlock", err)
+			log.Info("err_ tx_Hash", tx.Hash().String())
 			continue
 		}
-		blockReward, averageGasTipCap, err := getBlockRewar(block)
+		receipt, err := backend.TransactionReceipt(ctx, tx.Hash())
+		var status bool
+		if err == nil && receipt != nil {
+			status = receipt.Status == types.ReceiptStatusSuccessful
+		}
 		timestamp := block.Time()
 		minerAddress := block.Coinbase().String()
 		size := block.Size().String()
 		// .Status
-
 		txInfo := TransactionInfo{
+			TxIndex:          uint(txIndex),
 			BlockNumber:      block.NumberU64(),
 			BlockHash:        block.Hash(),
+			From:             msg.From(),
+			Tx:               *tx,
+			Status:           status,
 			Timestamp:        timestamp,
 			MinerAddress:     minerAddress,
 			Size:             size,
@@ -251,44 +339,8 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 			GasLimit:         block.GasLimit(),
 		}
 		transactions = append(transactions, txInfo)
-		if err != nil {
-			log.Info("err_ getBlockRewar", err)
-			continue
-		}
-		if err == nil {
-			for txIndex, tx := range block.Transactions() {
-				msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
-				if err != nil {
-					log.Info("err_ tx_Hash", tx.Hash().String())
-					continue
-				}
-				receipt, err := backend.TransactionReceipt(ctx, tx.Hash())
-				var status bool
-				if err == nil && receipt != nil {
-					status = receipt.Status == types.ReceiptStatusSuccessful
-				}
-				timestamp := block.Time()
-				minerAddress := block.Coinbase().String()
-				size := block.Size().String()
-				// .Status
-				txInfo := TransactionInfo{
-					TxIndex:          uint(txIndex),
-					BlockNumber:      block.NumberU64(),
-					BlockHash:        block.Hash(),
-					From:             msg.From(),
-					Tx:               *tx,
-					Status:           status,
-					Timestamp:        timestamp,
-					MinerAddress:     minerAddress,
-					Size:             size,
-					BlockReward:      blockReward,
-					AverageGasTipCap: averageGasTipCap,
-					GasLimit:         block.GasLimit(),
-				}
-				transactions = append(transactions, txInfo)
-			}
-		}
 	}
+
 	return transactions, nil
 }
 
@@ -303,7 +355,7 @@ func getBlockRewar(block *types.Block) (string, string, error) {
 
 	// 安全检测2：检查txs是否为空
 	if len(txs) == 0 {
-		return "", "", errors.New("no transactions in block")
+		return "", "", nil
 	}
 
 	gasTipCapSum := new(big.Int)
