@@ -54,7 +54,7 @@ type Contract struct {
 	Name    string
 }
 
-func defaultEventHandler(*Event) error {
+func defaultEventHandler([]*Event) error {
 	panic("请注册 EventHandler")
 }
 
@@ -388,6 +388,9 @@ func getBlockRewar(block *types.Block) (string, string, error) {
 // }
 
 func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []TransactionInfo) error {
+	event2 := []*Event{}
+	var count int
+
 	for _, tx := range txs {
 		event := new(Event)
 		// 解析交易数据成为事件对象
@@ -395,17 +398,28 @@ func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []Tra
 			log.Panic(err)
 		}
 		log.Info("完成")
-		// 处理反序列化后的事件
-		if err := s.handleEvent(ctx, event); err != nil {
-			return err
+
+		// 存储解包后的事件到 event2 中
+		event2 = append(event2, event)
+		count++
+
+		// 满足一定数量或者全部读完后，处理事件
+		if count == 100 || len(event2) == len(txs) {
+			if err := s.handleEvent(ctx, event2); err != nil {
+				return err
+			}
+			count = 0
+			event2 = []*Event{}
 		}
-		// 在应用程序关闭时，可以取消所有正在进行的处理任务
+
+		// 检查上下文是否被取消
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
 		}
 	}
+
 	return nil
 }
 
@@ -525,7 +539,7 @@ func (s *Sniffer) unpackBlock(ctx context.Context, backend eth.Backend, tx *Tran
 	return nil
 }
 
-func (s *Sniffer) handleEvent(ctx context.Context, event *Event) error {
+func (s *Sniffer) handleEvent(ctx context.Context, event []*Event) error {
 	log.Info(event)
 	for {
 		err := s.handler(event)

@@ -16,7 +16,7 @@ func TestRegisterEvent(t *testing.T) {
 		panic(err)
 	}
 
-	sniffer.SetEventHandler(func(e *Event) error {
+	sniffer.SetEventHandler(func(e []*Event) error {
 		return nil
 	})
 }

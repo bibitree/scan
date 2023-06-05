@@ -205,4 +205,4 @@ func DeserializeJsonToMap(jsonData []byte) (map[string]interface{}, error) {
 	return data, nil
 }
 
-type EventHandler func(*Event) error
+type EventHandler func([]*Event) error

@@ -53,9 +53,9 @@ func (app *App) Run(ctx context.Context) error {
 	return app.base.Run(ctx, app.backend)
 }
 
-func (app *App) dispatchEvent(event *sniffer.Event) error {
-	log.Debugf("捕获事件: %v, ContractName=%v Address=%v ChainID=%v BlockNumber=%v, TxHash=%v, TxIndex=%v",
-		event.Name, event.ContractName, event.Address, event.ChainID, event.BlockNumber, event.TxHash, event.TxIndex)
+func (app *App) dispatchEvent(event []*sniffer.Event) error {
+	// log.Debugf("捕获事件: %v, ContractName=%v Address=%v ChainID=%v BlockNumber=%v, TxHash=%v, TxIndex=%v",
+	// 	event.Name, event.ContractName, event.Address, event.ChainID, event.BlockNumber, event.TxHash, event.TxIndex)
 
 	body, err := util.Post(app.conf.Sniffer.Callback, event)
 	if err != nil {
