@@ -155,11 +155,21 @@ func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Messag
 
 	i := new(big.Int)
 	i.SetString(value, 10)
-	var event = sniffer.AddressData{
-		Address: message.String("To"),
-		Balance: i,
+	var balance = Balance{
+		Address: message.String("Address"),
 	}
 
+	balanceSupply, err := t.ProcessBalance(balance)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	balanceSupplyData := balanceSupply.([]interface{})
+	balanceSupplyUint64 := balanceSupplyData[0].(*big.Int)
+	var event = sniffer.AddressData{
+		Address: message.String("To"),
+		Balance: balanceSupplyUint64,
+	}
 	log.Info(event)
 	mysqlOrders.InsertAddressData(event)
 }
@@ -390,6 +400,30 @@ func (t *ChainFinder) ProcessERCContractTxCount(contract Contract) (interface{},
 			res.Message = fmt.Sprintf("%v", res.Code)
 		}
 		return nil, errors.New(res.Message)
+	}
+
+	return res.Data, nil
+}
+
+func (t *ChainFinder) ProcessBalance(balance Balance) (interface{}, error) {
+
+	body, err := util.Post(t.conf.GetGasPrice, balance)
+	if err != nil {
+		return "", err
+	}
+
+	var res Response
+	if err := json.Unmarshal(body, &res); err != nil {
+		return "", err
+	}
+
+	log.Debugf("应答: %v", string(body))
+
+	if res.Code != http.StatusOK {
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("%v", res.Code)
+		}
+		return "", errors.New(res.Message)
 	}
 
 	return res.Data, nil

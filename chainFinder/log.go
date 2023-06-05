@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var log *zap.SugaredLogger = logx.Default("[TYCHE]")
+var log *zap.SugaredLogger = logx.Default("[ChainFinder]")
 
 func SetLogger(logger *zap.SugaredLogger) {
 	log = logger

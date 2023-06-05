@@ -57,6 +57,10 @@ type ByBlockNumber struct {
 	BlockNumber int `json:"BlockNumber" example:"100"`
 }
 
+type SolidityCodeVerify struct {
+	SolidityCode int `json:"solidityCode" example:"100"`
+}
+
 type ByTxHash struct {
 	TxHash string `json:"TxHash" example:"0x66e3076f604491c0944b3c885d451424fd644c4ebf61c333e0d4622d567af38b"`
 }

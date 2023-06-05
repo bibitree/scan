@@ -26,6 +26,11 @@ type ContractTxCount struct {
 	Count    string `json:"count" example:"49335849638413224831"`
 }
 
+type Balance struct {
+	// 钱包地址
+	Address string `json:"address" example:"0x51E72BDbA3A6Fc6337251581CB95625fa3A7767F"`
+}
+
 type Paginate struct {
 	Event        []model.EventData    `json:"event" example:"100"`
 	PageNumber   uint64               `json:"pageNumber" example:"49335849638413224831"`

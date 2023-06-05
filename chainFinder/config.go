@@ -19,6 +19,7 @@ type Config struct {
 	ContractTxCount           string `toml:"contractTxCount" json:"contractTxCount"`
 	ContractCreationTime      string `toml:"contractCreationTime" json:"contractCreationTime"`
 	GetGasPrice               string `toml:"getGasPrice" json:"getGasPrice"`
+	BalanceAt                 string `toml:"balanceAt" json:"balanceAt"`
 	GasPriceUpdateInterval    int64  `toml:"gasPriceUpdateInterval" json:"gasPriceUpdateInterval"`
 	PrefixChain               string `toml:"prefixChain" json:"prefixChain"`
 	MaxBumpingGasTimes        int64  `toml:"maxBumpingGasTimes" json:"maxBumpingGasTimes"`
@@ -70,6 +71,9 @@ func (c *Config) Init() error {
 	}
 	if c.GetGasPrice == "" {
 		return errors.New("getGasPrice cannot be set to empty")
+	}
+	if c.BalanceAt == "" {
+		return errors.New("balanceAt cannot be set to empty")
 	}
 
 	if c.GasPriceUpdateInterval < 1 {
