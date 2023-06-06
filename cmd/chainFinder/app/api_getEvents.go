@@ -13,8 +13,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 func (app *App) GetAllEvents(c *ginx.Context) {
@@ -363,7 +361,7 @@ func (app *App) GetCreateContractData(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	createContractData, err := mysqlOrders.GetCreateContractData(common.HexToAddress(request.Contract))
+	createContractData, err := mysqlOrders.GetCreateContractData(request.Contract)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 		return

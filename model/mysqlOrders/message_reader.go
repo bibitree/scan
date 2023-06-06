@@ -684,7 +684,7 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 func GetEventsByContractAddress(contractAddress string) ([]model.ContractData, error) {
 	events := make([]model.ContractData, 0)
 	// 构造sql语句，查询与指定合约地址匹配的数据
-	sqlStr := fmt.Sprintf("SELECT * FROM ercevent WHERE toAddress = '%s'", contractAddress)
+	sqlStr := fmt.Sprintf("SELECT * FROM event WHERE toAddress = '%s'", contractAddress)
 	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -842,15 +842,15 @@ func GetEventDataCountByAddress(address string) (uint64, error) {
 	return count, nil
 }
 
-func GetCreateContractData(contracaddress common.Address) (*sniffer.CreateContractData, error) {
+func GetCreateContractData(contracaddress string) (*sniffer.CreateContractData, error) {
 	// 查询指定 contracaddress 对应的数据
 	var bytecode []byte
 	var icon string
-	err := model.MysqlPool.QueryRow("SELECT bytecode, icon FROM newContracData WHERE contracaddress=?", contracaddress.String()).Scan(&bytecode, &icon)
+	err := model.MysqlPool.QueryRow("SELECT bytecode, icon FROM newContracData WHERE contracaddress=?", contracaddress).Scan(&bytecode, &icon)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// 如果没有找到对应的数据，返回 nil 和一个错误对象
-			return nil, fmt.Errorf("data not found for contracaddress %s", contracaddress.String())
+			return nil, fmt.Errorf("data not found for contracaddress %s", contracaddress)
 		}
 		// 处理其他错误
 		return nil, err
@@ -858,7 +858,7 @@ func GetCreateContractData(contracaddress common.Address) (*sniffer.CreateContra
 
 	// 创建一个新的 CreateContractData 对象，并返回
 	return &sniffer.CreateContractData{
-		ContractAddr:   contracaddress,
+		ContractAddr:   common.HexToAddress(contracaddress),
 		BytecodeString: fmt.Sprintf("%x", bytecode),
 		Icon:           icon,
 	}, nil
