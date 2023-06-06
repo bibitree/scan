@@ -179,6 +179,9 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			log.With(err).Error("Failed to filterLogs")
 			goto WAIT
 		}
+		if len(transaction) == 0 {
+			goto WAIT
+		}
 
 		// log.Info(transaction)
 		// Handle all logs.
@@ -397,7 +400,6 @@ func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []Tra
 		if err := s.unpackTransaction(ctx, backend, &tx, event); err != nil {
 			log.Panic(err)
 		}
-		log.Info("完成")
 
 		// 存储解包后的事件到 event2 中
 		event2 = append(event2, event)
