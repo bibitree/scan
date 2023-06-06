@@ -881,6 +881,9 @@ func GetCreateContractData(contracaddress string) (*sniffer.CreateContractData, 
 }
 
 func GetCreateContractIconData(contractAddresses []string) ([]sniffer.CreateContractData, error) {
+	if len(contractAddresses) == 0 {
+		return nil, nil
+	}
 	results := make([]sniffer.CreateContractData, 0)
 
 	// 构造查询语句，查询符合条件的数据
