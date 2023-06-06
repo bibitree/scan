@@ -174,16 +174,18 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 
 		// Executes a filter query.
 		// 执行日志筛选操作，从区块中抽取感兴趣的日志信息。
-		transaction, err := s.filterLogsAndTransactions(ctx, backend, fromBlockNumber, toBlockNumber)
+		blocks, transaction, err := s.filterLogsAndTransactions(ctx, backend, fromBlockNumber, toBlockNumber)
 		if err != nil {
 			log.With(err).Error("Failed to filterLogs")
 			goto WAIT
 		}
 
-		log.Info("获取到交易数%d,", len(transaction))
-		if len(transaction) < int(toBlockNumber-fromBlockNumber+1) {
+		log.Info("获取到交易数%d,", len(blocks), len(transaction))
+		if len(blocks) <= int(toBlockNumber-fromBlockNumber) {
 			goto WAIT
 		}
+
+		transaction = append(blocks, transaction...)
 
 		// log.Info(transaction)
 		// Handle all logs.
@@ -214,12 +216,12 @@ func (s *Sniffer) getSecurityBlockNumber(ctx context.Context, backend eth.Backen
 	return latestBlockNumber - securityHeight, nil
 }
 
-func (s *Sniffer) filterLogsAndTransactions(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]TransactionInfo, error) {
-	transactionsInfo, err := s.getTransactionsInBlocks(ctx, backend, fromBlockNumber, toBlockNumber)
+func (s *Sniffer) filterLogsAndTransactions(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) ([]TransactionInfo, []TransactionInfo, error) {
+	blocks, transactionsInfo, err := s.getTransactionsInBlocks(ctx, backend, fromBlockNumber, toBlockNumber)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return transactionsInfo, nil
+	return blocks, transactionsInfo, nil
 }
 
 func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, blockNumber *big.Int, to common.Address) ([]types.Log, error) {
@@ -232,9 +234,10 @@ func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, blockNumb
 	return backend.FilterLogs(ctx, query)
 }
 
-func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) (transactions []TransactionInfo, err error) {
+func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) (blocks []TransactionInfo, transactions []TransactionInfo, err error) {
 
 	var wg sync.WaitGroup
+	var blkChan = make(chan []TransactionInfo)
 	var trxChan = make(chan []TransactionInfo)
 	var errChan = make(chan error)
 	var done = make(chan bool, 1)
@@ -245,19 +248,21 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 		go func() {
 			defer wg.Done()
 
-			transactions, er := getBlockTransactions(ctx, backend, blockNumberBig)
+			blocks, transactions, er := getBlockTransactions(ctx, backend, blockNumberBig)
 			if er != nil {
 				errChan <- er
 				return
 			}
 			trxChan <- transactions
-
+			blkChan <- blocks
 		}()
 	}
 
 	go func() {
 		for {
 			select {
+			case blk := <-blkChan:
+				blocks = append(blocks, blk...)
 			case trx := <-trxChan:
 				transactions = append(transactions, trx...)
 			case e := <-errChan:
@@ -265,6 +270,7 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 				err = e
 				done <- true
 			case <-done:
+				close(blkChan)
 				close(trxChan)
 				close(errChan)
 				close(done)
@@ -281,21 +287,21 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return transactions, nil
+	return blocks, transactions, nil
 }
 
-func getBlockTransactions(ctx context.Context, backend eth.Backend, blockNumber *big.Int) (transactions []TransactionInfo, err error) {
+func getBlockTransactions(ctx context.Context, backend eth.Backend, blockNumber *big.Int) (blocks []TransactionInfo, transactions []TransactionInfo, err error) {
 	block, err := backend.BlockByNumber(ctx, blockNumber)
 	if err != nil {
 		log.Error("getBlockTransactions.BlockByNumber", err)
-		return nil, err
+		return nil, nil, err
 	}
 	blockReward, averageGasTipCap, err := getBlockRewar(block)
 	if err != nil {
 		log.Error("getBlockTransactions.getBlockRewar", err)
-		return nil, err
+		return nil, nil, err
 	}
 	timestamp := block.Time()
 	minerAddress := block.Coinbase().String()
@@ -312,7 +318,7 @@ func getBlockTransactions(ctx context.Context, backend eth.Backend, blockNumber 
 		AverageGasTipCap: averageGasTipCap,
 		GasLimit:         block.GasLimit(),
 	}
-	transactions = append(transactions, txInfo)
+	blocks = append(blocks, txInfo)
 
 	for txIndex, tx := range block.Transactions() {
 		msg, err := tx.AsMessage(types.LatestSignerForChainID(tx.ChainId()), big.NewInt(int64(block.NumberU64()))) // 获取交易对应的消息信息
@@ -346,7 +352,7 @@ func getBlockTransactions(ctx context.Context, backend eth.Backend, blockNumber 
 		transactions = append(transactions, txInfo)
 	}
 
-	return transactions, nil
+	return blocks, transactions, nil
 }
 
 func getBlockRewar(block *types.Block) (string, string, error) {
