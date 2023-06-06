@@ -181,7 +181,7 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 		}
 
 		log.Info("获取到交易数%d,", len(transaction))
-		if len(transaction) != int(toBlockNumber-fromBlockNumber+1) {
+		if len(transaction) < int(toBlockNumber-fromBlockNumber+1) {
 			goto WAIT
 		}
 
