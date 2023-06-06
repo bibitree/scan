@@ -179,8 +179,14 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			log.With(err).Error("Failed to filterLogs")
 			goto WAIT
 		}
-		if len(transaction) == 0 {
+
+		log.Info("获取到交易数%d,", len(transaction))
+		if len(transaction) != int(toBlockNumber-fromBlockNumber+1) {
 			goto WAIT
+		}
+
+		for _, v := range transaction {
+			log.Info(v.BlockNumber)
 		}
 
 		// log.Info(transaction)
