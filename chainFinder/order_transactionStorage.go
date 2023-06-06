@@ -353,7 +353,7 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 	ercToSymbolIF := ercToSymbol.([]interface{})
 	ercToSymbolString := ercToSymbolIF[0].(string)
 
-	ethContractTxCount, err := mysqlOrders.GetEventsByContractAddress(event)
+	ethContractTxCount, err := mysqlOrders.GetEventsCountByContractAddress(event)
 	if err != nil {
 		log.Error(err)
 		return "", err
@@ -374,7 +374,7 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 		ContractAddress:    event,
 		ContractName:       ercString,
 		Value:              ercTotalSupplyInt64,
-		ContractTxCount:    len(ethContractTxCount),
+		ContractTxCount:    ethContractTxCount,
 		NewContractAddress: address,
 		Decimals:           int(ercTotalSupplyInt),
 		Symbol:             ercToSymbolString,

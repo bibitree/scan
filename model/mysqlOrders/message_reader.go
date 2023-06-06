@@ -684,7 +684,7 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 func GetEventsByContractAddress(contractAddress string) ([]model.ContractData, error) {
 	events := make([]model.ContractData, 0)
 	// 构造sql语句，查询与指定合约地址匹配的数据
-	sqlStr := fmt.Sprintf("SELECT * FROM event WHERE toAddress = '%s'", contractAddress)
+	sqlStr := fmt.Sprintf("SELECT * FROM ercevent WHERE toAddress = '%s'", contractAddress)
 	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -751,6 +751,20 @@ func GetBlockDataByBlockNumber(blockNumber []string) ([]model.BlockData3, error)
 		events = append(events, event)
 	}
 	return events, nil
+}
+
+func GetEventsCountByContractAddress(contractAddress string) (int, error) {
+	var count int
+	// 构造sql语句，查询与指定合约地址匹配的数据条数
+	sqlStr := fmt.Sprintf("SELECT COUNT(*) FROM event WHERE toAddress = '%s'", contractAddress)
+	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := model.MysqlPool.QueryRowContext(ctx, sqlStr).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func GetTopAddresses(pageNo uint64, pageSize uint64) ([]model.AddressData, uint64, error) {
