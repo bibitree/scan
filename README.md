@@ -77,11 +77,17 @@ CREATE TABLE `ercTop` (
   `name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `value` decimal(64,0) DEFAULT '0',
   `newContracaddress` varchar(44) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `contractTxCount` int UNSIGNED NOT NULL
+  `contractTxCount` int UNSIGNED NOT null,
+  `decimals` int UNSIGNED DEFAULT '18',
+  `symbol` varchar(44)  NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
-
+CREATE TABLE `newContracData` (
+  `id` bigint NOT NULL,
+  `contracaddress` varchar(42) NOT NULL,
+  `bytecode` BLOB  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 --
 -- 琛ㄧ殑缁撴瀯 `event`
 --
@@ -148,10 +154,16 @@ ALTER TABLE `event`
   ADD KEY `idx_address` (`address`),
   ADD KEY `idx_toAddress` (`toAddress`),
   ADD KEY `idx_blockNumber` (`blockNumber`);
-
+ 
+ 
 --
 -- 鍦ㄥ鍑虹殑琛ㄤ娇鐢ˋUTO_INCREMENT
 --
+ALTER TABLE `newContracData`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_contracaddress` (`contracaddress`);
+
+
 
 --
 -- 浣跨敤琛ˋUTO_INCREMENT `addressTop`
@@ -159,6 +171,9 @@ ALTER TABLE `event`
 ALTER TABLE `addressTop`
   MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
 
+ALTER TABLE `newContracData`
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
+ 
 --
 -- 浣跨敤琛ˋUTO_INCREMENT `block`
 --

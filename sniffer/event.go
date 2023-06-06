@@ -58,6 +58,13 @@ type AddressData struct {
 	Balance *big.Int `json:"balance"`
 }
 
+type BalanceResponse struct {
+	// 钱包地址
+	Address string `json:"address" example:"0x51E72BDbA3A6Fc6337251581CB95625fa3A7767F"`
+	// 余额（WEI）
+	Wei string `json:"wei" example:"49335849638413224831"`
+}
+
 type BlockData struct {
 	BlockHash    common.Hash `json:"blockHash"`
 	BlockNumber  *big.Int    `json:"blockNumber"`
@@ -161,6 +168,8 @@ type ErcTop struct {
 	Value              int64  `json:"value"`
 	NewContractAddress string `json:"nonce"`
 	ContractTxCount    int    `json:"contractTxCount"`
+	Decimals           int    `json:"decimals"`
+	Symbol             string `json:"symbol"`
 }
 
 func (event *Event) IsEmpty() bool {

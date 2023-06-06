@@ -41,8 +41,12 @@ type Transact struct {
 // 	TxIndex      string                 `json:"txIndex"`
 // }
 
+type Evensts struct {
+	Evensts []Event
+}
+
 type Event struct {
-	Address          string                 `json:"address"`
+	Address          common.Address         `json:"address"`
 	ContractName     string                 `json:"contractName"`
 	ChainID          *big.Int               `json:"chainID"`
 	Data             map[string]interface{} `json:"data"`
@@ -57,14 +61,46 @@ type Event struct {
 	GasFeeCap        *big.Int               `json:"gasFeeCap"`
 	Value            string                 `json:"value"`
 	Nonce            uint64                 `json:"nonce"`
-	To               string                 `json:"to"`
+	To               common.Address         `json:"to"`
 	Status           bool                   `json:"status"`
 	Timestamp        uint64                 `json:"timestamp"`
 	MinerAddress     string                 `json:"minerAddress"`
 	Size             string                 `json:"size"`
 	BlockReward      string                 `json:"blockReward"`
 	AverageGasTipCap string                 `json:"averageGasTipCap"`
+	NewAddress       string                 `json:"newAddress"`
+	NewToAddress     string                 `json:"newToAddress"`
 	GasLimit         uint64                 `json:"gasLimit"`
 	Bytecode         []byte                 `json:"bytecode"`
 	ContractAddr     common.Address         `json:"contractAddr"`
 }
+
+// type Event struct {
+// 	Address          common.Address         `json:"address"`
+// 	ContractName     string                 `json:"contractName"`
+// 	ChainID          *big.Int               `json:"chainID"`
+// 	Data             map[string]interface{} `json:"data"`
+// 	BlockHash        common.Hash            `json:"blockHash"`
+// 	BlockNumber      uint64                 `json:"blockNumber"`
+// 	Name             string                 `json:"name"`
+// 	TxHash           common.Hash            `json:"txHash"`
+// 	TxIndex          string                 `json:"txIndex"`
+// 	Gas              uint64                 `json:"gas"`
+// 	GasPrice         *big.Int               `json:"gasPrice"`
+// 	GasTipCap        *big.Int               `json:"gasTipCap"`
+// 	GasFeeCap        *big.Int               `json:"gasFeeCap"`
+// 	Value            string                 `json:"value"`
+// 	Nonce            uint64                 `json:"nonce"`
+// 	To               common.Address         `json:"to"`
+// 	Status           bool                   `json:"status"`
+// 	Timestamp        uint64                 `json:"timestamp"`
+// 	MinerAddress     string                 `json:"minerAddress"`
+// 	Size             string                 `json:"size"`
+// 	BlockReward      string                 `json:"blockReward"`
+// 	AverageGasTipCap string                 `json:"averageGasTipCap"`
+// 	NewAddress       string                 `json:"newAddress"`
+// 	NewToAddress     string                 `json:"newToAddress"`
+// 	GasLimit         uint64                 `json:"gasLimit"`
+// 	Bytecode         []byte                 `json:"bytecode"`
+// 	ContractAddr     common.Address         `json:"contractAddr"`
+// }

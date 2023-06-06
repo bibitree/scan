@@ -51,7 +51,7 @@ type Order struct {
 func InsertContractData(event sniffer.ContractData) error {
 	// 查询是否存在相同的txHash
 	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM ercevent WHERE txHash=?", event.TxHash).Scan(&count)
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM ercevent WHERE txHash=?", event.TxHash.String()).Scan(&count)
 	if err != nil {
 		log.Error("查询是否存在相同的txHash时出错: ", err)
 		return nil
@@ -79,7 +79,7 @@ func InsertContractData(event sniffer.ContractData) error {
 func InsertCreateContractData(event sniffer.CreateContractData) error {
 	// 查询是否存在相同的txHash
 	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM newcontracdata WHERE contracaddress=?", event.ContractAddr).Scan(&count)
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM newcontracdata WHERE contracaddress=?", event.ContractAddr.String()).Scan(&count)
 	if err != nil {
 		log.Error("查询是否存在相同的contracaddress时出错: ", err)
 		return nil
@@ -136,7 +136,7 @@ func InsertAddressData(addressData sniffer.AddressData) error {
 func InsertBlock(block sniffer.BlockData) error {
 	// 查询是否存在相同的blockHash
 	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM block WHERE blockHash=?", block.BlockHash.Hex()).Scan(&count)
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM block WHERE blockHash=?", block.BlockHash.String()).Scan(&count)
 	if err != nil {
 		log.Error("查询是否存在相同的blockHash时出错: ", err)
 		return err
@@ -160,7 +160,7 @@ func InsertBlock(block sniffer.BlockData) error {
 func InsertEvent(event sniffer.EventData) error {
 	// 查询是否存在相同的txHash
 	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE txHash=?", event.TxHash).Scan(&count)
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM event WHERE txHash=?", event.TxHash.String()).Scan(&count)
 	if err != nil {
 		log.Error("查询是否存在相同的txHash时出错: ", err) //添加内容
 		return nil
@@ -186,7 +186,7 @@ func InsertEvent(event sniffer.EventData) error {
 }
 
 func InsertErcTop(event sniffer.ErcTop) error {
-	// 查询是否存在相同的contracaddress
+	// 查询是否存在相同的contracaddress  Decimals:   Symbol:
 	var count int
 	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM ercTop WHERE contracaddress=?", event.ContractAddress).Scan(&count)
 	if err != nil {
@@ -195,12 +195,12 @@ func InsertErcTop(event sniffer.ErcTop) error {
 	}
 
 	if count == 0 { // 如果不存在相同的contracaddress，直接插入新数据
-		sqlStr := `INSERT INTO ercTop(contracaddress, name, value, newContracaddress, contractTxCount) VALUES (?, ?, ?, ?, ?)`
+		sqlStr := `INSERT INTO ercTop(contracaddress, name, value, newContracaddress, contractTxCount,decimals,symbol) VALUES (?, ?, ?, ?, ?, ?, ?)`
 		// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		// 使用ExecContext执行sql语句，如果执行成功则返回nil
-		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractAddress, event.ContractName, event.Value, event.NewContractAddress, event.ContractTxCount)
+		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractAddress, event.ContractName, event.Value, event.NewContractAddress, event.ContractTxCount, event.Decimals, event.Symbol)
 		if err != nil {
 			log.Error("插入数据时出错: ", err)
 			return err

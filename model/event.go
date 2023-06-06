@@ -109,6 +109,8 @@ type ErcTop struct {
 	Value              int64  `json:"value"`
 	NewContractAddress string `json:"nonce"`
 	ContractTxCount    string `json:"contractTxCount"`
+	Decimals           int    `json:"decimals"`
+	Symbol             string `json:"symbol"`
 }
 
 type EventHandler func(*Event) error

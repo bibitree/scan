@@ -164,18 +164,53 @@ func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Messag
 		log.Error(err)
 		return
 	}
+	balanceSupplyData := balanceSupply.(interface{})
+	balanceSupplyDataMap := balanceSupplyData.(map[string]interface{})
+	// address := balanceSupplyDataMap["address"].(string)
+	wei := balanceSupplyDataMap["wei"].(string)
+	// balanceSupplyUint64 := balanceSupplyData.(sniffer.BalanceResponse)
+	// num, err := strconv.ParseInt(wei, 10, 64)
+	num := new(big.Int)
+	num, _ = num.SetString(wei, 10)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	var balance1 = Balance{
+		Address: message.String("To"),
+	}
+
+	balanceSupplyTo, err := t.ProcessBalance(balance1)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 	// balanceSupplyData := balanceSupply.(interface{})
-	balanceSupplyUint64 := balanceSupply.(string)
-	num, err := strconv.ParseInt(balanceSupplyUint64, 10, 64)
+	balanceSupplyDataTo := balanceSupplyTo.(interface{})
+	balanceSupplyDataMapTo := balanceSupplyDataTo.(map[string]interface{})
+	// address := balanceSupplyDataMap["address"].(string)
+	weiTo := balanceSupplyDataMapTo["wei"].(string)
+	numTo := new(big.Int)
+	numTo, _ = numTo.SetString(weiTo, 10)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	// numTo := big.NewInt(weiTo)
 	if err != nil {
 		panic(err)
 	}
 	var event = sniffer.AddressData{
-		Address: message.String("To"),
-		Balance: big.NewInt(num),
+		Address: message.String("Address"),
+		Balance: num,
 	}
 	log.Info(event)
+	var event2 = sniffer.AddressData{
+		Address: message.String("To"),
+		Balance: numTo,
+	}
 	mysqlOrders.InsertAddressData(event)
+	mysqlOrders.InsertAddressData(event2)
 }
 
 func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Message) {
@@ -281,18 +316,42 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 	var contract = Contract{
 		Contract: event,
 	}
-	ercName, err := t.ProcessERCName(contract)
+	ercName, err := t.ProcessERC(contract, "name")
 	if err != nil {
 		log.Error(err)
 		return "", err
 	}
 	ercSlice := ercName.([]interface{})
 	ercString := ercSlice[0].(string)
-	ercTotalSupply, err := t.ProcessERCTotalSupply(contract)
+	ercTotalSupply, err := t.ProcessERC(contract, "totalSupply")
 	if err != nil {
 		log.Error(err)
 		return "", err
 	}
+	ercTotalSupply1 := ercTotalSupply.([]interface{})
+	ercTotalSupplyFloat64 := ercTotalSupply1[0].(float64)
+	ercTotalSupplyString := fmt.Sprintf("%.0f", ercTotalSupplyFloat64)
+	ercTotalSupplyInt64, err := strconv.ParseInt(ercTotalSupplyString, 10, 64)
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
+
+	ercTodecimals, err := t.ProcessERC(contract, "decimals")
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
+	ercTodecimalsIF := ercTodecimals.([]interface{})
+	ercTotalSupplyInt := ercTodecimalsIF[0].(float64)
+
+	ercToSymbol, err := t.ProcessERC(contract, "symbol")
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
+	ercToSymbolIF := ercToSymbol.([]interface{})
+	ercToSymbolString := ercToSymbolIF[0].(string)
 
 	ethContractTxCount, err := mysqlOrders.GetEventsByContractAddress(event)
 	if err != nil {
@@ -308,14 +367,6 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 
 	fmt.Println(ercString)
 
-	ercTotalSupply1 := ercTotalSupply.([]interface{})
-	ercTotalSupplyFloat64 := ercTotalSupply1[0].(float64)
-	ercTotalSupplyString := fmt.Sprintf("%.0f", ercTotalSupplyFloat64)
-	ercTotalSupplyInt64, err := strconv.ParseInt(ercTotalSupplyString, 10, 64)
-	if err != nil {
-		log.Error(err)
-		return "", err
-	}
 	bigInt := new(big.Int)
 	bigInt.SetString(ercTotalSupplyString, 10)
 	fmt.Println(ercString)
@@ -325,44 +376,46 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 		Value:              ercTotalSupplyInt64,
 		ContractTxCount:    len(ethContractTxCount),
 		NewContractAddress: address,
+		Decimals:           int(ercTotalSupplyInt),
+		Symbol:             ercToSymbolString,
 	}
 	mysqlOrders.InsertErcTop(ercTop)
 	return ercString, nil
 }
 
-func (t *ChainFinder) ProcessERCName(contract Contract) (interface{}, error) {
+// func (t *ChainFinder) ProcessERCName(contract Contract) (interface{}, error) {
+
+// 	var call = Call{
+// 		Address: contract.Contract,
+// 		Method:  "name",
+// 	}
+// 	body, err := util.Post(t.conf.Callback, call)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	var res Response
+// 	if err := json.Unmarshal(body, &res); err != nil {
+// 		return nil, err
+// 	}
+
+// 	log.Debugf("应答: %v", string(body))
+
+// 	if res.Code != http.StatusOK {
+// 		if res.Message == "" {
+// 			res.Message = fmt.Sprintf("%v", res.Code)
+// 		}
+// 		return nil, errors.New(res.Message)
+// 	}
+
+// 	return res.Data, nil
+// }
+
+func (t *ChainFinder) ProcessERC(contract Contract, name string) (interface{}, error) {
 
 	var call = Call{
 		Address: contract.Contract,
-		Method:  "name",
-	}
-	body, err := util.Post(t.conf.Callback, call)
-	if err != nil {
-		return nil, err
-	}
-
-	var res Response
-	if err := json.Unmarshal(body, &res); err != nil {
-		return nil, err
-	}
-
-	log.Debugf("应答: %v", string(body))
-
-	if res.Code != http.StatusOK {
-		if res.Message == "" {
-			res.Message = fmt.Sprintf("%v", res.Code)
-		}
-		return nil, errors.New(res.Message)
-	}
-
-	return res.Data, nil
-}
-
-func (t *ChainFinder) ProcessERCTotalSupply(contract Contract) (interface{}, error) {
-
-	var call = Call{
-		Address: contract.Contract,
-		Method:  "totalSupply",
+		Method:  name,
 	}
 	body, err := util.Post(t.conf.Callback, call)
 	if err != nil {
@@ -415,7 +468,7 @@ func (t *ChainFinder) ProcessERCContractTxCount(contract Contract) (interface{},
 
 func (t *ChainFinder) ProcessBalance(balance Balance) (interface{}, error) {
 
-	body, err := util.Post(t.conf.GetGasPrice, balance)
+	body, err := util.Post(t.conf.BalanceAt, balance)
 	if err != nil {
 		return "", err
 	}

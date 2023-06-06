@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"ethgo/chainFinder"
+	"ethgo/model"
 	"ethgo/model/mysqlOrders"
 	"ethgo/model/orders"
 	"ethgo/proto"
@@ -67,11 +68,24 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
+	addressData, err := mysqlOrders.GetTopAddress(request.Address)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
 	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
+	addressDataList := []model.AddressData{
+		{
+			Address: addressData.Address,
+			Balance: addressData.Balance,
+			Count:   addressData.Count,
+		},
+	}
+
 	eventData := chainFinder.EventData{
+		AddressData:  addressDataList,
 		ContractData: Contracts,
 		Event:        events,
 	}

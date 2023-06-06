@@ -180,6 +180,15 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			goto WAIT
 		}
 
+		log.Info("获取到交易数%d,", len(transaction))
+		if len(transaction) != int(toBlockNumber-fromBlockNumber+1) {
+			goto WAIT
+		}
+
+		for _, v := range transaction {
+			log.Info(v.BlockNumber)
+		}
+
 		// log.Info(transaction)
 		// Handle all logs.
 		// 处理抽取到的日志信息，并在处理过程中出现错误则进入等待状态。
@@ -397,7 +406,6 @@ func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []Tra
 		if err := s.unpackTransaction(ctx, backend, &tx, event); err != nil {
 			log.Panic(err)
 		}
-		log.Info("完成")
 
 		// 存储解包后的事件到 event2 中
 		event2 = append(event2, event)

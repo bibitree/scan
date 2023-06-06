@@ -59,6 +59,7 @@ type EventData struct {
 	ContractData []model.ContractData `json:"contractData" example:"0"`
 	Event        []model.EventData    `json:"event" example:"100"`
 	BlockData    []model.BlockData3   `json:"blockData" example:"100"`
+	AddressData  []model.AddressData  `json:"addressData" example:"0"`
 	PageNumber   uint64               `json:"pageNumber" example:"49335849638413224831"`
 }
 

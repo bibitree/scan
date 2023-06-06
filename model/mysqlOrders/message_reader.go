@@ -395,7 +395,7 @@ func GetErcTopData(n uint64) ([]model.ErcTop, error) {
 	ercTops := make([]model.ErcTop, 0)
 	for rows.Next() {
 		ercTop := model.ErcTop{}
-		err := rows.Scan(&id, &ercTop.ContractAddress, &ercTop.ContractName, &ercTop.Value, &ercTop.NewContractAddress, &ercTop.ContractTxCount)
+		err := rows.Scan(&id, &ercTop.ContractAddress, &ercTop.ContractName, &ercTop.Value, &ercTop.NewContractAddress, &ercTop.ContractTxCount, &ercTop.Decimals, &ercTop.Symbol)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -800,6 +800,32 @@ func GetTopAddresses(pageNo uint64, pageSize uint64) ([]model.AddressData, uint6
 	}
 	totalPages := uint64(math.Ceil(float64(total) / float64(pageSize)))
 	return addresses, totalPages, nil
+}
+
+func GetTopAddress(address string) (model.AddressData, error) {
+	var sqlStr string
+	var params []interface{}
+	sqlStr = "SELECT address, Balance, Count FROM addressTop WHERE address = ?"
+	params = append(params, address)
+	rows, err := model.MysqlPool.Query(sqlStr, params...)
+	if err != nil {
+		return model.AddressData{}, err
+	}
+	defer rows.Close()
+	var addressData model.AddressData
+	for rows.Next() {
+		if err := rows.Scan(&addressData.Address, &addressData.Balance, &addressData.Count); err != nil {
+			return model.AddressData{}, err
+		}
+		addressData.Count, err = GetEventDataCountByAddress(addressData.Address)
+		if err != nil {
+			return model.AddressData{}, err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return model.AddressData{}, err
+	}
+	return addressData, nil
 }
 
 func GetEventDataCountByAddress(address string) (uint64, error) {
