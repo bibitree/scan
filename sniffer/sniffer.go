@@ -185,10 +185,6 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			goto WAIT
 		}
 
-		for _, v := range transaction {
-			log.Info(v.BlockNumber)
-		}
-
 		// log.Info(transaction)
 		// Handle all logs.
 		// 处理抽取到的日志信息，并在处理过程中出现错误则进入等待状态。
