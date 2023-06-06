@@ -13,8 +13,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 const BlockBeasReward = "10"
@@ -876,7 +874,7 @@ func GetCreateContractData(contracaddress string) (*sniffer.CreateContractData, 
 
 	// 创建一个新的 CreateContractData 对象，并返回
 	return &sniffer.CreateContractData{
-		ContractAddr:   common.HexToAddress(contracaddress),
+		ContractAddr:   contracaddress,
 		BytecodeString: fmt.Sprintf("%x", bytecode),
 		Icon:           icon,
 	}, nil

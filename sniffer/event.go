@@ -48,10 +48,10 @@ type ContractData struct {
 }
 
 type CreateContractData struct {
-	Bytecode       []byte         `json:"bytecode"`
-	ContractAddr   common.Address `json:"contractAddr"`
-	BytecodeString string         `json:"bytecodeString"`
-	Icon           string         `json:"icon"`
+	Bytecode       []byte `json:"bytecode"`
+	ContractAddr   string `json:"contractAddr"`
+	BytecodeString string `json:"bytecodeString"`
+	Icon           string `json:"icon"`
 }
 
 type AddressData struct {

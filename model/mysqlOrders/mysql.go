@@ -80,7 +80,7 @@ func InsertContractData(event sniffer.ContractData) error {
 func InsertCreateContractData(event sniffer.CreateContractData) error {
 	// 查询是否存在相同的txHash
 	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM newcontracdata WHERE contracaddress=?", event.ContractAddr.String()).Scan(&count)
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM newcontracdata WHERE contracaddress=?", event.ContractAddr).Scan(&count)
 	if err != nil {
 		log.Error("查询是否存在相同的contracaddress时出错: ", err)
 		return nil
@@ -92,7 +92,7 @@ func InsertCreateContractData(event sniffer.CreateContractData) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		// 使用ExecContext执行sql语句，如果执行成功则返回nil
-		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractAddr.String(), event.Bytecode)
+		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractAddr, event.Bytecode)
 		if err != nil {
 			log.Error("插入数据时出错: ", err)
 			return err
