@@ -39,7 +39,7 @@ func (app *App) GetEventsByBlockNumbers(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	Contracts, _, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
@@ -70,7 +70,7 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	Contracts, _, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
@@ -117,7 +117,7 @@ func (app *App) GetEventsByBlockNumber(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	Contracts, _, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
@@ -145,7 +145,7 @@ func (app *App) GetEventsByTxHash(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	Contracts, _, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
@@ -166,7 +166,7 @@ func (app *App) GetEventsByBlockHash(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	Contracts, _, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
@@ -189,11 +189,21 @@ func (app *App) GetERCTop(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, err := mysqlOrders.GetErcTopData(uint64(request.N))
+	events, addresss, err := mysqlOrders.GetErcTopData(uint64(request.N))
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	c.Success(http.StatusOK, "succ", events)
+	Contracts, err := mysqlOrders.GetCreateContractIconData(addresss)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+
+	contractData := chainFinder.ContractData{
+		CreateContractData: Contracts,
+		ErcTop:             events,
+	}
+
+	c.Success(http.StatusOK, "succ", contractData)
 }
 
 func (app *App) GetEventsByContract(c *ginx.Context) {
@@ -206,10 +216,15 @@ func (app *App) GetEventsByContract(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	Contracts, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	contracts, addresslist, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
+	createContractData, err := mysqlOrders.GetCreateContractIconData(addresslist)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+
 	decimals, err := app.ProcessCall(request.Contract, "decimals")
 	if err != nil {
 		c.Success(http.StatusOK, "succ", nil)
@@ -228,12 +243,13 @@ func (app *App) GetEventsByContract(c *ginx.Context) {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
 	paginate := chainFinder.Paginate{
-		Event:        events,
-		PageNumber:   n,
-		Decimals:     decimalsString,
-		CreationTime: time,
-		Address:      address,
-		ContractData: Contracts,
+		Event:              events,
+		PageNumber:         n,
+		Decimals:           decimalsString,
+		CreationTime:       time,
+		Address:            address,
+		ContractData:       contracts,
+		CreateContractData: createContractData,
 	}
 
 	c.Success(http.StatusOK, "succ", paginate)

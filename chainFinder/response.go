@@ -1,6 +1,11 @@
 package chainFinder
 
-import "ethgo/model"
+import (
+	"ethgo/model"
+	"ethgo/sniffer"
+
+	"github.com/ethereum/go-ethereum/common"
+)
 
 type Response struct {
 	Code    int         `json:"code"`
@@ -32,12 +37,13 @@ type Balance struct {
 }
 
 type Paginate struct {
-	Event        []model.EventData    `json:"event" example:"100"`
-	PageNumber   uint64               `json:"pageNumber" example:"49335849638413224831"`
-	Decimals     string               `json:"decimals" example:"49335849638413224831"`
-	CreationTime uint64               `json:"creationTime" example:"49335849638413224831"`
-	Address      string               `json:"address" example:"49335849638413224831"`
-	ContractData []model.ContractData `json:"contractData" example:"0"`
+	Event              []model.EventData            `json:"event" example:"100"`
+	PageNumber         uint64                       `json:"pageNumber" example:"49335849638413224831"`
+	Decimals           string                       `json:"decimals" example:"49335849638413224831"`
+	CreationTime       uint64                       `json:"creationTime" example:"49335849638413224831"`
+	Address            string                       `json:"address" example:"49335849638413224831"`
+	ContractData       []model.ContractData         `json:"contractData" example:"0"`
+	CreateContractData []sniffer.CreateContractData `json:"createContractData" example:"100"`
 }
 
 type ChainData struct {
@@ -61,6 +67,19 @@ type EventData struct {
 	BlockData    []model.BlockData3   `json:"blockData" example:"100"`
 	AddressData  []model.AddressData  `json:"addressData" example:"0"`
 	PageNumber   uint64               `json:"pageNumber" example:"49335849638413224831"`
+}
+
+type ContractData struct {
+	// 合约地址
+	ErcTop             []model.ErcTop               `json:"ercTop" example:"0"`
+	CreateContractData []sniffer.CreateContractData `json:"createContractData" example:"100"`
+}
+
+type CreateContractData struct {
+	Bytecode       []byte         `json:"bytecode"`
+	ContractAddr   common.Address `json:"contractAddr"`
+	BytecodeString string         `json:"bytecodeString"`
+	Icon           string         `json:"icon"`
 }
 
 type AddressData struct {

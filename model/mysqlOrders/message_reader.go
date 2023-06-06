@@ -381,28 +381,30 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 	return events, txHashList, pageCount, distinctBlockNumbers, nil
 }
 
-func GetErcTopData(n uint64) ([]model.ErcTop, error) {
+func GetErcTopData(n uint64) ([]model.ErcTop, []string, error) {
 	// 声明SQL语句，限制返回数量为 n
 	sqlStr := fmt.Sprintf("SELECT * FROM ercTop ORDER BY ContractTxCount DESC LIMIT %d", n)
 	// 查询所有数据
 	rows, err := model.MysqlPool.Query(sqlStr)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 	var id uint64
 	// 将查询结果遍历转化为ErcTop类型并返回
 	ercTops := make([]model.ErcTop, 0)
+	txHashList := make([]string, 0)
 	for rows.Next() {
 		ercTop := model.ErcTop{}
 		err := rows.Scan(&id, &ercTop.ContractAddress, &ercTop.ContractName, &ercTop.Value, &ercTop.NewContractAddress, &ercTop.ContractTxCount, &ercTop.Decimals, &ercTop.Symbol)
 		if err != nil {
 			log.Fatal(err)
 		}
+		txHashList = append(txHashList, ercTop.ContractAddress)
 		ercTops = append(ercTops, ercTop)
 	}
 
-	return ercTops, nil
+	return ercTops, txHashList, nil
 }
 
 func GetEventsByToAddressAndBlockNumber(toAddress string, pageNo uint64, pageSize uint64) ([]model.EventData, []string, uint64, error) {
@@ -650,7 +652,7 @@ func GetAllAddressesAndBlockRewardSum(number string) (string, error) {
 	return blockRewardSumStr, nil
 }
 
-func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
+func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, []string, error) {
 	events := make([]model.ContractData, 0)
 	// 将传入的TxHash列表转换为字符串形式，以便查询数据库
 	txHashStr := fmt.Sprintf("'%s'", strings.Join(txHashes, "','"))
@@ -661,9 +663,10 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 	defer cancel()
 	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
+	ContractList := make([]string, 0)
 	// 遍历查询结果并将其转换为ContractData类型
 	for rows.Next() {
 		var event model.ContractData
@@ -672,13 +675,14 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, error) {
 		var id uint64
 		err = rows.Scan(&id, &event.ContractName, &event.EventName, &data, &event.Name, &event.TxHash, &event.Contrac)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		// 解析data字段
 		json.Unmarshal([]byte(data), &event.Data)
+		ContractList = append(ContractList, event.Contrac)
 		events = append(events, event)
 	}
-	return events, nil
+	return events, ContractList, nil
 }
 
 func GetEventsByContractAddress(contractAddress string) ([]model.ContractData, error) {
@@ -876,4 +880,38 @@ func GetCreateContractData(contracaddress string) (*sniffer.CreateContractData, 
 		BytecodeString: fmt.Sprintf("%x", bytecode),
 		Icon:           icon,
 	}, nil
+}
+
+func GetCreateContractIconData(contractAddresses []string) ([]sniffer.CreateContractData, error) {
+	results := make([]sniffer.CreateContractData, 0)
+
+	// 构造查询语句，查询符合条件的数据
+	sqlStr := "SELECT contracaddress, icon FROM newContracData WHERE contracaddress IN (?" + strings.Repeat(",?", len(contractAddresses)-1) + ")"
+	stmt, err := model.MysqlPool.Prepare(sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	// 传入查询参数并执行查询
+	args := []interface{}{}
+	for _, addr := range contractAddresses {
+		args = append(args, addr)
+	}
+	rows, err := stmt.Query(args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// 遍历查询结果并将其转换为 CreateContractData 类型
+	for rows.Next() {
+		var result sniffer.CreateContractData
+		if err := rows.Scan(&result.ContractAddr, &result.Icon); err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+
+	return results, nil
 }
