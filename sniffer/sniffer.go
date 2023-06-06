@@ -325,11 +325,11 @@ func getBlockTransactions(ctx context.Context, backend eth.Backend, blockNumber 
 			log.Info("err_ tx_Hash", tx.Hash().String())
 			continue
 		}
-		receipt, err := backend.TransactionReceipt(ctx, tx.Hash())
-		var status bool
-		if err == nil && receipt != nil {
-			status = receipt.Status == types.ReceiptStatusSuccessful
-		}
+		// receipt, err := backend.TransactionReceipt(ctx, tx.Hash())
+		var status bool = true
+		// if err == nil && receipt != nil {
+		// 	status = receipt.Status == types.ReceiptStatusSuccessful
+		// }
 		timestamp := block.Time()
 		minerAddress := block.Coinbase().String()
 		size := block.Size().String()
