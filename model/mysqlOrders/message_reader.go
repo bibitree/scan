@@ -845,7 +845,8 @@ func GetEventDataCountByAddress(address string) (uint64, error) {
 func GetCreateContractData(contracaddress common.Address) (*sniffer.CreateContractData, error) {
 	// 查询指定 contracaddress 对应的数据
 	var bytecode []byte
-	err := model.MysqlPool.QueryRow("SELECT bytecode FROM newContracData WHERE contracaddress=?", contracaddress.String()).Scan(&bytecode)
+	var icon string
+	err := model.MysqlPool.QueryRow("SELECT bytecode, icon FROM newContracData WHERE contracaddress=?", contracaddress.String()).Scan(&bytecode, &icon)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// 如果没有找到对应的数据，返回 nil 和一个错误对象
@@ -859,5 +860,6 @@ func GetCreateContractData(contracaddress common.Address) (*sniffer.CreateContra
 	return &sniffer.CreateContractData{
 		ContractAddr:   contracaddress,
 		BytecodeString: fmt.Sprintf("%x", bytecode),
+		Icon:           icon,
 	}, nil
 }

@@ -87,7 +87,7 @@ CREATE TABLE `newContracData` (
   `id` bigint NOT NULL,
   `contracaddress` varchar(42) NOT NULL,
   `bytecode` BLOB  ,
-  `Icon` varchar(44)  NOT NULL
+  `Icon` varchar(44)  CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 --
 -- 琛ㄧ殑缁撴瀯 `event`
