@@ -880,6 +880,19 @@ func GetCreateContractData(contracaddress string) (*sniffer.CreateContractData, 
 	}, nil
 }
 
+func IsContractDataExists(contracaddress string) (bool, error) {
+	// 查询指定 contracaddress 对应的数据
+	var count int
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM newContracData WHERE contracaddress=?", contracaddress).Scan(&count)
+	if err != nil {
+		// 处理错误
+		return false, err
+	}
+
+	// 如果 count 大于 0，则说明存在匹配数据
+	return count > 0, nil
+}
+
 func GetCreateContractIconData(contractAddresses []string) ([]sniffer.CreateContractData, error) {
 	if len(contractAddresses) == 0 {
 		return nil, nil

@@ -392,3 +392,17 @@ func (app *App) GetCreateContractData(c *ginx.Context) {
 	}
 	c.Success(http.StatusOK, "succ", createContractData)
 }
+
+func (app *App) IsContractAddress(c *ginx.Context) {
+	var request = new(proto.ByAddress)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	createContractData, err := mysqlOrders.IsContractDataExists(request.Address)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+		return
+	}
+	c.Success(http.StatusOK, "succ", createContractData)
+}
