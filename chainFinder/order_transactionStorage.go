@@ -194,10 +194,6 @@ func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Messag
 		log.Error(err)
 		return
 	}
-	// numTo := big.NewInt(weiTo)
-	if err != nil {
-		panic(err)
-	}
 	var event = sniffer.AddressData{
 		Address: message.String("Address"),
 		Balance: num,

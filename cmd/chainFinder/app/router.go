@@ -19,6 +19,7 @@ func (app *App) Router(g *gin.Engine) {
 	g.POST("/chainFinder/api/GetBlockNum", ginx.WrapHandler(app.GetBlockNum))
 	g.POST("/chainFinder/api/GetAddressList", ginx.WrapHandler(app.GetAddressList))
 	g.POST("/chainFinder/api/GetEventsByAddress", ginx.WrapHandler(app.GetEventsByAddress))
+	g.POST("/chainFinder/api/GetAddres", ginx.WrapHandler(app.GetAddres))
 	g.POST("/chainFinder/api/GetCreateContractData", ginx.WrapHandler(app.GetCreateContractData))
 
 }

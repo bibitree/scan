@@ -66,11 +66,25 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	addressData, err := mysqlOrders.GetTopAddress(request.Address)
+	Contracts, _, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	Contracts, _, err := mysqlOrders.GetEventsByTxHashes(Contract)
+
+	eventData := chainFinder.EventData{
+		ContractData: Contracts,
+		Event:        events,
+	}
+	c.Success(http.StatusOK, "succ", eventData)
+}
+
+func (app *App) GetAddres(c *ginx.Context) {
+	var request = new(proto.ByAddress)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	addressData, err := mysqlOrders.GetTopAddress(request.Address)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
@@ -81,13 +95,7 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 			Count:   addressData.Count,
 		},
 	}
-
-	eventData := chainFinder.EventData{
-		AddressData:  addressDataList,
-		ContractData: Contracts,
-		Event:        events,
-	}
-	c.Success(http.StatusOK, "succ", eventData)
+	c.Success(http.StatusOK, "succ", addressDataList)
 }
 
 func (app *App) GetAddressList(c *ginx.Context) {
