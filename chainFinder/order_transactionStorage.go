@@ -55,9 +55,7 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	}
 
 	Value := message.String("Value")
-	if Value != "0" && Value != "" {
-		t.AddressStorage(ctx, message, Value)
-	}
+	t.AddressStorage(ctx, message)
 
 	chainID, err := message.Int("ChainID")
 	if err != nil {
@@ -147,14 +145,14 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 	return t.ack(message)
 }
 
-func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Message, value string) {
+func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Message) {
 	log.Debugf("ENTER @ContractStorage 订单")
 	defer log.Debugf("  LEAVE @ContractStorage 订单")
 
 	log.Info(message.String("Address"))
 
-	i := new(big.Int)
-	i.SetString(value, 10)
+	// i := new(big.Int)
+	// i.SetString(value, 10)
 	var balance = Balance{
 		Address: message.String("Address"),
 	}

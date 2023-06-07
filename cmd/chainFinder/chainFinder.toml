@@ -72,10 +72,10 @@ CallbackRetryInterval = 15
 
 [backend]
 # Addr = "http://127.0.0.1:8545"
-# Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
+  Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
 # Addr = "http://47.98.198.159:8989"
 #Addr = "https://matic-mumbai.chainstacklabs.com"
- Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
+# Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
 DefaultGasLimit = 5500000
 TransactionsPerSecond = 20
 
