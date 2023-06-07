@@ -78,25 +78,16 @@ func InsertContractData(event sniffer.ContractData) error {
 }
 
 func InsertCreateContractData(event sniffer.CreateContractData) error {
-	// 查询是否存在相同的txHash
-	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM newcontracdata WHERE contracaddress=?", event.ContractAddr).Scan(&count)
-	if err != nil {
-		log.Error("查询是否存在相同的contracaddress时出错: ", err)
-		return nil
-	}
 
-	if count == 0 { // 如果不存在相同的txHash，直接插入新数据
-		sqlStr := `INSERT INTO newcontracdata(contracaddress,bytecode,timestamp) VALUES (?, ?, ?)`
-		// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		// 使用ExecContext执行sql语句，如果执行成功则返回nil
-		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractAddr, event.Bytecode, event.Time)
-		if err != nil {
-			log.Error("插入数据时出错: ", err)
-			return err
-		}
+	sqlStr := `INSERT INTO newContracData(contracaddress,bytecode,timestamp) VALUES (?, ?, ?)`
+	// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	// 使用ExecContext执行sql语句，如果执行成功则返回nil
+	_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractAddr, event.Bytecode, event.Time)
+	if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
+		log.Error("插入数据时出错: ", err)
+		return err
 	}
 	return nil
 }
