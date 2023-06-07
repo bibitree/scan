@@ -164,10 +164,7 @@ func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Messag
 	}
 	balanceSupplyData := balanceSupply.(interface{})
 	balanceSupplyDataMap := balanceSupplyData.(map[string]interface{})
-	// address := balanceSupplyDataMap["address"].(string)
 	wei := balanceSupplyDataMap["wei"].(string)
-	// balanceSupplyUint64 := balanceSupplyData.(sniffer.BalanceResponse)
-	// num, err := strconv.ParseInt(wei, 10, 64)
 	num := new(big.Int)
 	num, _ = num.SetString(wei, 10)
 	if err != nil {
@@ -250,10 +247,16 @@ func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Messa
 func (t *ChainFinder) CreateContractStorage(ctx context.Context, message *orders.Message) {
 	log.Debugf("ENTER @ContractStorage 订单")
 	defer log.Debugf("  LEAVE @ContractStorage 订单")
+	timestamp, err := message.Int("Timestamp")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return
+	}
 
 	var event = sniffer.CreateContractData{
 		Bytecode:     message.Bytes("Bytecode"),
 		ContractAddr: message.String("ContractAddr"),
+		Time:         timestamp,
 	}
 
 	log.Info(event)
