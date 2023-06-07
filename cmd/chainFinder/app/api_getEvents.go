@@ -404,5 +404,10 @@ func (app *App) IsContractAddress(c *ginx.Context) {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 		return
 	}
-	c.Success(http.StatusOK, "succ", createContractData)
+
+	isContractAddressResponse := chainFinder.IsContractAddressResponse{
+		Address:    request.Address,
+		IsContract: createContractData,
+	}
+	c.Success(http.StatusOK, "succ", isContractAddressResponse)
 }
