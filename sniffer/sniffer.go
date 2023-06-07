@@ -469,9 +469,11 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 		// 如果交易的接收方为 nil，则表示这是一个合约创建交易
 		out.Bytecode = tx.Tx.Data()
 		out.ContractAddr = crypto.CreateAddress(out.Address, tx.Tx.Nonce())
+		out.To = crypto.CreateAddress(out.Address, tx.Tx.Nonce())
 		if out.ContractAddr == (common.Address{}) {
 			out.Bytecode = nil
 			out.ContractAddr = common.Address{}
+			out.To = common.Address{}
 		}
 	} else {
 		if len(tx.Tx.Data()) > 0 {
