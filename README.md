@@ -87,8 +87,8 @@ CREATE TABLE `newContracData` (
   `id` bigint NOT NULL,
   `contracaddress` varchar(42) NOT NULL,
   `bytecode` BLOB  ,
-  `abi` BLOB  ,
-  `code` BLOB  ,
+  `abi` LONGTEXT NOT NULL ,
+  `code` LONGTEXT NOT null,
   `timestamp` int UNSIGNED NOT NULL DEFAULT '0',
   `Icon` varchar(44)  CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT ''
   
