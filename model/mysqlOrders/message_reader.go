@@ -3,7 +3,6 @@ package mysqlOrders
 import (
 	"context"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"ethgo/model"
 	"ethgo/sniffer"
@@ -910,9 +909,6 @@ func GetCreateContractData(contracaddress string) (*sniffer.CreateContractData, 
 		// 处理其他错误
 		return nil, err
 	}
-
-	// 返回 CreateContractData 对象
-	data.BytecodeString = hex.EncodeToString(data.Bytecode)
 	return &data, nil
 }
 
