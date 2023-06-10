@@ -488,9 +488,29 @@ func (app *App) CompareBytecodeAndSourceCode(c *ginx.Context) {
 		return
 	}
 
+	// 获取合约地址
+	solcVersion := c.PostForm("SolcVersion")
+	if solcVersion == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing contract solcVersion"})
+		return
+	}
+
+	// 获取合约地址
+	optimizationRuns := c.PostForm("OptimizationRuns")
+	var optimizationRunsInt int
+	if solcVersion != "" {
+		optimizationRunsInt, err = strconv.Atoi(optimizationRuns)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
 	compareBytecodeAndSourceCode := chainFinder.CompareBytecodeAndSourceCode{
-		Code:           fileContentAsString,
-		BytecodeString: createContractData.BytecodeString,
+		Code:             fileContentAsString,
+		BytecodeString:   createContractData.BytecodeString,
+		SolcVersion:      solcVersion,
+		OptimizationRuns: optimizationRunsInt,
 	}
 
 	decimals, err := app.ProcessCompareBytecodeAndSourceCode(compareBytecodeAndSourceCode)
