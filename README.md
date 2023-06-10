@@ -27,7 +27,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `addressTop` (
   `id` bigint NOT NULL,
-  `address` varchar(42) NOT null UNIQUE,
+  `address` varchar(42) NOT null,
   `Balance` decimal(28,0) NOT NULL,
   `Count` int UNSIGNED DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -73,9 +73,9 @@ CREATE TABLE `ercevent` (
 
 CREATE TABLE `ercTop` (
   `id` bigint NOT NULL,
-  `contracaddress` varchar(42) NOT null UNIQUE,
+  `contracaddress` varchar(42) NOT null,
   `name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `value` varchar(255) DEFAULT '0',
+  `value` decimal(64,0) DEFAULT '0',
   `newContracaddress` varchar(44) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `contractTxCount` int UNSIGNED NOT null,
   `decimals` int UNSIGNED DEFAULT '18',
@@ -85,7 +85,7 @@ CREATE TABLE `ercTop` (
 -- --------------------------------------------------------
 CREATE TABLE `newContracData` (
   `id` bigint NOT NULL,
-  `contracaddress` varchar(42) NOT null UNIQUE,
+  `contracaddress` varchar(42) NOT null,
   `bytecode` BLOB  ,
   `abi` LONGTEXT  ,
   `code` LONGTEXT ,
@@ -102,7 +102,7 @@ CREATE TABLE `event` (
   `chainID` int UNSIGNED NOT NULL,
   `blockHash` varchar(66) NOT NULL,
   `blockNumber` bigint DEFAULT '0',
-  `txHash` varchar(66) DEFAULT null UNIQUE,
+  `txHash` varchar(66) DEFAULT null,
   `txIndex` int DEFAULT '0',
   `gas` bigint DEFAULT '0',
   `gasPrice` bigint DEFAULT '0',
@@ -126,7 +126,7 @@ CREATE TABLE `event` (
 --
 ALTER TABLE `addressTop`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `address` (`address`);
+  ADD unique KEY `address` (`address`);
 
 --
 -- 琛ㄧ殑绱㈠紩 `block`
@@ -141,14 +141,14 @@ ALTER TABLE `block`
 --
 ALTER TABLE `ercevent`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_txHash` (`txHash`);
+  ADD unique KEY `idx_txHash` (`txHash`);
 
 --
 -- 琛ㄧ殑绱㈠紩 `ercTop`
 --
 ALTER TABLE `ercTop`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `contracaddress` (`contracaddress`);
+  add UNIQUE KEY `contracaddress` (`contracaddress`);
 
 --
 -- 琛ㄧ殑绱㈠紩 `event`
@@ -157,7 +157,8 @@ ALTER TABLE `event`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_address` (`address`),
   ADD KEY `idx_toAddress` (`toAddress`),
-  ADD KEY `idx_blockNumber` (`blockNumber`);
+  ADD KEY `idx_blockNumber` (`blockNumber`),
+  ADD unique KEY `idx_txHash` (`txHash`);
  
  
 --
@@ -165,7 +166,7 @@ ALTER TABLE `event`
 --
 ALTER TABLE `newContracData`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_contracaddress` (`contracaddress`);
+  ADD unique KEY `idx_contracaddress` (`contracaddress`);
 
 
 
