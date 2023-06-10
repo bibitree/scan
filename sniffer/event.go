@@ -55,6 +55,14 @@ type CreateContractData struct {
 	Time           int    `json:"timestamp"`
 }
 
+type CreateContractIconData struct {
+	Bytecode       []byte `json:"bytecode"`
+	ContractAddr   string `json:"contractAddr"`
+	BytecodeString string `json:"bytecodeString"`
+	Icon           string `json:"icon"`
+	Time           int    `json:"timestamp"`
+}
+
 type AddressData struct {
 	Address string   `json:"address"`
 	Balance *big.Int `json:"balance"`
@@ -165,13 +173,13 @@ type ChainData struct {
 }
 
 type ErcTop struct {
-	ContractAddress    string `json:"contractAddress"`
-	ContractName       string `json:"contractName"`
-	Value              int64  `json:"value"`
-	NewContractAddress string `json:"nonce"`
-	ContractTxCount    int    `json:"contractTxCount"`
-	Decimals           int    `json:"decimals"`
-	Symbol             string `json:"symbol"`
+	ContractAddress    string   `json:"contractAddress"`
+	ContractName       string   `json:"contractName"`
+	Value              *big.Int `json:"value"`
+	NewContractAddress string   `json:"nonce"`
+	ContractTxCount    int      `json:"contractTxCount"`
+	Decimals           int      `json:"decimals"`
+	Symbol             string   `json:"symbol"`
 }
 
 func (event *Event) IsEmpty() bool {

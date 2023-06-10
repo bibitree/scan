@@ -196,7 +196,8 @@ func InsertErcTop(event sniffer.ErcTop) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		// 使用ExecContext执行sql语句，如果执行成功则返回nil
-		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractAddress, event.ContractName, event.Value, event.NewContractAddress, event.ContractTxCount, event.Decimals, event.Symbol)
+		value := event.Value.String()
+		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractAddress, event.ContractName, value, event.NewContractAddress, event.ContractTxCount, event.Decimals, event.Symbol)
 		if err != nil {
 			log.Error("插入数据时出错: ", err)
 			return err
@@ -205,7 +206,7 @@ func InsertErcTop(event sniffer.ErcTop) error {
 		sqlStr := `UPDATE ercTop SET name=?, value=?, newContracaddress=?, contractTxCount=? WHERE contracaddress=?`
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractName, event.Value, event.NewContractAddress, event.ContractTxCount, event.ContractAddress)
+		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractName, event.Value.String(), event.NewContractAddress, event.ContractTxCount, event.ContractAddress)
 		if err != nil {
 			log.Error("更新数据时出错: ", err)
 			return err

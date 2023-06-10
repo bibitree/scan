@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	// "ethgo/model/mysqlOrders"
 	"ethgo/model/mysqlOrders"
@@ -325,13 +324,21 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 		log.Error(err)
 		return "", err
 	}
-	ercTotalSupply1 := ercTotalSupply.([]interface{})
-	ercTotalSupplyFloat64 := ercTotalSupply1[0].(float64)
+	ercTotalSupply1, ok := ercTotalSupply.([]interface{})
+	if !ok {
+		log.Fatal("ercTotalSupply is not of type []interface{}")
+	}
+
+	ercTotalSupplyFloat64, ok := ercTotalSupply1[0].(float64)
+	if !ok {
+		log.Fatal("ercTotalSupply1[0] is not of type float64")
+	}
+
 	ercTotalSupplyString := fmt.Sprintf("%.0f", ercTotalSupplyFloat64)
-	ercTotalSupplyInt64, err := strconv.ParseInt(ercTotalSupplyString, 10, 64)
-	if err != nil {
-		log.Error(err)
-		return "", err
+	ercTotalSupplyBigInt := new(big.Int)
+	ercTotalSupplyBigIntData, ok := ercTotalSupplyBigInt.SetString(ercTotalSupplyString, 10)
+	if !ok {
+		log.Fatal("Error converting ercTotalSupplyString to big.Int")
 	}
 
 	ercTodecimals, err := t.ProcessERC(contract, "decimals")
@@ -370,7 +377,7 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 	var ercTop = sniffer.ErcTop{
 		ContractAddress:    event,
 		ContractName:       ercString,
-		Value:              ercTotalSupplyInt64,
+		Value:              ercTotalSupplyBigIntData,
 		ContractTxCount:    ethContractTxCount,
 		NewContractAddress: address,
 		Decimals:           int(ercTotalSupplyInt),

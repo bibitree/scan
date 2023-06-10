@@ -5,38 +5,39 @@ import (
 )
 
 type Config struct {
-	Listen                    string `toml:"listen" json:"listen"`
-	ReadTimeout               int    `toml:"readTimeout" json:"readTimeout"`
-	WriteTimeout              int    `toml:"writeTimeout" json:"writeTimeout"`
-	MaxHeaderBytes            int    `toml:"maxHeaderBytes" json:"maxHeaderBytes"`
-	Account                   string `toml:"account" json:"account"`
-	PrivateKey                string `toml:"privateKey" json:"privateKey"`
-	EstimatorJS               string `toml:"estimatorJS" json:"estimatorJS"`
-	ErrorURI                  string `toml:"errorURI" json:"errorURI"`
-	FailedURI                 string `toml:"failedURI" json:"failedURI"`
-	SucceedURI                string `toml:"succeedURI" json:"succeedURI"`
-	Callback                  string `toml:"callback" json:"callback"`
-	ContractTxCount           string `toml:"contractTxCount" json:"contractTxCount"`
-	ContractCreationTime      string `toml:"contractCreationTime" json:"contractCreationTime"`
-	GetGasPrice               string `toml:"getGasPrice" json:"getGasPrice"`
-	BalanceAt                 string `toml:"balanceAt" json:"balanceAt"`
-	GasPriceUpdateInterval    int64  `toml:"gasPriceUpdateInterval" json:"gasPriceUpdateInterval"`
-	PrefixChain               string `toml:"prefixChain" json:"prefixChain"`
-	MaxBumpingGasTimes        int64  `toml:"maxBumpingGasTimes" json:"maxBumpingGasTimes"`
-	ErrorNumberOfConcurrent   int64  `toml:"errorNumberOfConcurrent" json:"errorNumberOfConcurrent"`
-	FailedNumberOfConcurrent  int64  `toml:"failedNumberOfConcurrent" json:"failedNumberOfConcurrent"`
-	PendingNumberOfConcurrent int64  `toml:"pendingNumberOfConcurrent" json:"pendingNumberOfConcurrent"`
-	SentNumberOfConcurrent    int64  `toml:"sentNumberOfConcurrent" json:"sentNumberOfConcurrent"`
-	SucceedNumberOfConcurrent int64  `toml:"succeedNumberOfConcurrent" json:"succeedNumberOfConcurrent"`
-	PendingRetryInterval      int64  `toml:"pendingRetryInterval" json:"pendingRetryInterval"`
-	SentRetryInterval         int64  `toml:"sentRetryInterval" json:"sentRetryInterval"`
-	RedisRetryInterval        int64  `toml:"redisRetryInterval" json:"redisRetryInterval"`
-	NetworkRetryInterval      int64  `toml:"networkRetryInterval" json:"networkRetryInterval"`
-	WaitMinedRetryInterval    int64  `toml:"waitMinedRetryInterval" json:"waitMinedRetryInterval"`
-	CallbackRetryInterval     int64  `toml:"callbackRetryInterval" json:"callbackRetryInterval"`
-	EnableTLS                 bool   `toml:"enableTLS" json:"enableTLS"`
-	CertFile                  string `toml:"certFile" json:"certFile"`
-	KeyFile                   string `toml:"keyFile" json:"keyFile"`
+	Listen                       string `toml:"listen" json:"listen"`
+	ReadTimeout                  int    `toml:"readTimeout" json:"readTimeout"`
+	WriteTimeout                 int    `toml:"writeTimeout" json:"writeTimeout"`
+	MaxHeaderBytes               int    `toml:"maxHeaderBytes" json:"maxHeaderBytes"`
+	Account                      string `toml:"account" json:"account"`
+	PrivateKey                   string `toml:"privateKey" json:"privateKey"`
+	EstimatorJS                  string `toml:"estimatorJS" json:"estimatorJS"`
+	ErrorURI                     string `toml:"errorURI" json:"errorURI"`
+	FailedURI                    string `toml:"failedURI" json:"failedURI"`
+	SucceedURI                   string `toml:"succeedURI" json:"succeedURI"`
+	Callback                     string `toml:"callback" json:"callback"`
+	ContractTxCount              string `toml:"contractTxCount" json:"contractTxCount"`
+	ContractCreationTime         string `toml:"contractCreationTime" json:"contractCreationTime"`
+	GetGasPrice                  string `toml:"getGasPrice" json:"getGasPrice"`
+	BalanceAt                    string `toml:"balanceAt" json:"balanceAt"`
+	CompareBytecodeAndSourceCode string `toml:"compareBytecodeAndSourceCode" json:"compareBytecodeAndSourceCode"`
+	GasPriceUpdateInterval       int64  `toml:"gasPriceUpdateInterval" json:"gasPriceUpdateInterval"`
+	PrefixChain                  string `toml:"prefixChain" json:"prefixChain"`
+	MaxBumpingGasTimes           int64  `toml:"maxBumpingGasTimes" json:"maxBumpingGasTimes"`
+	ErrorNumberOfConcurrent      int64  `toml:"errorNumberOfConcurrent" json:"errorNumberOfConcurrent"`
+	FailedNumberOfConcurrent     int64  `toml:"failedNumberOfConcurrent" json:"failedNumberOfConcurrent"`
+	PendingNumberOfConcurrent    int64  `toml:"pendingNumberOfConcurrent" json:"pendingNumberOfConcurrent"`
+	SentNumberOfConcurrent       int64  `toml:"sentNumberOfConcurrent" json:"sentNumberOfConcurrent"`
+	SucceedNumberOfConcurrent    int64  `toml:"succeedNumberOfConcurrent" json:"succeedNumberOfConcurrent"`
+	PendingRetryInterval         int64  `toml:"pendingRetryInterval" json:"pendingRetryInterval"`
+	SentRetryInterval            int64  `toml:"sentRetryInterval" json:"sentRetryInterval"`
+	RedisRetryInterval           int64  `toml:"redisRetryInterval" json:"redisRetryInterval"`
+	NetworkRetryInterval         int64  `toml:"networkRetryInterval" json:"networkRetryInterval"`
+	WaitMinedRetryInterval       int64  `toml:"waitMinedRetryInterval" json:"waitMinedRetryInterval"`
+	CallbackRetryInterval        int64  `toml:"callbackRetryInterval" json:"callbackRetryInterval"`
+	EnableTLS                    bool   `toml:"enableTLS" json:"enableTLS"`
+	CertFile                     string `toml:"certFile" json:"certFile"`
+	KeyFile                      string `toml:"keyFile" json:"keyFile"`
 }
 
 type ContractConfig struct {
@@ -74,6 +75,9 @@ func (c *Config) Init() error {
 	}
 	if c.BalanceAt == "" {
 		return errors.New("balanceAt cannot be set to empty")
+	}
+	if c.CompareBytecodeAndSourceCode == "" {
+		return errors.New("compareBytecodeAndSourceCode cannot be set to empty")
 	}
 
 	if c.GasPriceUpdateInterval < 1 {

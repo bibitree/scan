@@ -27,7 +27,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `addressTop` (
   `id` bigint NOT NULL,
-  `address` varchar(42) NOT NULL,
+  `address` varchar(42) NOT null UNIQUE,
   `Balance` decimal(28,0) NOT NULL,
   `Count` int UNSIGNED DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -40,7 +40,7 @@ CREATE TABLE `addressTop` (
 
 CREATE TABLE `block` (
   `id` bigint NOT NULL,
-  `blockHash` varchar(66) NOT NULL,
+  `blockHash` varchar(66) NOT null,
   `blockNumber` bigint NOT NULL DEFAULT '0',
   `blockReward` bigint NOT NULL DEFAULT '0',
   `minerAddress` varchar(42) DEFAULT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE `ercevent` (
   `eventName` varchar(255) NOT NULL,
   `data` json NOT NULL,
   `name` varchar(255) NOT NULL,
-  `txHash` varchar(66) DEFAULT NULL,
+  `txHash` varchar(66) DEFAULT null UNIQUE,
   `toAddress` varchar(44) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '0x0000000000000000000000000000000000000000'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -73,9 +73,9 @@ CREATE TABLE `ercevent` (
 
 CREATE TABLE `ercTop` (
   `id` bigint NOT NULL,
-  `contracaddress` varchar(42) NOT NULL,
+  `contracaddress` varchar(42) NOT null UNIQUE,
   `name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `value` decimal(64,0) DEFAULT '0',
+  `value` varchar(255) DEFAULT '0',
   `newContracaddress` varchar(44) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `contractTxCount` int UNSIGNED NOT null,
   `decimals` int UNSIGNED DEFAULT '18',
@@ -85,13 +85,12 @@ CREATE TABLE `ercTop` (
 -- --------------------------------------------------------
 CREATE TABLE `newContracData` (
   `id` bigint NOT NULL,
-  `contracaddress` varchar(42) NOT NULL,
+  `contracaddress` varchar(42) NOT null UNIQUE,
   `bytecode` BLOB  ,
-  `abi` LONGTEXT NOT NULL ,
-  `code` LONGTEXT NOT null,
+  `abi` LONGTEXT  ,
+  `code` LONGTEXT ,
   `timestamp` int UNSIGNED NOT NULL DEFAULT '0',
-  `Icon` varchar(44)  CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT ''
-  
+  `Icon` varchar(100)  CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 --
 -- 琛ㄧ殑缁撴瀯 `event`
@@ -103,7 +102,7 @@ CREATE TABLE `event` (
   `chainID` int UNSIGNED NOT NULL,
   `blockHash` varchar(66) NOT NULL,
   `blockNumber` bigint DEFAULT '0',
-  `txHash` varchar(66) DEFAULT NULL,
+  `txHash` varchar(66) DEFAULT null UNIQUE,
   `txIndex` int DEFAULT '0',
   `gas` bigint DEFAULT '0',
   `gasPrice` bigint DEFAULT '0',

@@ -43,6 +43,7 @@ func (app *App) Run(ctx context.Context) error {
 	engine.Use(gin.Logger())
 	engine.RedirectTrailingSlash = false
 	engine.Use(ginx.Cors())
+	engine.Static("/img", "./img")
 	app.Router(engine)
 
 	var c = app.conf.ChainFinder

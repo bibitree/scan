@@ -11,8 +11,13 @@ import (
 	"ethgo/util"
 	"ethgo/util/ginx"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func (app *App) GetAllEvents(c *ginx.Context) {
@@ -62,7 +67,7 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, Contract, err := mysqlOrders.GetEventsByAddress(request.Address)
+	events, Contract, page, err := mysqlOrders.GetEventsByAddress(request.Address, request.PageNo, request.PageSize)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
@@ -74,6 +79,7 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 	eventData := chainFinder.EventData{
 		ContractData: Contracts,
 		Event:        events,
+		PageNumber:   page,
 	}
 	c.Success(http.StatusOK, "succ", eventData)
 }
@@ -409,5 +415,124 @@ func (app *App) IsContractAddress(c *ginx.Context) {
 		Address:    request.Address,
 		IsContract: createContractData,
 	}
+
 	c.Success(http.StatusOK, "succ", isContractAddressResponse)
+}
+
+func (app *App) CompareByIcon(c *ginx.Context) {
+	// 获取合约地址
+	address := c.PostForm("address")
+	if address == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing contracimgFilet address"})
+		return
+	}
+	// 获取上传图片
+	imgFile, err := c.FormFile("img")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	/// 存储图片到指定路径
+	imgPath := "img/" + address + filepath.Ext(imgFile.Filename)
+	if err := os.MkdirAll("img", os.ModePerm); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if err := c.SaveUploadedFile(imgFile, imgPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	err = mysqlOrders.UpdateCreateContractIconData(address, imgPath)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+	c.Success(http.StatusOK, "succ", imgPath)
+}
+
+func (app *App) CompareBytecodeAndSourceCode(c *ginx.Context) {
+	// 获取上传文件
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 获取合约地址
+	address := c.PostForm("address")
+	if address == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing contract address"})
+		return
+	}
+
+	// 打开上传文件
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer src.Close()
+
+	// 读取文件内容并保存为string
+	content, err := ioutil.ReadAll(src)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	fileContentAsString := string(content)
+
+	createContractData, err := mysqlOrders.GetCreateContractData(address)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+
+	compareBytecodeAndSourceCode := chainFinder.CompareBytecodeAndSourceCode{
+		Code:           fileContentAsString,
+		BytecodeString: createContractData.BytecodeString,
+	}
+
+	decimals, err := app.ProcessCompareBytecodeAndSourceCode(compareBytecodeAndSourceCode)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	if decimals == nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	decimalsData := decimals.(interface{})
+	decimalsFloat64 := decimalsData.(string)
+	// decimalsString := fmt.Sprintf("%.0f", decimalsFloat64)
+	err = mysqlOrders.UpdateCreateContractData(address, "", decimalsFloat64, fileContentAsString)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+	c.Success(http.StatusOK, "succ", decimalsFloat64)
+	// c.JSON(http.StatusOK, gin.H{"status": "success", "data": })
+}
+
+func (app *App) ProcessCompareBytecodeAndSourceCode(compareBytecodeAndSourceCode chainFinder.CompareBytecodeAndSourceCode) (interface{}, error) {
+
+	body, err := util.Post(app.conf.ChainFinder.CompareBytecodeAndSourceCode, compareBytecodeAndSourceCode)
+	if err != nil {
+		return "", err
+	}
+
+	var res Response
+	if err := json.Unmarshal(body, &res); err != nil {
+		return "", err
+	}
+
+	log.Debugf("应答: %v", string(body))
+
+	if res.Code != http.StatusOK {
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("%v", res.Code)
+		}
+		return "", errors.New(res.Message)
+	}
+
+	return res.Data, nil
 }

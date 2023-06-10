@@ -94,7 +94,7 @@ type EventData struct {
 	GasPrice     *big.Int `json:"gasPrice"`
 	GasTipCap    *big.Int `json:"gasTipCap"`
 	GasFeeCap    *big.Int `json:"gasFeeCap"`
-	Value        string   `json:"value"`
+	Value        *big.Int `json:"value"`
 	Nonce        uint64   `json:"nonce"`
 	To           string   `json:"to"`
 	Status       bool     `json:"status"`
@@ -104,13 +104,13 @@ type EventData struct {
 }
 
 type ErcTop struct {
-	ContractAddress    string `json:"contractAddress"`
-	ContractName       string `json:"contractName"`
-	Value              int64  `json:"value"`
-	NewContractAddress string `json:"nonce"`
-	ContractTxCount    string `json:"contractTxCount"`
-	Decimals           int    `json:"decimals"`
-	Symbol             string `json:"symbol"`
+	ContractAddress    string   `json:"contractAddress"`
+	ContractName       string   `json:"contractName"`
+	Value              *big.Int `json:"value"`
+	NewContractAddress string   `json:"nonce"`
+	ContractTxCount    string   `json:"contractTxCount"`
+	Decimals           int      `json:"decimals"`
+	Symbol             string   `json:"symbol"`
 }
 
 type EventHandler func(*Event) error

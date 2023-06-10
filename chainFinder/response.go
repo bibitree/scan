@@ -76,6 +76,11 @@ type IsContractAddressResponse struct {
 	IsContract bool `json:"isContract" example:"49335849638413224831"`
 }
 
+type CompareBytecodeAndSourceCode struct {
+	BytecodeString string `json:"bytecodeString" example:"0x51E72BDbA3A6Fc6337251581CB95625fa3A7767F"`
+	Code           string `json:"code" example:"49335849638413224831"`
+}
+
 type ContractData struct {
 	// 合约地址
 	ErcTop             []model.ErcTop               `json:"ercTop" example:"0"`
