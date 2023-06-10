@@ -489,14 +489,14 @@ func (app *App) CompareBytecodeAndSourceCode(c *ginx.Context) {
 	}
 
 	// 获取合约地址
-	solcVersion := c.PostForm("SolcVersion")
+	solcVersion := c.PostForm("solcVersion")
 	if solcVersion == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing contract solcVersion"})
 		return
 	}
 
 	// 获取合约地址
-	optimizationRuns := c.PostForm("OptimizationRuns")
+	optimizationRuns := c.PostForm("optimizationRuns")
 	var optimizationRunsInt int
 	if solcVersion != "" {
 		optimizationRunsInt, err = strconv.Atoi(optimizationRuns)
