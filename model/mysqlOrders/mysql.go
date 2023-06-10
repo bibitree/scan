@@ -70,6 +70,10 @@ func InsertContractData(event sniffer.ContractData) error {
 			string(data), event.Name, event.TxHash.Hex(),
 			event.Contrac.Hex())
 		if err != nil {
+			if strings.Contains(err.Error(), "Duplicate entry") {
+				log.Info("重复插入数据: ", event.TxHash.String())
+				return nil
+			}
 			log.Error("插入数据时出错: ", err)
 			return err
 		}
@@ -107,6 +111,10 @@ func InsertAddressData(addressData sniffer.AddressData) error {
 
 		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Address, addressData.Balance.String(), "1")
 		if err != nil {
+			if strings.Contains(err.Error(), "Duplicate entry") {
+				log.Info("重复插入数据: ", addressData.Address)
+				return nil
+			}
 			log.Error("插入数据时出错: ", err)
 			return err
 		}
@@ -142,6 +150,10 @@ func InsertBlock(block sniffer.BlockData) error {
 		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, block.BlockHash.Hex(), block.BlockNumber.String(), block.BlockReward.String(),
 			block.MinerAddress, block.Size, block.Timestamp, block.GasLimit)
 		if err != nil {
+			if strings.Contains(err.Error(), "Duplicate entry") {
+				log.Info("重复插入数据: ", block.BlockHash.String())
+				return nil
+			}
 			log.Info("插入数据时出错: ", err)
 			return err
 		}
@@ -190,6 +202,10 @@ func InsertErcTop(event sniffer.ErcTop) error {
 		value := event.Value.String()
 		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractAddress, event.ContractName, value, event.NewContractAddress, event.ContractTxCount, event.Decimals, event.Symbol)
 		if err != nil {
+			if strings.Contains(err.Error(), "Duplicate entry") {
+				log.Info("重复插入数据: ", event.ContractAddress)
+				return nil
+			}
 			log.Error("插入数据时出错: ", err)
 			return err
 		}
