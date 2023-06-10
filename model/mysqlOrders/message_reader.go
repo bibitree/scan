@@ -3,6 +3,7 @@ package mysqlOrders
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"ethgo/model"
 	"ethgo/sniffer"
@@ -899,9 +900,8 @@ func GetEventDataCountByAddress(address string) (uint64, error) {
 
 func GetCreateContractData(contracaddress string) (*sniffer.CreateContractData, error) {
 	// 查询指定 contracaddress 对应的数据
-	var bytecode []byte
-	var icon string
-	err := model.MysqlPool.QueryRow("SELECT bytecode, icon FROM newContracData WHERE contracaddress=?", contracaddress).Scan(&bytecode, &icon)
+	var data sniffer.CreateContractData
+	err := model.MysqlPool.QueryRow("SELECT bytecode, contracaddress, abi, code, timestamp, icon FROM newContracData WHERE contracaddress=?", contracaddress).Scan(&data.Bytecode, &data.ContractAddr, &data.Abi, &data.BytecodeString, &data.Time, &data.Icon)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// 如果没有找到对应的数据，返回 nil 和一个错误对象
@@ -911,12 +911,9 @@ func GetCreateContractData(contracaddress string) (*sniffer.CreateContractData, 
 		return nil, err
 	}
 
-	// 创建一个新的 CreateContractData 对象，并返回
-	return &sniffer.CreateContractData{
-		ContractAddr:   contracaddress,
-		BytecodeString: fmt.Sprintf("%x", bytecode),
-		Icon:           icon,
-	}, nil
+	// 返回 CreateContractData 对象
+	data.BytecodeString = hex.EncodeToString(data.Bytecode)
+	return &data, nil
 }
 
 func IsContractDataExists(contracaddress string) (bool, error) {
@@ -965,7 +962,6 @@ func GetCreateContractIconData(contractAddresses []string) ([]sniffer.CreateCont
 		}
 		results = append(results, result)
 	}
-
 	return results, nil
 }
 

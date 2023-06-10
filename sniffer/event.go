@@ -51,6 +51,7 @@ type CreateContractData struct {
 	Bytecode       []byte `json:"bytecode"`
 	ContractAddr   string `json:"contractAddr"`
 	BytecodeString string `json:"bytecodeString"`
+	Abi            string `json:"abi"`
 	Icon           string `json:"icon"`
 	Time           int    `json:"timestamp"`
 }
