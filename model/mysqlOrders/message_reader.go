@@ -3,6 +3,7 @@ package mysqlOrders
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"ethgo/model"
 	"ethgo/sniffer"
@@ -896,18 +897,37 @@ func GetEventDataCountByAddress(address string) (uint64, error) {
 
 	return count, nil
 }
-
-func GetCreateContractData(contracaddress string) (*sniffer.CreateContractData, error) {
-	// 查询指定 contracaddress 对应的数据
+func GetCreateContractData(contractAddress string) (*sniffer.CreateContractData, error) {
+	// 查询指定 contractAddress 对应的数据
 	var data sniffer.CreateContractData
-	err := model.MysqlPool.QueryRow("SELECT bytecode, contracaddress, abi, code, timestamp, icon FROM newContracData WHERE contracaddress=?", contracaddress).Scan(&data.Bytecode, &data.ContractAddr, &data.Abi, &data.BytecodeString, &data.Time, &data.Icon)
+	var byteCode, abi, code, timestamp, icon sql.NullString
+	err := model.MysqlPool.QueryRow("SELECT bytecode, contracaddress, abi, code, timestamp, icon FROM newContracData WHERE contracaddress=?", contractAddress).Scan(&byteCode, &data.ContractAddr, &abi, &code, &timestamp, &icon)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// 如果没有找到对应的数据，返回 nil 和一个错误对象
-			return nil, fmt.Errorf("data not found for contracaddress %s", contracaddress)
+			return nil, fmt.Errorf("data not found for contractAddress %s", contractAddress)
 		}
 		// 处理其他错误
 		return nil, err
+	}
+	if byteCode.Valid {
+		data.Bytecode = hex.EncodeToString([]byte(byteCode.String))
+	}
+	if abi.Valid {
+		data.Abi = abi.String
+	}
+	if code.Valid {
+		data.Code = code.String
+	}
+	if timestamp.Valid {
+		data.Time, err = strconv.Atoi(timestamp.String)
+		if err != nil {
+			// 处理错误
+			return nil, err
+		}
+	}
+	if icon.Valid {
+		data.Icon = icon.String
 	}
 	return &data, nil
 }

@@ -81,7 +81,7 @@ func InsertContractData(event sniffer.ContractData) error {
 	return nil
 }
 
-func InsertCreateContractData(event sniffer.CreateContractData) error {
+func InsertCreateContractData(event sniffer.SetCreateContractData) error {
 
 	sqlStr := `INSERT INTO newContracData(contracaddress,bytecode,timestamp) VALUES (?, ?, ?)`
 	// 使用ExecContext来执行sql语句，并且在执行时使用超时参数

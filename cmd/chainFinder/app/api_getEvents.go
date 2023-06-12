@@ -508,7 +508,7 @@ func (app *App) CompareBytecodeAndSourceCode(c *ginx.Context) {
 
 	compareBytecodeAndSourceCode := chainFinder.CompareBytecodeAndSourceCode{
 		Code:             fileContentAsString,
-		BytecodeString:   createContractData.BytecodeString,
+		BytecodeString:   createContractData.Bytecode,
 		SolcVersion:      solcVersion,
 		OptimizationRuns: optimizationRunsInt,
 	}

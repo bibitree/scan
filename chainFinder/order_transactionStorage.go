@@ -252,7 +252,7 @@ func (t *ChainFinder) CreateContractStorage(ctx context.Context, message *orders
 		return
 	}
 
-	var event = sniffer.CreateContractData{
+	var event = sniffer.SetCreateContractData{
 		Bytecode:     message.Bytes("Bytecode"),
 		ContractAddr: message.String("ContractAddr"),
 		Time:         timestamp,

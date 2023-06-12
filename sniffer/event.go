@@ -48,15 +48,24 @@ type ContractData struct {
 }
 
 type CreateContractData struct {
-	Bytecode       []byte `json:"bytecode"`
-	ContractAddr   string `json:"contractAddr"`
-	BytecodeString string `json:"bytecodeString"`
-	Abi            string `json:"abi"`
-	Icon           string `json:"icon"`
-	Time           int    `json:"timestamp"`
+	Bytecode     string `json:"bytecode"`
+	ContractAddr string `json:"contractAddr"`
+	Code         string `json:"Code"`
+	Abi          string `json:"abi"`
+	Icon         string `json:"icon"`
+	Time         int    `json:"timestamp"`
 }
 
-type CreateContractIconData struct {
+type SetCreateContractData struct {
+	Bytecode     []byte `json:"bytecode"`
+	ContractAddr string `json:"contractAddr"`
+	Code         string `json:"Code"`
+	Abi          string `json:"abi"`
+	Icon         string `json:"icon"`
+	Time         int    `json:"timestamp"`
+}
+
+type GetCreateContractIconData struct {
 	Bytecode       []byte `json:"bytecode"`
 	ContractAddr   string `json:"contractAddr"`
 	BytecodeString string `json:"bytecodeString"`
