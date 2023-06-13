@@ -881,6 +881,9 @@ func GetTopAddress(address string) (model.AddressData, error) {
 	if err := rows.Err(); err != nil {
 		return model.AddressData{}, err
 	}
+	if addressData.Address == "0x000000000000000000000000000000000000000f" {
+		addressData.Balance = "0"
+	}
 	return addressData, nil
 }
 
