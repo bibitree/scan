@@ -97,8 +97,10 @@ func InsertCreateContractData(event sniffer.SetCreateContractData) error {
 }
 
 func InsertAddressData(addressData sniffer.AddressData) error {
+
 	var count int
 	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM addressTop WHERE address=?", addressData.Address).Scan(&count)
+
 	if err != nil {
 		log.Error("查询是否存在相同的address时出错: ", err)
 		return err
@@ -108,7 +110,18 @@ func InsertAddressData(addressData sniffer.AddressData) error {
 		sqlStr := `INSERT INTO addressTop(address, Balance, Count) VALUES (?, ?, ?)`
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-
+		if addressData.Address == "0x000000000000000000000000000000000000000f" {
+			_, err := model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Address, "0", "1")
+			if err != nil {
+				if strings.Contains(err.Error(), "Duplicate entry") {
+					log.Info("重复插入数据: ", addressData.Address)
+					return nil
+				}
+				log.Error("插入数据时出错: ", err)
+				return err
+			}
+			return nil
+		}
 		_, err := model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Address, addressData.Balance.String(), "1")
 		if err != nil {
 			if strings.Contains(err.Error(), "Duplicate entry") {
@@ -122,7 +135,14 @@ func InsertAddressData(addressData sniffer.AddressData) error {
 		sqlStr := `UPDATE addressTop SET Balance=?, Count=Count+1 WHERE address=?`
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-
+		if addressData.Address == "0x000000000000000000000000000000000000000f" {
+			_, err = model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Balance.String(), addressData.Address)
+			if err != nil {
+				log.Error("更新数据时出错: ", err)
+				return err
+			}
+			return nil
+		}
 		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, addressData.Balance.String(), addressData.Address)
 		if err != nil {
 			log.Error("更新数据时出错: ", err)
