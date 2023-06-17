@@ -184,7 +184,11 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			goto WAIT
 		}
 
-		transaction = append(blocks, transaction...)
+		if len(transaction) > 0 {
+			transaction = append(blocks, transaction...)
+		} else {
+			transaction = blocks
+		}
 
 		// log.Info(transaction)
 		// Handle all logs.
