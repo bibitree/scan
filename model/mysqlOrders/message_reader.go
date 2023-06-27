@@ -727,7 +727,7 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, []string, err
 	return events, ContractList, nil
 }
 
-func GetEventsByAddress2(address string) ([]model.ContractData, []string, error) {
+func GetEventsByAddress3(address string) ([]model.ContractData, []string, error) {
 	events := make([]model.ContractData, 0)
 	// 构造sql语句
 	sqlStr := fmt.Sprintf("SELECT * FROM ercevent WHERE data LIKE '%%\"%s\"%%'", address)
@@ -775,6 +775,61 @@ func GetEventsByAddress2(address string) ([]model.ContractData, []string, error)
 		}
 	}
 	return events, ContractList, nil
+}
+func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractData, []string, uint64, error) {
+	events := make([]model.ContractData, 0)
+	totalPages := uint64(0)
+	// 构造sql语句
+	sqlCountStr := "SELECT COUNT(*) AS count FROM ercevent WHERE data LIKE CONCAT('%', ?, '%')"
+	sqlStr := "SELECT * FROM ercevent WHERE data LIKE CONCAT('%', ?, '%') ORDER BY id DESC LIMIT ?, ?"
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	// 查询总记录数
+	row := model.MysqlPool.QueryRowContext(ctx, sqlCountStr, address)
+	var count uint64
+	if err := row.Scan(&count); err != nil {
+		return nil, nil, 0, err
+	}
+	totalPages = (count + uint64(pageSize) - 1) / uint64(pageSize)
+	// 分页查询数据
+	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr, address, (page-1)*pageSize, pageSize)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	defer rows.Close()
+	ContractList := make([]string, 0)
+	// 遍历查询结果并将其转换为ContractData类型
+	for rows.Next() {
+		var event model.ContractData
+		var data string
+		var id uint64
+		err = rows.Scan(&id, &event.ContractName, &event.EventName, &data, &event.Name, &event.TxHash, &event.Contrac)
+		if err != nil {
+			return nil, nil, 0, err
+		}
+		// 解析data字段，获取地址
+		jsonData := make(map[string]interface{})
+		err = json.Unmarshal([]byte(data), &jsonData)
+		if err != nil {
+			return nil, nil, 0, err
+		}
+		fromAddr, ok1 := jsonData["from"].(string)
+		toAddr, ok2 := jsonData["to"].(string)
+		if !ok1 || !ok2 {
+			continue
+		}
+		// 筛选出发人或接收人为传入地址的数据
+		if fromAddr == address || toAddr == address {
+			event.Decimals, err = GetDecimals(event.Contrac)
+			if err != nil {
+				return nil, nil, 0, err
+			}
+			json.Unmarshal([]byte(data), &event.Data)
+			ContractList = append(ContractList, event.Contrac)
+			events = append(events, event)
+		}
+	}
+	return events, ContractList, totalPages, nil
 }
 
 func GetEventsByContractAddress(contractAddress string) ([]model.ContractData, error) {

@@ -20,6 +20,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Call struct {
+	// 合约地址
+	Address string `json:"address" example:"0xa19844250b2b37c8518cb837b58ffed67f2e915D"`
+	// 方法名(大小写敏感)
+	Method string `json:"method" example:"getDNA"`
+	// 合约方法参数
+	Args interface{} `json:"args" swaggertype:"object,string" example:"id:1020"`
+}
+
+type Balance struct {
+	// 合约地址
+	Address string `json:"address" example:"0xa19844250b2b37c8518cb837b58ffed67f2e915D"`
+	// 方法名(大小写敏感)
+	Balance string `json:"Balance" example:"getDNA"`
+}
+
 func (app *App) GetAllEvents(c *ginx.Context) {
 	var request = new(proto.AllEvents)
 	if err := c.BindJSONEx(request); err != nil {
@@ -67,19 +83,69 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
+	addressData, err := mysqlOrders.GetTopAddress(request.Address)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
 	events, _, page, err := mysqlOrders.GetEventsByAddress(request.Address, request.PageNo, request.PageSize)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	Contracts, _, err := mysqlOrders.GetEventsByAddress2(request.Address)
+	Contracts, _, page2, err := mysqlOrders.GetEventsByAddress2(request.Address, request.PageNo, request.PageSize)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
+	_, data, err := mysqlOrders.GetEventsByAddress3(request.Address)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+	var uniqueData []string
+	uniqueMap := make(map[string]bool)
+	for _, val := range data {
+		if _, ok := uniqueMap[val]; !ok {
+			uniqueMap[val] = true
+			uniqueData = append(uniqueData, val)
+		}
+	}
 
+	var calls []model.Balance2
+	for _, addr := range uniqueData {
+		ercName, err := app.ProcessERC(addr, "symbol")
+		if err != nil {
+			continue
+		}
+		ercSlice := ercName.([]interface{})
+		ercString := ercSlice[0].(string)
+		call := Call{
+			Address: addr,
+			Method:  "balanceOf",
+			Args: map[string]interface{}{
+				"account": request.Address,
+			},
+		}
+		balance, _ := app.ProcessCall2(call)
+		if balance == nil {
+			continue
+		}
+		decimalsData := balance.([]interface{})
+		decimalsFloat64 := decimalsData[0].(float64)
+		decimalsString := fmt.Sprintf("%.0f", decimalsFloat64)
+		call2 := model.Balance2{
+			Address: addr,
+			Balance: decimalsString,
+			Name:    ercString,
+		}
+
+		calls = append(calls, call2)
+	}
 	eventData := chainFinder.EventData{
 		ContractData: Contracts,
 		Event:        events,
 		PageNumber:   page,
+		// EventPageNumber: uint64(len(Contracts)/request.PageSize) + 1,
+		EventPageNumber: page2,
+		Balance:         calls,
+		ETHBalance:      addressData.Balance,
 	}
 	c.Success(http.StatusOK, "succ", eventData)
 }
@@ -284,6 +350,56 @@ func (app *App) ProcessCall(contract string, name string) (interface{}, error) {
 	if err := json.Unmarshal(body, &res); err != nil {
 		return nil, err
 	}
+
+	if res.Code != http.StatusOK {
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("%v", res.Code)
+		}
+		return nil, errors.New(res.Message)
+	}
+
+	return res.Data, nil
+}
+
+func (app *App) ProcessCall2(contract Call) (interface{}, error) {
+
+	body, err := util.Post(app.conf.ChainFinder.Callback, contract)
+	if err != nil {
+		return nil, err
+	}
+
+	var res chainFinder.Response
+	if err := json.Unmarshal(body, &res); err != nil {
+		return nil, err
+	}
+
+	if res.Code != http.StatusOK {
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("%v", res.Code)
+		}
+		return nil, errors.New(res.Message)
+	}
+
+	return res.Data, nil
+}
+
+func (app *App) ProcessERC(contract string, name string) (interface{}, error) {
+
+	var call = Call{
+		Address: contract,
+		Method:  name,
+	}
+	body, err := util.Post(app.conf.ChainFinder.Callback, call)
+	if err != nil {
+		return nil, err
+	}
+
+	var res Response
+	if err := json.Unmarshal(body, &res); err != nil {
+		return nil, err
+	}
+
+	log.Debugf("应答: %v", string(body))
 
 	if res.Code != http.StatusOK {
 		if res.Message == "" {

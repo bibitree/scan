@@ -36,6 +36,13 @@ type Balance struct {
 	Address string `json:"address" example:"0x51E72BDbA3A6Fc6337251581CB95625fa3A7767F"`
 }
 
+type Balance2 struct {
+	// 合约地址
+	Address string `json:"address" example:"0xa19844250b2b37c8518cb837b58ffed67f2e915D"`
+	// 方法名(大小写敏感)
+	Balance string `json:"Balance" example:"getDNA"`
+}
+
 type Paginate struct {
 	Event              []model.EventData            `json:"event" example:"100"`
 	PageNumber         uint64                       `json:"pageNumber" example:"49335849638413224831"`
@@ -62,11 +69,14 @@ type ChainData struct {
 
 type EventData struct {
 	// 合约地址
-	ContractData []model.ContractData `json:"contractData" example:"0"`
-	Event        []model.EventData    `json:"event" example:"100"`
-	BlockData    []model.BlockData3   `json:"blockData" example:"100"`
-	AddressData  []model.AddressData  `json:"addressData" example:"0"`
-	PageNumber   uint64               `json:"pageNumber" example:"49335849638413224831"`
+	ContractData    []model.ContractData `json:"contractData" example:"0"`
+	Event           []model.EventData    `json:"event" example:"100"`
+	BlockData       []model.BlockData3   `json:"blockData" example:"100"`
+	AddressData     []model.AddressData  `json:"addressData" example:"0"`
+	PageNumber      uint64               `json:"pageNumber" example:"49335849638413224831"`
+	EventPageNumber uint64               `json:"eventPageNumber" example:"49335849638413224831"`
+	Balance         []model.Balance2     `json:"balance" example:"0"`
+	ETHBalance      string               `json:"eTHBalance" example:"0"`
 }
 
 type IsContractAddressResponse struct {

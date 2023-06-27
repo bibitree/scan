@@ -104,6 +104,15 @@ type EventData struct {
 	NewToAddress string   `json:"NewToAddress"`
 }
 
+type Balance2 struct {
+	// 合约地址
+	Address string `json:"address" example:"0xa19844250b2b37c8518cb837b58ffed67f2e915D"`
+	// 方法名(大小写敏感)
+	Balance string `json:"Balance" example:"getDNA"`
+
+	Name string `json:"name" example:"USDT"`
+}
+
 type ErcTop struct {
 	ContractAddress    string   `json:"contractAddress"`
 	ContractName       string   `json:"contractName"`
