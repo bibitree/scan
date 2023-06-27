@@ -87,11 +87,29 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	events, _, page, err := mysqlOrders.GetEventsByAddress(request.Address, request.PageNo, request.PageSize)
+	events, txHashs, page, err := mysqlOrders.GetEventsByAddress(request.Address, request.PageNo, request.PageSize)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	Contracts, _, page2, err := mysqlOrders.GetEventsByAddress2(request.Address, request.PageNo, request.PageSize)
+	Contracts, txHashsERC, _, page2, err := mysqlOrders.GetEventsByAddress2(request.Address, request.PageNo, request.PageSize)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+	var txHashsNew []string
+	m := make(map[string]bool)
+
+	for _, txh := range txHashs {
+		m[txh] = true
+	}
+
+	for _, txh := range txHashsERC {
+		m[txh] = true
+	}
+
+	for k := range m {
+		txHashsNew = append(txHashsNew, k)
+	}
+	supplementEvent, err := mysqlOrders.GetEventsByTxHash(txHashsNew)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
@@ -146,6 +164,7 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 		EventPageNumber: page2,
 		Balance:         calls,
 		ETHBalance:      addressData.Balance,
+		SupplementEvent: supplementEvent,
 	}
 	c.Success(http.StatusOK, "succ", eventData)
 }
