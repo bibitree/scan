@@ -67,11 +67,11 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, Contract, page, err := mysqlOrders.GetEventsByAddress(request.Address, request.PageNo, request.PageSize)
+	events, _, page, err := mysqlOrders.GetEventsByAddress(request.Address, request.PageNo, request.PageSize)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
-	Contracts, _, err := mysqlOrders.GetEventsByTxHashes(Contract)
+	Contracts, _, err := mysqlOrders.GetEventsByAddress2(request.Address)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}

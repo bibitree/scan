@@ -716,9 +716,63 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, []string, err
 			return nil, nil, err
 		}
 		// 解析data字段
+		event.Decimals, err = GetDecimals(event.Contrac)
+		if err != nil {
+			return nil, nil, err
+		}
 		json.Unmarshal([]byte(data), &event.Data)
 		ContractList = append(ContractList, event.Contrac)
 		events = append(events, event)
+	}
+	return events, ContractList, nil
+}
+
+func GetEventsByAddress2(address string) ([]model.ContractData, []string, error) {
+	events := make([]model.ContractData, 0)
+	// 构造sql语句
+	sqlStr := fmt.Sprintf("SELECT * FROM ercevent WHERE data LIKE '%%\"%s\"%%'", address)
+	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	ContractList := make([]string, 0)
+	// 遍历查询结果并将其转换为ContractData类型
+	for rows.Next() {
+		var event model.ContractData
+		var data string
+		var id uint64
+		err = rows.Scan(&id, &event.ContractName, &event.EventName, &data, &event.Name, &event.TxHash, &event.Contrac)
+		if err != nil {
+			return nil, nil, err
+		}
+		// 解析data字段，获取地址
+		jsonData := make(map[string]interface{})
+		err = json.Unmarshal([]byte(data), &jsonData)
+		if err != nil {
+			return nil, nil, err
+		}
+		fromAddr, ok := jsonData["from"].(string)
+		if !ok {
+			continue
+		}
+		toAddr, ok := jsonData["to"].(string)
+		if !ok {
+			continue
+		}
+		// 筛选出发人或接收人为传入地址的数据
+		if fromAddr == address || toAddr == address {
+			event.Decimals, err = GetDecimals(event.Contrac)
+			if err != nil {
+				return nil, nil, err
+			}
+			json.Unmarshal([]byte(data), &event.Data)
+			ContractList = append(ContractList, event.Contrac)
+			events = append(events, event)
+		}
 	}
 	return events, ContractList, nil
 }
@@ -1016,4 +1070,19 @@ func UpdateCreateContractIconData(address string, iconPath string) error {
 		return fmt.Errorf("no data found for address %s", address)
 	}
 	return nil
+}
+
+func GetDecimals(contractAddress string) (string, error) {
+	// 声明SQL语句，限制返回数量为1，仅查找指定 ContractAddress 的数据
+	sqlStr := fmt.Sprintf("SELECT decimals FROM ercTop WHERE contracaddress = '%s' LIMIT 1", contractAddress)
+	// 查询数据
+	row := model.MysqlPool.QueryRow(sqlStr)
+	var decimals string
+	// 将查询结果转化为字符串并返回
+	err := row.Scan(&decimals)
+	if err != nil {
+		return "", err
+	}
+
+	return decimals, nil
 }

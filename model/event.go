@@ -39,6 +39,7 @@ type ContractData struct {
 	Name         string                 `json:"name"`
 	TxHash       string                 `json:"txHash"`
 	Contrac      string                 `json:"to"`
+	Decimals     string                 `json:"decimals"`
 }
 
 type BlockData struct {
