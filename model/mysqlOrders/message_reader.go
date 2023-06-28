@@ -836,7 +836,7 @@ func GetEventsByAddress3(address string) ([]model.ContractData, []string, error)
 	}
 	return events, ContractList, nil
 }
-func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractData, []string, []string, uint64, error) {
+func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractData, []string, []string, uint64, int, error) {
 	events := make([]model.ContractData, 0)
 	totalPages := uint64(0)
 	// 构造sql语句
@@ -848,13 +848,13 @@ func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractDa
 	row := model.MysqlPool.QueryRowContext(ctx, sqlCountStr, address)
 	var count uint64
 	if err := row.Scan(&count); err != nil {
-		return nil, nil, nil, 0, err
+		return nil, nil, nil, 0, 0, err
 	}
 	totalPages = (count + uint64(pageSize) - 1) / uint64(pageSize)
 	// 分页查询数据
 	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr, address, (page-1)*pageSize, pageSize)
 	if err != nil {
-		return nil, nil, nil, 0, err
+		return nil, nil, nil, 0, 0, err
 	}
 	defer rows.Close()
 	ContractList := make([]string, 0)
@@ -866,13 +866,13 @@ func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractDa
 		var id uint64
 		err = rows.Scan(&id, &event.ContractName, &event.EventName, &data, &event.Name, &event.TxHash, &event.Contrac)
 		if err != nil {
-			return nil, nil, nil, 0, err
+			return nil, nil, nil, 0, 0, err
 		}
 		// 解析data字段，获取地址
 		jsonData := make(map[string]interface{})
 		err = json.Unmarshal([]byte(data), &jsonData)
 		if err != nil {
-			return nil, nil, nil, 0, err
+			return nil, nil, nil, 0, 0, err
 		}
 		fromAddr, ok1 := jsonData["from"].(string)
 		toAddr, ok2 := jsonData["to"].(string)
@@ -883,7 +883,7 @@ func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractDa
 		if fromAddr == address || toAddr == address {
 			event.Decimals, err = GetDecimals(event.Contrac)
 			if err != nil {
-				return nil, nil, nil, 0, err
+				return nil, nil, nil, 0, 0, err
 			}
 			json.Unmarshal([]byte(data), &event.Data)
 			TXHashList = append(TXHashList, event.TxHash)
@@ -891,7 +891,7 @@ func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractDa
 			events = append(events, event)
 		}
 	}
-	return events, TXHashList, ContractList, totalPages, nil
+	return events, TXHashList, ContractList, totalPages, int(count), nil
 }
 
 func GetEventsByContractAddress(contractAddress string) ([]model.ContractData, error) {

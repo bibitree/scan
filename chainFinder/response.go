@@ -78,6 +78,7 @@ type EventData struct {
 	EventPageNumber uint64               `json:"eventPageNumber" example:"49335849638413224831"`
 	Balance         []model.Balance2     `json:"balance" example:"0"`
 	ETHBalance      string               `json:"eTHBalance" example:"0"`
+	ContractNum     int                  `json:"contractNum" example:"0"`
 }
 
 type IsContractAddressResponse struct {
