@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -83,6 +84,7 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
+	request.Address = strings.ToLower(request.Address)
 	addressData, err := mysqlOrders.GetTopAddress(request.Address)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
