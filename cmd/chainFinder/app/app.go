@@ -40,7 +40,7 @@ func (app *App) Init(ctx context.Context) error {
 func (app *App) Run(ctx context.Context) error {
 	engine := gin.New()
 	engine.Use(gin.Recovery())
-	engine.Use(gin.Logger())
+	// engine.Use(gin.Logger())
 	engine.RedirectTrailingSlash = false
 	engine.Use(ginx.Cors())
 	engine.Static("/img", "./img")

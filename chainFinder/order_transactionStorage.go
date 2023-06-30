@@ -370,11 +370,11 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 		address = t.conf.PrefixChain + address[2:]
 	}
 
-	fmt.Println(ercString)
+	log.Debug(ercString)
 
 	bigInt := new(big.Int)
 	bigInt.SetString(ercTotalSupplyString, 10)
-	fmt.Println(ercString)
+	log.Debug(ercString)
 	var ercTop = sniffer.ErcTop{
 		ContractAddress:    event,
 		ContractName:       ercString,

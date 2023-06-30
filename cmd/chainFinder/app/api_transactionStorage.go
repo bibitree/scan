@@ -35,12 +35,12 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 		return
 	}
 
-	fmt.Println(string(data))
+	log.Debug(string(data))
 	var events []*proto.Event
 	if err := json.Unmarshal(data, &events); err != nil {
-		fmt.Println(err)
+		log.Error(err)
 	} else {
-		fmt.Println(events)
+		log.Debug(events)
 	}
 	// if err := c.BindJSONEx1(data, events); err != nil {
 	// 	c.Failure(http.StatusBadRequest, err.Error(), nil)
