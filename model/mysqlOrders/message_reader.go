@@ -119,10 +119,7 @@ func GetEventByTxHash(txHash string) ([]model.EventData, []string, error) {
 
 func GetEventsByAddress(address string, page int, pageSize int) ([]model.EventData, []string, uint64, error) {
 	// 获取结果集
-	resultSQLStr := `
-        SELECT * FROM event WHERE address = ? OR toAddress = ?
-        ORDER BY blockNumber DESC LIMIT ?, ?;
-    `
+	resultSQLStr := `SELECT * FROM event WHERE address = ? OR toAddress = ? ORDER BY blockNumber DESC LIMIT ?, ?;`
 	rangeStart := (page - 1) * pageSize
 	rangeEnd := rangeStart + pageSize
 	resultRows, err := model.MysqlPool.Query(resultSQLStr, address, address, rangeStart, rangeEnd)
@@ -184,6 +181,10 @@ func GetEventsByAddress(address string, page int, pageSize int) ([]model.EventDa
 }
 
 func GetEventsByTxHash(txHashes []string) ([]model.EventData, error) {
+	if len(txHashes) == 0 {
+		return nil, nil
+	}
+
 	// 构造查询条件
 	placeholders := make([]string, len(txHashes))
 	values := make([]interface{}, len(txHashes))
@@ -193,10 +194,7 @@ func GetEventsByTxHash(txHashes []string) ([]model.EventData, error) {
 	}
 
 	// 获取结果集
-	resultSQLStr := fmt.Sprintf(`
-        SELECT * FROM event WHERE txHash IN (%s)
-        ORDER BY blockNumber DESC;
-    `, strings.Join(placeholders, ","))
+	resultSQLStr := fmt.Sprintf(`SELECT * FROM event WHERE txHash IN (%s) ORDER BY blockNumber DESC;`, strings.Join(placeholders, ","))
 	resultRows, err := model.MysqlPool.Query(resultSQLStr, values...)
 	if err != nil {
 		return nil, err

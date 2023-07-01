@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"ethgo/chainFinder"
@@ -17,8 +18,11 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/net/html/charset"
 )
 
 type Call struct {
@@ -588,6 +592,29 @@ func (app *App) CompareByIcon(c *ginx.Context) {
 	c.Success(http.StatusOK, "succ", imgPath)
 }
 
+func DecodeUTF16(b []byte) (string, error) {
+
+	if len(b)%2 != 0 {
+		return "", fmt.Errorf("Must have even length byte slice")
+	}
+
+	u16s := make([]uint16, 1)
+
+	ret := &bytes.Buffer{}
+
+	b8buf := make([]byte, 4)
+
+	lb := len(b)
+	for i := 0; i < lb; i += 2 {
+		u16s[0] = uint16(b[i]) + (uint16(b[i+1]) << 8)
+		r := utf16.Decode(u16s)
+		n := utf8.EncodeRune(b8buf, r[0])
+		ret.Write(b8buf[:n])
+	}
+
+	return ret.String(), nil
+}
+
 func (app *App) CompareBytecodeAndSourceCode(c *ginx.Context) {
 	// 获取上传文件
 	file, err := c.FormFile("file")
@@ -616,6 +643,17 @@ func (app *App) CompareBytecodeAndSourceCode(c *ginx.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	_, encoding, _ := charset.DetermineEncoding([]byte(content), "")
+	if encoding == "utf-16le" {
+		cnt, err := DecodeUTF16(content)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		cnt = strings.Replace(cnt, "\ufeff", "", -1)
+		content = []byte(cnt)
 	}
 
 	fileContentAsString := string(content)
