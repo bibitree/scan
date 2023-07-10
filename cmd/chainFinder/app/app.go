@@ -78,5 +78,6 @@ func (app *App) Run(ctx context.Context) error {
 	}()
 
 	defer model.Dispose()
+	go app.setChainDataLoop()
 	return app.base.Run(ctx)
 }

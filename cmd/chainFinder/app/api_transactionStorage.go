@@ -12,6 +12,7 @@ import (
 	"ethgo/util/ginx"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type Response struct {
@@ -91,31 +92,37 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 			orders.CreateTransactionTOPStorage(event)
 		}
 	}
-	app.SetChainData(c)
 	c.Success(http.StatusOK, "succ", nil)
 }
 
-func (app *App) SetChainData(c *ginx.Context) {
+func (app *App) setChainDataLoop() {
+	for {
+		app.SetChainData()
+		time.Sleep(time.Second * 5)
+	}
+}
+
+func (app *App) SetChainData() {
 	log.Debugf("ENTER @TransactionStorage SetChainData")
 	blockHeight, _, err := mysqlOrders.GetLatestEvent()
 	if err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		log.Error(err)
 		return
 	}
 	log.Debugf("ENTER @TransactionStorage SetChainData blockHeight")
 	numberTransactions, numberTransfers, numberTransactionsIn24H, numberaddressesIn24H, totalnumberofAddresses, err := mysqlOrders.GetEventStatistics(blockHeight)
 	if err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		log.Error(err)
 		return
 	}
 	log.Debugf("ENTER @TransactionStorage SetChainData numberTransactions")
 	totalBlockRewards, err := mysqlOrders.GetAllAddressesAndBlockRewardSum(blockHeight)
 	if err != nil {
-		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		log.Error(err)
 		return
 	}
 	log.Debugf("ENTER @TransactionStorage SetChainData totalBlockRewards")
-	gasPriceGasPrice, err := app.ProcessGasPrice(c)
+	gasPriceGasPrice, err := app.ProcessGasPrice()
 	if err != nil {
 		log.Error(err)
 		return
@@ -137,7 +144,7 @@ func (app *App) SetChainData(c *ginx.Context) {
 	orders.CreateChainDataStorag(paginate)
 }
 
-func (app *App) ProcessGasPrice(c *ginx.Context) (string, error) {
+func (app *App) ProcessGasPrice() (string, error) {
 
 	var gasPrice = chainFinder.GasPrice{}
 	body, err := util.Post(app.conf.ChainFinder.GetGasPrice, gasPrice)

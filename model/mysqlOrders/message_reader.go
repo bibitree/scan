@@ -603,7 +603,7 @@ func GetEventAddressByToAddress(toAddress string) (string, uint64, error) {
 
 func GetLatestEvent() (string, string, error) {
 	// 声明SQL语句
-	sqlStr := `SELECT blockNumber FROM block ORDER BY cast(blockNumber as unsigned) DESC LIMIT 1`
+	sqlStr := `SELECT MAX(blockNumber)blockNumber FROM block`
 	// 查询匹配的数据
 	row := model.MysqlPool.QueryRow(sqlStr)
 
