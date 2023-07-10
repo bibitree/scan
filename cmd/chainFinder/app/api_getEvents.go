@@ -741,7 +741,10 @@ func (app *App) UpdateBalance(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	balance, err := app.ProcessBalance(request.Address)
+	var balance1 = chainFinder.Balance{
+		Address: request.Address,
+	}
+	balance, err := app.ProcessBalance(balance1)
 
 	if err != nil {
 		c.Success(http.StatusOK, "succ", nil)
@@ -751,21 +754,24 @@ func (app *App) UpdateBalance(c *ginx.Context) {
 		c.Success(http.StatusOK, "succ", nil)
 		return
 	}
-	balanceSupplyUint64 := balance.(string)
-	num, err := strconv.ParseInt(balanceSupplyUint64, 10, 64)
+	balanceSupplyData := balance.(interface{})
+	balanceSupplyDataMap := balanceSupplyData.(map[string]interface{})
+	wei := balanceSupplyDataMap["wei"].(string)
+	num := new(big.Int)
+	num, _ = num.SetString(wei, 10)
 	if err != nil {
 		panic(err)
 	}
 	var event = sniffer.AddressData{
 		Address: request.Address,
-		Balance: big.NewInt(num),
+		Balance: num,
 	}
 	log.Info(event)
 	mysqlOrders.InsertAddressData(event)
 	c.Success(http.StatusOK, "succ", num)
 }
 
-func (app *App) ProcessBalance(address string) (interface{}, error) {
+func (app *App) ProcessBalance(address chainFinder.Balance) (interface{}, error) {
 	body, err := util.Post(app.conf.ChainFinder.BalanceAt, address)
 	if err != nil {
 		return "", err
