@@ -24,4 +24,5 @@ func (app *App) Router(g *gin.Engine) {
 	g.POST("/chainFinder/api/IsContractAddress", ginx.WrapHandler(app.IsContractAddress))
 	g.POST("/chainFinder/api/CompareBytecodeAndSourceCode", ginx.WrapHandler(app.CompareBytecodeAndSourceCode))
 	g.POST("/chainFinder/api/CompareByIcon", ginx.WrapHandler(app.CompareByIcon))
+	g.POST("/chainFinder/api/UpdateBalance", ginx.WrapHandler(app.UpdateBalance))
 }

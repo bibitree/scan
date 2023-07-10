@@ -9,10 +9,12 @@ import (
 	"ethgo/model/mysqlOrders"
 	"ethgo/model/orders"
 	"ethgo/proto"
+	"ethgo/sniffer"
 	"ethgo/util"
 	"ethgo/util/ginx"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -712,6 +714,59 @@ func (app *App) CompareBytecodeAndSourceCode(c *ginx.Context) {
 func (app *App) ProcessCompareBytecodeAndSourceCode(compareBytecodeAndSourceCode chainFinder.CompareBytecodeAndSourceCode) (interface{}, error) {
 
 	body, err := util.Post(app.conf.ChainFinder.CompareBytecodeAndSourceCode, compareBytecodeAndSourceCode)
+	if err != nil {
+		return "", err
+	}
+
+	var res Response
+	if err := json.Unmarshal(body, &res); err != nil {
+		return "", err
+	}
+
+	log.Debugf("应答: %v", string(body))
+
+	if res.Code != http.StatusOK {
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("%v", res.Code)
+		}
+		return "", errors.New(res.Message)
+	}
+
+	return res.Data, nil
+}
+
+func (app *App) UpdateBalance(c *ginx.Context) {
+	var request = new(proto.ByAddress)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	balance, err := app.ProcessBalance(request.Address)
+
+	if err != nil {
+		c.Success(http.StatusOK, "succ", nil)
+		return
+	}
+	if balance == nil {
+		c.Success(http.StatusOK, "succ", nil)
+		return
+	}
+	balanceSupplyUint64 := balance.(string)
+	num, err := strconv.ParseInt(balanceSupplyUint64, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	var event = sniffer.AddressData{
+		Address: request.Address,
+		Balance: big.NewInt(num),
+	}
+	log.Info(event)
+	mysqlOrders.InsertAddressData(event)
+	c.Success(http.StatusOK, "succ", num)
+}
+
+func (app *App) ProcessBalance(address string) (interface{}, error) {
+	body, err := util.Post(app.conf.ChainFinder.BalanceAt, address)
 	if err != nil {
 		return "", err
 	}
