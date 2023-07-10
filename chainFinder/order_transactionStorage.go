@@ -228,9 +228,11 @@ func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Messa
 	log.Info(toAddress)
 	var name string
 	if message.String("ContractName") == "ERC20" {
-		name, _ = t.StoreERCInfo(common.HexToAddress(message.String("To")).String())
+		ok, _ := mysqlOrders.CheckErcTopExists(message.String("To"))
+		if !ok {
+			name, _ = t.StoreERCInfo(common.HexToAddress(message.String("To")).String())
+		}
 	}
-
 	var event = sniffer.ContractData{
 		ContractName: name,
 		EventName:    message.String("ContractName"),
@@ -388,7 +390,7 @@ func (t *ChainFinder) StoreERCInfo(event string) (string, error) {
 	return ercString, nil
 }
 
-// func (t *ChainFinder) ProcessERCName(contract Contract) (interface{}, error) {
+// func (t *ChainFinder) ProcessERCName(contract Contract) (interface{}, error) {  CheckErcTopExists
 
 // 	var call = Call{
 // 		Address: contract.Contract,
@@ -423,33 +425,6 @@ func (t *ChainFinder) ProcessERC(contract Contract, name string) (interface{}, e
 		Method:  name,
 	}
 	body, err := util.Post(t.conf.Callback, call)
-	if err != nil {
-		return nil, err
-	}
-
-	var res Response
-	if err := json.Unmarshal(body, &res); err != nil {
-		return nil, err
-	}
-
-	log.Debugf("应答: %v", string(body))
-
-	if res.Code != http.StatusOK {
-		if res.Message == "" {
-			res.Message = fmt.Sprintf("%v", res.Code)
-		}
-		return nil, errors.New(res.Message)
-	}
-
-	return res.Data, nil
-}
-
-func (t *ChainFinder) ProcessERCContractTxCount(contract Contract) (interface{}, error) {
-
-	var call = Contract{
-		Contract: contract.Contract,
-	}
-	body, err := util.Post(t.conf.ContractTxCount, call)
 	if err != nil {
 		return nil, err
 	}

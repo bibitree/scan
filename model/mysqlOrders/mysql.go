@@ -241,3 +241,19 @@ func InsertErcTop(event sniffer.ErcTop) error {
 	}
 	return nil
 }
+
+// 查询是否存在相同的contracaddress
+func CheckErcTopExists(contracaddress string) (bool, error) {
+	var count int
+	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM ercTop WHERE contracaddress=?", contracaddress).Scan(&count)
+	if err != nil {
+		log.Error("查询是否存在相同的contracaddress时出错: ", err)
+		return false, err
+	}
+
+	if count > 0 { // 如果存在相同的contracaddress，返回true
+		return true, nil
+	} else { // 如果不存在相同的contracaddress，返回false
+		return false, nil
+	}
+}
