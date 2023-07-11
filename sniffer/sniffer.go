@@ -174,12 +174,13 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 
 		// Executes a filter query.
 		// 执行日志筛选操作，从区块中抽取感兴趣的日志信息。
+		beginTs := time.Now().UnixMilli()
 		blocks, transaction, err := s.filterLogsAndTransactions(ctx, backend, fromBlockNumber, toBlockNumber)
 		if err != nil {
 			log.With(err).Error("Failed to filterLogs")
 			goto WAIT
 		}
-		log.Info("获取到交易数,", len(blocks), len(transaction))
+		log.Info("获取到交易数,", len(blocks), len(transaction), time.Now().UnixMilli()-beginTs)
 		if len(blocks) <= int(toBlockNumber-fromBlockNumber) {
 			goto WAIT
 		}
@@ -188,6 +189,9 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			transaction = append(blocks, transaction...)
 		} else {
 			transaction = blocks
+		}
+		if len(transaction) == 0 {
+			goto WAIT
 		}
 
 		// log.Info(transaction)

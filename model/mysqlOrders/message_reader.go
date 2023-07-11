@@ -493,6 +493,7 @@ func GetErcTopData(n uint64) ([]model.ErcTop, []string, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		ercTop.ContractName = strings.Replace(ercTop.ContractName, "ERC20", "FRC20", -1)
 		ercTop.Value, _ = new(big.Int).SetString(string(value), 10)
 		txHashList = append(txHashList, ercTop.ContractAddress)
 		ercTops = append(ercTops, ercTop)
@@ -773,6 +774,8 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, []string, err
 		if err != nil {
 			return nil, nil, err
 		}
+		event.ContractName = strings.Replace(event.ContractName, "ERC20", "FRC20", -1)
+		event.EventName = strings.Replace(event.EventName, "ERC20", "FRC20", -1)
 		// 解析data字段
 		event.Decimals, err = GetDecimals(event.Contrac)
 		if err != nil {
@@ -807,6 +810,7 @@ func GetEventsByAddress3(address string) ([]model.ContractData, []string, error)
 		if err != nil {
 			return nil, nil, err
 		}
+		event.ContractName = strings.Replace(event.ContractName, "ERC20", "FRC20", -1)
 		// 解析data字段，获取地址
 		jsonData := make(map[string]interface{})
 		err = json.Unmarshal([]byte(data), &jsonData)
@@ -866,6 +870,8 @@ func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractDa
 		if err != nil {
 			return nil, nil, nil, 0, 0, err
 		}
+		event.ContractName = strings.Replace(event.ContractName, "ERC20", "FRC20", -1)
+		event.EventName = strings.Replace(event.EventName, "ERC20", "FRC20", -1)
 		// 解析data字段，获取地址
 		jsonData := make(map[string]interface{})
 		err = json.Unmarshal([]byte(data), &jsonData)
