@@ -23,12 +23,10 @@ func (t *ChainFinder) WatchBalanceStorage(ctx context.Context) {
 }
 
 func (t *ChainFinder) BalanceStorage(ctx context.Context, message *orders.Message) AfterFunc {
-	log.Debugf("ENTER @TransactionStorage 订单")
-	defer log.Debugf("  LEAVE @TransactionStorage 订单")
+	log.Debugf("ENTER @BalanceStorage 订单")
+	defer log.Debugf("  LEAVE @BalanceStorage 订单")
 	log.Info(message.String("Address"))
 
-	// i := new(big.Int)
-	// i.SetString(value, 10)
 	var balance = Balance{
 		Address: message.String("Address"),
 	}
