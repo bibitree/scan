@@ -335,6 +335,10 @@ func NewSucceedReader(groupName string, readerName string) (*MessageReader, erro
 	return NewMessageReader(keys.Succeed(), groupName, readerName)
 }
 
+func NewCreateBalanceReader(groupName string, readerName string) (*MessageReader, error) {
+	return NewMessageReader(keys.CreateBalanceStorage(), groupName, readerName)
+}
+
 func NewTransactionStorageReader(groupName string, readerName string) (*MessageReader, error) {
 	return NewMessageReader(keys.CreateTransactionStorage(), groupName, readerName)
 }

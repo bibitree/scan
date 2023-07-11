@@ -8,7 +8,7 @@ MaxBackups = 512
 Named = "[TYCHE]"
 
 [redis]
-Domain = "polygon:chainFinder"
+Domain = "polygon:chainFinder2"
 MaxIdle = 8
 MaxActive = 0
 IdleTimeout = 0

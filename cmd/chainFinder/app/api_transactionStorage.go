@@ -86,7 +86,6 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 		}
 
 		orders.CreateTransactionStorage(event)
-
 		txhash := ev.TxHash.String()
 		if txhash != "0x0000000000000000000000000000000000000000000000000000000000000000" {
 			orders.CreateTransactionTOPStorage(event)

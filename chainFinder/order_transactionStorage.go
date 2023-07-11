@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	// "ethgo/model/mysqlOrders"
 	"ethgo/model/mysqlOrders"
@@ -149,59 +150,21 @@ func (t *ChainFinder) AddressStorage(ctx context.Context, message *orders.Messag
 	log.Debugf("ENTER @ContractStorage 订单")
 	defer log.Debugf("  LEAVE @ContractStorage 订单")
 
-	log.Info(message.String("Address"))
+	blockNumber, _ := message.Uint64("BlockNumber")
+	txIndex, _ := message.Int("TxIndex")
 
-	// i := new(big.Int)
-	// i.SetString(value, 10)
-	var balance = Balance{
-		Address: message.String("Address"),
+	var event = sniffer.Event2{
+		Address:     common.HexToAddress(message.String("Address")),
+		BlockNumber: blockNumber,
+		TxIndex:     strconv.Itoa(txIndex),
 	}
-
-	balanceSupply, err := t.ProcessBalance(balance)
-	if err != nil {
-		log.Error(err)
-		return
+	var event2 = sniffer.Event2{
+		Address:     common.HexToAddress(message.String("To")),
+		BlockNumber: blockNumber,
+		TxIndex:     strconv.Itoa(txIndex),
 	}
-	balanceSupplyData := balanceSupply.(interface{})
-	balanceSupplyDataMap := balanceSupplyData.(map[string]interface{})
-	wei := balanceSupplyDataMap["wei"].(string)
-	num := new(big.Int)
-	num, _ = num.SetString(wei, 10)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	var balance1 = Balance{
-		Address: message.String("To"),
-	}
-
-	balanceSupplyTo, err := t.ProcessBalance(balance1)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	// balanceSupplyData := balanceSupply.(interface{})
-	balanceSupplyDataTo := balanceSupplyTo.(interface{})
-	balanceSupplyDataMapTo := balanceSupplyDataTo.(map[string]interface{})
-	// address := balanceSupplyDataMap["address"].(string)
-	weiTo := balanceSupplyDataMapTo["wei"].(string)
-	numTo := new(big.Int)
-	numTo, _ = numTo.SetString(weiTo, 10)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	var event = sniffer.AddressData{
-		Address: message.String("Address"),
-		Balance: num,
-	}
-	log.Info(event)
-	var event2 = sniffer.AddressData{
-		Address: message.String("To"),
-		Balance: numTo,
-	}
-	mysqlOrders.InsertAddressData(event)
-	mysqlOrders.InsertAddressData(event2)
+	orders.CreateBalance(event)
+	orders.CreateBalance(event2)
 }
 
 func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Message) {

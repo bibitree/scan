@@ -39,6 +39,12 @@ func (t *ChainFinder) run(ctx context.Context) error {
 		t.WatchTransactionStorage(ctx)
 	}()
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		t.WatchBalanceStorage(ctx)
+	}()
+
 	wg.Wait()
 	return nil
 }

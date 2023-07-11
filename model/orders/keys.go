@@ -53,6 +53,9 @@ func (k *keygen) Error() string {
 func (k *keygen) CreateTransactionStorage() string {
 	return fmt.Sprintf("%s:status:CreateTransactionStorage", k.Namespace())
 }
+func (k *keygen) CreateBalanceStorage() string {
+	return fmt.Sprintf("%s:status:CreateBalanceStorage", k.Namespace())
+}
 
 func (k *keygen) CreateTransactionTOPStorage() string {
 	return fmt.Sprintf("%s:status:CreateTransactionTOPStorage", k.Namespace())

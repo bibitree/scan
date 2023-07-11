@@ -252,6 +252,23 @@ func CreateTransactionStorage(event sniffer.Event2) error {
 	return red.Flush()
 }
 
+func CreateBalance(event sniffer.Event2) error {
+	var red = model.RedisPool.Get()
+	defer red.Close()
+	red.Send("MUTIL")
+	{
+		args := redis.Args{keys.CreateBalanceStorage()}
+		args = args.Add("*")
+		args = args.Add("Address", event.Address.String())
+		args = args.Add("BlockNumber", event.BlockNumber)
+		args = args.Add("TxIndex", event.TxIndex)
+		args = args.Add("Time", time.Now().Unix())
+		red.Send("XADD", args...)
+	}
+	red.Send("EXEC")
+	return red.Flush()
+}
+
 func CreateTransactionTOPStorage(event sniffer.Event2) error {
 	var red = model.RedisPool.Get()
 	defer red.Close()
