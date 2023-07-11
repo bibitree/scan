@@ -261,6 +261,7 @@ func GetLatestTransactionTOPStorage(num int) ([]sniffer.Event2, error) {
 			if err != nil {
 				return nil, err
 			}
+			event.ContractName = strings.Replace(event.ContractName, "ERC20", "FRC20", -1)
 			events = append(events, event)
 		}
 	}

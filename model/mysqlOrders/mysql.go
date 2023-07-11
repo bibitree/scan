@@ -6,6 +6,7 @@ import (
 	"ethgo/model"
 	"ethgo/sniffer"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
@@ -51,33 +52,33 @@ type Order struct {
 
 func InsertContractData(event sniffer.ContractData) error {
 	// 查询是否存在相同的txHash
-	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM ercevent WHERE txHash=?", event.TxHash.String()).Scan(&count)
-	if err != nil {
-		log.Error("查询是否存在相同的txHash时出错: ", err)
-		return nil
-	}
+	// var count int
+	// err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM ercevent WHERE txHash=?", event.TxHash.String()).Scan(&count)
+	// if err != nil {
+	// 	log.Error("查询是否存在相同的txHash时出错: ", err)
+	// 	return nil
+	// }
 
-	if count == 0 { // 如果不存在相同的txHash，直接插入新数据
-		sqlStr := `INSERT INTO ercevent(contractName,EventName,data,  name, txHash, toAddress) VALUES (?, ?, ?, ?, ?, ?)`
-		// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		var data []byte
-		data, _ = json.Marshal(event.Data)
-		// 使用ExecContext执行sql语句，如果执行成功则返回nil
-		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractName, event.EventName,
-			string(data), event.Name, event.TxHash.Hex(),
-			event.Contrac.Hex())
-		if err != nil {
-			if strings.Contains(err.Error(), "Duplicate entry") {
-				log.Info("重复插入数据: ", event.TxHash.String())
-				return nil
-			}
-			log.Error("插入数据时出错: ", err)
-			return err
+	// if count == 0 { // 如果不存在相同的txHash，直接插入新数据
+	sqlStr := `INSERT INTO ercevent(contractName,EventName,data,  name, txHash, toAddress) VALUES (?, ?, ?, ?, ?, ?)`
+	// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var data []byte
+	data, _ = json.Marshal(event.Data)
+	// 使用ExecContext执行sql语句，如果执行成功则返回nil
+	_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.ContractName, event.EventName,
+		string(data), event.Name, event.TxHash.Hex(),
+		event.Contrac.Hex())
+	if err != nil {
+		if strings.Contains(err.Error(), "Duplicate entry") {
+			log.Info("重复插入数据: ", event.TxHash.String())
+			return nil
 		}
+		log.Error("插入数据时出错: ", err)
+		return err
 	}
+	// }
 	return nil
 }
 
@@ -155,29 +156,29 @@ func InsertAddressData(addressData sniffer.AddressData) error {
 
 func InsertBlock(block sniffer.BlockData) error {
 	// 查询是否存在相同的blockHash
-	var count int
-	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM block WHERE blockHash=?", block.BlockHash.String()).Scan(&count)
+	// var count int
+	// err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM block WHERE blockHash=?", block.BlockHash.String()).Scan(&count)
+	// if err != nil {
+	// 	log.Error("查询是否存在相同的blockHash时出错: ", err)
+	// 	return err
+	// }
+	// if count == 0 { // 如果不存在相同的blockHash，直接插入新数据
+	sqlStr := `INSERT INTO block(blockHash, blockNumber, blockReward, minerAddress, size, timestamp,gasLimit) VALUES (?, ?, ?, ?, ?, ?, ?)`
+	// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	// 使用ExecContext执行sql语句，如果执行成功则返回nil
+	_, err := model.MysqlPool.ExecContext(ctx, sqlStr, block.BlockHash.Hex(), block.BlockNumber.String(), block.BlockReward.String(),
+		block.MinerAddress, block.Size, block.Timestamp, block.GasLimit)
 	if err != nil {
-		log.Error("查询是否存在相同的blockHash时出错: ", err)
+		if strings.Contains(err.Error(), "Duplicate entry") {
+			// log.Info("重复插入数据: ", block.BlockHash.String())
+			return nil
+		}
+		log.Info("插入数据时出错: ", err)
 		return err
 	}
-	if count == 0 { // 如果不存在相同的blockHash，直接插入新数据
-		sqlStr := `INSERT INTO block(blockHash, blockNumber, blockReward, minerAddress, size, timestamp,gasLimit) VALUES (?, ?, ?, ?, ?, ?, ?)`
-		// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		// 使用ExecContext执行sql语句，如果执行成功则返回nil
-		_, err = model.MysqlPool.ExecContext(ctx, sqlStr, block.BlockHash.Hex(), block.BlockNumber.String(), block.BlockReward.String(),
-			block.MinerAddress, block.Size, block.Timestamp, block.GasLimit)
-		if err != nil {
-			if strings.Contains(err.Error(), "Duplicate entry") {
-				log.Info("重复插入数据: ", block.BlockHash.String())
-				return nil
-			}
-			log.Info("插入数据时出错: ", err)
-			return err
-		}
-	}
+	// }
 	return nil
 }
 
@@ -242,8 +243,13 @@ func InsertErcTop(event sniffer.ErcTop) error {
 	return nil
 }
 
+var ercTopCache sync.Map
+
 // 查询是否存在相同的contracaddress
 func CheckErcTopExists(contracaddress string) (bool, error) {
+	if _, ok := ercTopCache.Load(contracaddress); ok {
+		return true, nil
+	}
 	var count int
 	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM ercTop WHERE contracaddress=?", contracaddress).Scan(&count)
 	if err != nil {
@@ -252,6 +258,7 @@ func CheckErcTopExists(contracaddress string) (bool, error) {
 	}
 
 	if count > 0 { // 如果存在相同的contracaddress，返回true
+		ercTopCache.Store(contracaddress, true)
 		return true, nil
 	} else { // 如果不存在相同的contracaddress，返回false
 		return false, nil
