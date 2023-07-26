@@ -12,7 +12,6 @@ Domain = "polygon"
 MaxIdle = 8
 MaxActive = 0
 IdleTimeout = 0
-#URI = "redis://:AyLf3qg%40ia%5EGZ%23yrbd34%25j@192.168.10.179:6001/2"
 URI = "redis://:@127.0.0.1:6379/1"
 
 [sniffer]
@@ -44,8 +43,5 @@ Events = [
 ]
 
 [backend]
-# Addr = "http://47.98.198.159:8989"
- Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
-# Addr = "https://eth-goerli.public.blastapi.io"
-#Addr = "https://rpc.ankr.com/eth"
+Addr = "http://127.0.0.1:8545"
 TransactionsPerSecond = 128

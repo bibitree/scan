@@ -12,7 +12,6 @@ Domain = "polygon:chainFinder2"
 MaxIdle = 8
 MaxActive = 0
 IdleTimeout = 0
-#URI = "redis://:AyLf3qg%40ia%5EGZ%23yrbd34%25j@192.168.10.179:6001/2"
 URI = "redis://:@127.0.0.1:6379/2"
 Address = "127.0.0.1:3306"
 Password ="a2683570"
@@ -29,10 +28,6 @@ MaxHeaderBytes = 8192
 EnableTLS = false
 CertFile = "./pem/tyche.com.crt"
 keyFile = "./pem/tyche.com.key"
-
-# 账号
-Account = "0x3f42a9387A75E92283E0EbA1CC707E4c637c7dEe"
-PrivateKey = "37f562aa2e03b3cb2977e939a772d06172b42c9730bbf32b5039788e5adaaf1f"
 
 # 回调
 ErrorURI = "http://127.0.0.1:8081/event/error"
@@ -74,11 +69,7 @@ WaitMinedRetryInterval = 10
 CallbackRetryInterval = 15
 
 [backend]
-# Addr = "http://127.0.0.1:8545"
-  Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
-# Addr = "http://47.98.198.159:8989"
-#Addr = "https://matic-mumbai.chainstacklabs.com"
-# Addr = "https://polygon-mumbai.infura.io/v3/ee1d61ff21434b3a881fe98ff30c5587"
+Addr = "http://127.0.0.1:8545"
 DefaultGasLimit = 5500000
 TransactionsPerSecond = 20
 
