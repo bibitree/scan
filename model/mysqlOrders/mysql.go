@@ -247,8 +247,8 @@ var ercTopCache sync.Map
 
 // 查询是否存在相同的contracaddress
 func CheckErcTopExists(contracaddress string) (bool, error) {
-	if _, ok := ercTopCache.Load(contracaddress); ok {
-		return true, nil
+	if val, ok := ercTopCache.Load(contracaddress); ok {
+		return val.(bool), nil
 	}
 	var count int
 	err := model.MysqlPool.QueryRow("SELECT COUNT(*) FROM ercTop WHERE contracaddress=?", contracaddress).Scan(&count)
@@ -261,6 +261,7 @@ func CheckErcTopExists(contracaddress string) (bool, error) {
 		ercTopCache.Store(contracaddress, true)
 		return true, nil
 	} else { // 如果不存在相同的contracaddress，返回false
+		ercTopCache.Store(contracaddress, false)
 		return false, nil
 	}
 }

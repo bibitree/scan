@@ -190,7 +190,7 @@ func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Messa
 	}
 	log.Info(toAddress)
 	var name string
-	if message.String("ContractName") == "ERC20" {
+	if message.String("ContractName") != "" {
 		ok, _ := mysqlOrders.CheckErcTopExists(message.String("To"))
 		if !ok {
 			name, _ = t.StoreERCInfo(common.HexToAddress(message.String("To")).String())

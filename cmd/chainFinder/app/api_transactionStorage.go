@@ -30,6 +30,11 @@ type Response struct {
 // @Router /tyche/api/transact [post]
 func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 	// var events = new(proto.Evensts)
+	now := time.Now().UnixMilli()
+	defer func() {
+		println("AcceptTransactionStorage cost: ", time.Now().UnixMilli()-now)
+	}()
+
 	data, err := c.GetRawData()
 	if err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
