@@ -447,19 +447,23 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 		return s.unpackBlock(ctx, backend, tx, out)
 	}
 
-	// 计算gas消耗量
-	receipt, err := backend.TransactionReceipt(ctx, tx.Tx.Hash())
-	if err != nil {
-		return err
-	}
-	gasUsed := receipt.GasUsed
+	if tx.Tx.To() != nil {
+		// 普通交易
+		receipt, err := backend.TransactionReceipt(ctx, tx.Tx.Hash())
+		if err != nil {
+			return err
+		}
+		gasUsed := receipt.GasUsed
 
-	// 计算Transaction Fee
-	transactionFee, ok := new(big.Int).SetString(tx.Tx.GasPrice().String(), 10)
-	if !ok {
-		return fmt.Errorf("failed to parse gas price")
+		transactionFee, ok := new(big.Int).SetString(tx.Tx.GasPrice().String(), 10)
+		if !ok {
+			return fmt.Errorf("failed to parse gas price")
+		}
+		out.TransactionFee = transactionFee.Mul(transactionFee, new(big.Int).SetUint64(gasUsed))
+	} else {
+		// 合约创建交易
+		out.TransactionFee = new(big.Int).SetUint64(tx.Tx.GasPrice().Uint64() * tx.Tx.Gas())
 	}
-	out.TransactionFee = transactionFee.Mul(transactionFee, new(big.Int).SetUint64(gasUsed))
 
 	// 设置Event对象的其他属性
 	out.Address = tx.From
