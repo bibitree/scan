@@ -41,7 +41,7 @@ func GetAllEvents(n uint64) ([]model.EventData, []string, error) {
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
+			&event.Gas, &gasPrice, &transactionFee, &gasTipCap, &gasFeeCap,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -93,7 +93,7 @@ func GetEventByTxHash(txHash string) ([]model.EventData, []string, error) {
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
+			&event.Gas, &gasPrice, &transactionFee, &gasTipCap, &gasFeeCap,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -146,7 +146,7 @@ func GetEventsByAddress(address string, page int, pageSize int) ([]model.EventDa
 		var value []uint8
 		err := resultRows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
+			&event.Gas, &gasPrice, &transactionFee, &gasTipCap, &gasFeeCap,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -221,7 +221,7 @@ func GetEventsByTxHash(txHashes []string) ([]model.EventData, error) {
 		var value []uint8
 		err := resultRows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &event.TxHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
+			&event.Gas, &gasPrice, &transactionFee, &gasTipCap, &gasFeeCap,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -277,7 +277,7 @@ func GetEventByBlockHash(blockHash string) ([]model.EventData, []string, []strin
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
+			&event.Gas, &gasPrice, &transactionFee, &gasTipCap, &gasFeeCap,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -336,7 +336,7 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.EventData, []string, []s
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
+			&event.Gas, &gasPrice, &transactionFee, &gasTipCap, &gasFeeCap,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -452,7 +452,7 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
+			&event.Gas, &gasPrice, &transactionFee, &gasTipCap, &gasFeeCap,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -562,7 +562,7 @@ func GetEventsByToAddressAndBlockNumber(toAddress string, pageNo uint64, pageSiz
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
+			&event.Gas, &gasPrice, &transactionFee, &gasTipCap, &gasFeeCap,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
