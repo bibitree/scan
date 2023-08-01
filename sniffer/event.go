@@ -22,6 +22,7 @@ type Event struct {
 	GasPrice         *big.Int               `json:"gasPrice"`
 	GasTipCap        *big.Int               `json:"gasTipCap"`
 	GasFeeCap        *big.Int               `json:"gasFeeCap"`
+	TransactionFee   *big.Int               `json:"transactionFee"`
 	Value            string                 `json:"value"`
 	Nonce            uint64                 `json:"nonce"`
 	To               common.Address         `json:"to"`
@@ -96,23 +97,24 @@ type BlockData struct {
 }
 
 type EventData struct {
-	Address      common.Address `json:"address"`
-	ChainID      int            `json:"chainID"`
-	BlockHash    common.Hash    `json:"blockHash"`
-	BlockNumber  *big.Int       `json:"blockNumber"`
-	TxHash       common.Hash    `json:"txHash"`
-	TxIndex      int            `json:"txIndex"`
-	Gas          *big.Int       `json:"gas"`
-	GasPrice     *big.Int       `json:"gasPrice"`
-	GasTipCap    *big.Int       `json:"gasTipCap"`
-	GasFeeCap    *big.Int       `json:"gasFeeCap"`
-	Value        string         `json:"value"`
-	Nonce        *big.Int       `json:"nonce"`
-	To           common.Address `json:"to"`
-	Status       int            `json:"status"`
-	Timestamp    int            `json:"timestamp"`
-	NewAddress   string         `json:"NewAddress"`
-	NewToAddress string         `json:"NewToAddress"`
+	Address        common.Address `json:"address"`
+	ChainID        int            `json:"chainID"`
+	BlockHash      common.Hash    `json:"blockHash"`
+	BlockNumber    *big.Int       `json:"blockNumber"`
+	TxHash         common.Hash    `json:"txHash"`
+	TxIndex        int            `json:"txIndex"`
+	Gas            *big.Int       `json:"gas"`
+	GasPrice       *big.Int       `json:"gasPrice"`
+	GasTipCap      *big.Int       `json:"gasTipCap"`
+	GasFeeCap      *big.Int       `json:"gasFeeCap"`
+	TransactionFee *big.Int       `json:"transactionFee"`
+	Value          string         `json:"value"`
+	Nonce          *big.Int       `json:"nonce"`
+	To             common.Address `json:"to"`
+	Status         int            `json:"status"`
+	Timestamp      int            `json:"timestamp"`
+	NewAddress     string         `json:"NewAddress"`
+	NewToAddress   string         `json:"NewToAddress"`
 }
 
 type Event2 struct {
@@ -129,6 +131,7 @@ type Event2 struct {
 	GasPrice         *big.Int       `json:"gasPrice"`
 	GasTipCap        *big.Int       `json:"gasTipCap"`
 	GasFeeCap        *big.Int       `json:"gasFeeCap"`
+	TransactionFee   *big.Int       `json:"transactionFee"`
 	Value            string         `json:"value"`
 	Nonce            uint64         `json:"nonce"`
 	To               common.Address `json:"to"`
@@ -144,28 +147,29 @@ type Event2 struct {
 }
 
 type Event3 struct {
-	Address      common.Address `json:"address"`
-	ContractName string         `json:"contractName"`
-	ChainID      *big.Int       `json:"chainID"`
-	Data         []byte         `json:"data"`
-	BlockHash    common.Hash    `json:"blockHash"`
-	BlockNumber  string         `json:"blockNumber"`
-	Name         string         `json:"name"`
-	TxHash       common.Hash    `json:"txHash"`
-	TxIndex      string         `json:"txIndex"`
-	Gas          uint64         `json:"gas"`
-	GasPrice     *big.Int       `json:"gasPrice"`
-	GasTipCap    *big.Int       `json:"gasTipCap"`
-	GasFeeCap    *big.Int       `json:"gasFeeCap"`
-	Value        string         `json:"value"`
-	Nonce        uint64         `json:"nonce"`
-	To           common.Address `json:"to"`
-	Status       bool           `json:"status"`
-	Timestamp    uint64         `json:"timestamp"`
-	MinerAddress string         `json:"minerAddress"`
-	Size         string         `json:"size"`
-	BlockReward  string         `json:"blockReward"`
-	Time         int64          `json:"time"`
+	Address        common.Address `json:"address"`
+	ContractName   string         `json:"contractName"`
+	ChainID        *big.Int       `json:"chainID"`
+	Data           []byte         `json:"data"`
+	BlockHash      common.Hash    `json:"blockHash"`
+	BlockNumber    string         `json:"blockNumber"`
+	Name           string         `json:"name"`
+	TxHash         common.Hash    `json:"txHash"`
+	TxIndex        string         `json:"txIndex"`
+	Gas            uint64         `json:"gas"`
+	GasPrice       *big.Int       `json:"gasPrice"`
+	GasTipCap      *big.Int       `json:"gasTipCap"`
+	GasFeeCap      *big.Int       `json:"gasFeeCap"`
+	TransactionFee *big.Int       `json:"transactionFee"`
+	Value          string         `json:"value"`
+	Nonce          uint64         `json:"nonce"`
+	To             common.Address `json:"to"`
+	Status         bool           `json:"status"`
+	Timestamp      uint64         `json:"timestamp"`
+	MinerAddress   string         `json:"minerAddress"`
+	Size           string         `json:"size"`
+	BlockReward    string         `json:"blockReward"`
+	Time           int64          `json:"time"`
 }
 
 type ChainData struct {

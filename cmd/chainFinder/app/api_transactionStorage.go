@@ -76,6 +76,7 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 			GasPrice:         ev.GasPrice,
 			GasTipCap:        ev.GasTipCap,
 			GasFeeCap:        ev.GasFeeCap,
+			TransactionFee:   ev.TransactionFee,
 			Value:            ev.Value,
 			Nonce:            ev.Nonce,
 			To:               ev.To,

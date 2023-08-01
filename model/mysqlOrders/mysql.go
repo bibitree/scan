@@ -183,14 +183,14 @@ func InsertBlock(block sniffer.BlockData) error {
 }
 
 func InsertEvent(event sniffer.EventData) error {
-	sqlStr := `INSERT INTO event(address, chainID, blockHash, blockNumber, txHash, txIndex, gas, gasPrice, gasTipCap, gasFeeCap, value, nonce, toAddress, status, timestamp, newAddress, newToAddress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	sqlStr := `INSERT INTO event(address, chainID, blockHash, blockNumber, txHash, txIndex, gas, gasPrice, transactionFee,gasTipCap, gasFeeCap, value, nonce, toAddress, status, timestamp, newAddress, newToAddress) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	// 使用ExecContext执行sql语句，如果执行成功则返回nil
 	_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.Address.Hex(), event.ChainID,
 		event.BlockHash.Hex(), event.BlockNumber.String(), event.TxHash.Hex(), event.TxIndex,
-		event.Gas.String(), event.GasPrice.String(), event.GasTipCap.String(),
+		event.Gas.String(), event.GasPrice.String(), event.TransactionFee.String(), event.GasTipCap.String(),
 		event.GasFeeCap.String(), event.Value, event.Nonce.String(),
 		event.To.Hex(), event.Status, event.Timestamp,
 		event.NewAddress, event.NewToAddress) // 添加新字段

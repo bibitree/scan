@@ -212,3 +212,7 @@ COMMIT;
  ALTER TABLE `newContracData`
   CHANGE COLUMN `abi` `abi` LONGTEXT DEFAULT NULL,
   CHANGE COLUMN `code` `code` LONGTEXT DEFAULT NULL;
+
+----2023-8-1
+ALTER TABLE `event` 
+ADD `transactionFee` bigint DEFAULT '0' AFTER `gasPrice`;
