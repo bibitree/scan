@@ -37,11 +37,11 @@ func GetAllEvents(n uint64) ([]model.EventData, []string, error) {
 		event := model.EventData{}
 		var chainID, blockHashBytes, txHash []byte
 		var id uint64
-		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		var gasPrice, gasTipCap, gasFeeCap, transactionFee string // Modify the variable types for these fields
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -57,6 +57,9 @@ func GetAllEvents(n uint64) ([]model.EventData, []string, error) {
 
 		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
 		event.GasFeeCap = gasFeeCapParsed
+
+		transactionFeeParsed, _ := new(big.Int).SetString(transactionFee, 10)
+		event.TransactionFee = transactionFeeParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)
@@ -86,11 +89,11 @@ func GetEventByTxHash(txHash string) ([]model.EventData, []string, error) {
 		event := model.EventData{}
 		var chainID, blockHashBytes, txHash []byte
 		var id uint64
-		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		var gasPrice, gasTipCap, gasFeeCap, transactionFee string // Modify the variable types for these fields
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -106,6 +109,9 @@ func GetEventByTxHash(txHash string) ([]model.EventData, []string, error) {
 
 		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
 		event.GasFeeCap = gasFeeCapParsed
+
+		transactionFeeParsed, _ := new(big.Int).SetString(transactionFee, 10)
+		event.TransactionFee = transactionFeeParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)
@@ -136,11 +142,11 @@ func GetEventsByAddress(address string, page int, pageSize int) ([]model.EventDa
 		var chainID, blockHashBytes, txHash []byte
 		var id uint64
 
-		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		var gasPrice, gasTipCap, gasFeeCap, transactionFee string // Modify the variable types for these fields
 		var value []uint8
 		err := resultRows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -156,6 +162,9 @@ func GetEventsByAddress(address string, page int, pageSize int) ([]model.EventDa
 
 		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
 		event.GasFeeCap = gasFeeCapParsed
+
+		transactionFeeParsed, _ := new(big.Int).SetString(transactionFee, 10)
+		event.TransactionFee = transactionFeeParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)
@@ -208,11 +217,11 @@ func GetEventsByTxHash(txHashes []string) ([]model.EventData, error) {
 		var chainID, blockHashBytes []byte
 		var id uint64
 
-		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		var gasPrice, gasTipCap, gasFeeCap, transactionFee string // Modify the variable types for these fields
 		var value []uint8
 		err := resultRows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &event.TxHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -228,6 +237,9 @@ func GetEventsByTxHash(txHashes []string) ([]model.EventData, error) {
 
 		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
 		event.GasFeeCap = gasFeeCapParsed
+
+		transactionFeeParsed, _ := new(big.Int).SetString(transactionFee, 10)
+		event.TransactionFee = transactionFeeParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)
@@ -261,11 +273,11 @@ func GetEventByBlockHash(blockHash string) ([]model.EventData, []string, []strin
 		event := model.EventData{}
 		var chainID, blockHashBytes, txHash []byte
 		var id uint64
-		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		var gasPrice, gasTipCap, gasFeeCap, transactionFee string // Modify the variable types for these fields
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -281,6 +293,9 @@ func GetEventByBlockHash(blockHash string) ([]model.EventData, []string, []strin
 
 		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
 		event.GasFeeCap = gasFeeCapParsed
+
+		transactionFeeParsed, _ := new(big.Int).SetString(transactionFee, 10)
+		event.TransactionFee = transactionFeeParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)
@@ -317,11 +332,11 @@ func GetEventByBlockNumber(blockNumber uint64) ([]model.EventData, []string, []s
 		event := model.EventData{}
 		var chainID, blockHashBytes, txHash []byte
 		var id uint64
-		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		var gasPrice, gasTipCap, gasFeeCap, transactionFee string // Modify the variable types for these fields
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -433,11 +448,11 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 		event := model.EventData{}
 		var chainID, blockHashBytes, txHash []byte
 		var id uint64
-		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		var gasPrice, gasTipCap, gasFeeCap, transactionFee string // Modify the variable types for these fields
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -453,6 +468,9 @@ func GetEventsBetweenBlockNumbers(start uint64, end uint64, pageNo uint64, pageS
 
 		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
 		event.GasFeeCap = gasFeeCapParsed
+
+		transactionFeeParsed, _ := new(big.Int).SetString(transactionFee, 10)
+		event.TransactionFee = transactionFeeParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)
@@ -540,11 +558,11 @@ func GetEventsByToAddressAndBlockNumber(toAddress string, pageNo uint64, pageSiz
 		event := model.EventData{}
 		var chainID, blockHashBytes, txHash []byte
 		var id uint64
-		var gasPrice, gasTipCap, gasFeeCap string // Modify the variable types for these fields
+		var gasPrice, gasTipCap, gasFeeCap, transactionFee string // Modify the variable types for these fields
 		var value []uint8
 		err := rows.Scan(&id, &event.Address, &chainID,
 			&blockHashBytes, &event.BlockNumber, &txHash, &event.TxIndex,
-			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap,
+			&event.Gas, &gasPrice, &gasTipCap, &gasFeeCap, &transactionFee,
 			&value, &event.Nonce, &event.To,
 			&event.Status, &event.Timestamp, &event.NewAddress,
 			&event.NewToAddress)
@@ -560,6 +578,9 @@ func GetEventsByToAddressAndBlockNumber(toAddress string, pageNo uint64, pageSiz
 
 		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
 		event.GasFeeCap = gasFeeCapParsed
+
+		transactionFeeParsed, _ := new(big.Int).SetString(transactionFee, 10)
+		event.TransactionFee = transactionFeeParsed
 
 		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
 		event.BlockHash = string(blockHashBytes)

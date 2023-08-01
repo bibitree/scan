@@ -80,6 +80,12 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		return After(t.conf.NetworkRetryInterval, message)
 	}
 
+	transactionFee, err := message.Int64("TransactionFee")
+	if err != nil {
+		// 发生错误，处理错误逻辑
+		return After(t.conf.NetworkRetryInterval, message)
+	}
+
 	nonce, err := message.Int64("Nonce")
 	if err != nil {
 		// 发生错误，处理错误逻辑
@@ -122,23 +128,24 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		Status = 1
 	}
 	var event = sniffer.EventData{
-		Address:      common.HexToAddress(message.String("Address")),
-		ChainID:      chainID,
-		BlockHash:    common.HexToHash(message.String("BlockHash")),
-		BlockNumber:  big.NewInt(blockNumber),
-		TxHash:       common.HexToHash(message.String("TxHash")),
-		TxIndex:      txIndex,
-		Gas:          big.NewInt(gas),
-		GasPrice:     big.NewInt(gasPrice),
-		GasTipCap:    big.NewInt(gasTipCap),
-		GasFeeCap:    big.NewInt(gasFeeCap),
-		Value:        Value,
-		Nonce:        big.NewInt(nonce),
-		To:           common.HexToAddress(message.String("To")),
-		Status:       Status,
-		Timestamp:    timestamp,
-		NewAddress:   address,
-		NewToAddress: toAddress,
+		Address:        common.HexToAddress(message.String("Address")),
+		ChainID:        chainID,
+		BlockHash:      common.HexToHash(message.String("BlockHash")),
+		BlockNumber:    big.NewInt(blockNumber),
+		TxHash:         common.HexToHash(message.String("TxHash")),
+		TxIndex:        txIndex,
+		Gas:            big.NewInt(gas),
+		GasPrice:       big.NewInt(gasPrice),
+		GasTipCap:      big.NewInt(gasTipCap),
+		GasFeeCap:      big.NewInt(gasFeeCap),
+		TransactionFee: big.NewInt(transactionFee),
+		Value:          Value,
+		Nonce:          big.NewInt(nonce),
+		To:             common.HexToAddress(message.String("To")),
+		Status:         Status,
+		Timestamp:      timestamp,
+		NewAddress:     address,
+		NewToAddress:   toAddress,
 	}
 
 	log.Info(event)

@@ -231,6 +231,7 @@ func CreateTransactionStorage(event sniffer.Event2) error {
 		args = args.Add("GasPrice", event.GasPrice)
 		args = args.Add("GasTipCap", event.GasTipCap)
 		args = args.Add("GasFeeCap", event.GasFeeCap)
+		args = args.Add("TransactionFee", event.TransactionFee)
 		args = args.Add("Value", event.Value)
 		args = args.Add("Nonce", event.Nonce)
 		args = args.Add("To", event.To.String())

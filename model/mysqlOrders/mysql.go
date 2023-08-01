@@ -191,7 +191,7 @@ func InsertEvent(event sniffer.EventData) error {
 	_, err := model.MysqlPool.ExecContext(ctx, sqlStr, event.Address.Hex(), event.ChainID,
 		event.BlockHash.Hex(), event.BlockNumber.String(), event.TxHash.Hex(), event.TxIndex,
 		event.Gas.String(), event.GasPrice.String(), event.GasTipCap.String(),
-		event.GasFeeCap.String(), event.Value, event.Nonce.String(),
+		event.GasFeeCap.String(), event.TransactionFee.String(), event.Value, event.Nonce.String(),
 		event.To.Hex(), event.Status, event.Timestamp,
 		event.NewAddress, event.NewToAddress) // 添加新字段
 	if err != nil {

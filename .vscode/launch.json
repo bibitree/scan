@@ -11,7 +11,7 @@
             "request": "launch",
             "mode": "auto",
             // "cwd": "/config/workspace/chain/build/scanner/sniffer",
-            "cwd": "/config/workspace/chain/build/scanner/chainFinder",
+            // "cwd": "/config/workspace/chain/build/scanner/chainFinder",
             // "program": "${workspaceFolder}/cmd/sniffer/main.go"
             "program": "${workspaceFolder}/cmd/chainFinder/main.go"
         }

@@ -59,6 +59,7 @@ type Event struct {
 	GasPrice         *big.Int               `json:"gasPrice"`
 	GasTipCap        *big.Int               `json:"gasTipCap"`
 	GasFeeCap        *big.Int               `json:"gasFeeCap"`
+	TransactionFee   *big.Int               `json:"transactionFee"`
 	Value            string                 `json:"value"`
 	Nonce            uint64                 `json:"nonce"`
 	To               common.Address         `json:"to"`
