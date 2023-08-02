@@ -269,6 +269,45 @@ func GetLatestTransactionTOPStorage(num int) ([]sniffer.Event2, error) {
 	return events, nil
 }
 
+func GetLatestTransactionTOPStorageByHash(tx string) (*sniffer.Event2, error) {
+	var red = model.RedisPool.Get()
+	defer red.Close()
+	red.Send("XREVRANGE", keys.CreateTransactionTOPStorage(), "+", "-", "COUNT", 5000)
+	red.Send("XLEN", keys.CreateTransactionTOPStorage())
+	red.Flush()
+
+	resp, err := redis.Values(red.Receive()) // get latest transaction
+	if err != nil {
+		return nil, err
+	}
+
+	for _, msg := range resp {
+		streamMsg := msg.([]interface{})
+		streamEvents := streamMsg[1].([]interface{})
+
+		skipFirst := true
+		for _, streamEvent := range streamEvents {
+			if skipFirst {
+				skipFirst = false
+				continue
+			}
+			eventBytes := streamEvent.([]byte)
+
+			event := sniffer.Event2{}
+			err = json.Unmarshal(eventBytes, &event)
+			if err != nil {
+				return nil, err
+			}
+			event.ContractName = strings.Replace(event.ContractName, "ERC20", "FRC20", -1)
+			if event.TxHash.Hex() == tx {
+				return &event, nil
+			}
+		}
+	}
+
+	return nil, nil
+}
+
 func ReadChainDataStorag() (sniffer.ChainData, error) {
 	var chainData sniffer.ChainData
 

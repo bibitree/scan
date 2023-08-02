@@ -148,7 +148,7 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			log.With(err).Error("Failed to blocknumber.Get")
 			goto WAIT
 		}
-		log.Info("获取本地最新块%d,", fromBlockNumber)
+		log.Info("获取本地最新块", fromBlockNumber)
 		// End of the range.
 		//获取当前安全块
 		toBlockNumber, err := s.getSecurityBlockNumber(ctx, backend)
@@ -156,7 +156,7 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 			log.With(err).Error("Failed to getSecurityBlockNumber")
 			goto WAIT
 		}
-		log.Info("获取当前安全块%d,", toBlockNumber)
+		log.Info("获取当前安全块", toBlockNumber)
 		if fromBlockNumber > toBlockNumber {
 			// Is latest block number.
 			// 如果本地块号大于安全块号，则表示本地已经是最新块，进入等待状态。
@@ -407,34 +407,25 @@ func getBlockRewar(block *types.Block) (string, string, error) {
 
 func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []TransactionInfo) error {
 	event2 := []*Event{}
-	var count int
 
+	var WaitGroup sync.WaitGroup
 	for _, tx := range txs {
+		WaitGroup.Add(1)
 		event := new(Event)
-		// 解析交易数据成为事件对象
-		if err := s.unpackTransaction(ctx, backend, &tx, event); err != nil {
-			log.Panic(err)
-		}
+		go func(tx TransactionInfo, event *Event) {
+			defer WaitGroup.Done()
 
-		// 存储解包后的事件到 event2 中
-		event2 = append(event2, event)
-		count++
-
-		// 满足一定数量或者全部读完后，处理事件
-		if count == 100 || len(event2) == len(txs) {
-			if err := s.handleEvent(ctx, event2); err != nil {
-				return err
+			// 解析交易数据成为事件对象
+			if err := s.unpackTransaction(ctx, backend, &tx, event); err != nil {
+				log.Panic(err)
 			}
-			count = 0
-			event2 = []*Event{}
-		}
 
-		// 检查上下文是否被取消
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
+		}(tx, event)
+		event2 = append(event2, event)
+	}
+	WaitGroup.Wait()
+	if err := s.handleEvent(ctx, event2); err != nil {
+		return err
 	}
 
 	return nil
@@ -447,11 +438,12 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 		return s.unpackBlock(ctx, backend, tx, out)
 	}
 
-	receipt, err := backend.TransactionReceipt(ctx, tx.Tx.Hash())
-	if err != nil {
-		return err
-	}
-	gasUsed := receipt.GasUsed
+	// TODO 操作太耗时，暂时注释掉
+	// receipt, err := backend.TransactionReceipt(ctx, tx.Tx.Hash())
+	// if err != nil {
+	// 	return err
+	// }
+	gasUsed := tx.GasLimit //receipt.GasUsed
 
 	// 计算Transaction Fee
 	transactionFee, ok := new(big.Int).SetString(tx.Tx.GasPrice().String(), 10)
@@ -578,7 +570,7 @@ func (s *Sniffer) unpackBlock(ctx context.Context, backend eth.Backend, tx *Tran
 }
 
 func (s *Sniffer) handleEvent(ctx context.Context, event []*Event) error {
-	log.Info(event)
+	log.Info("handleEvent", event)
 	for {
 		err := s.handler(event)
 		if err == nil {

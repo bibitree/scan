@@ -3,6 +3,8 @@ package sniffer
 import (
 	"encoding/json"
 	"errors"
+	"ethgo/model"
+	"ethgo/util/bigx"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -37,6 +39,10 @@ type Event struct {
 	GasLimit         uint64                 `json:"gasLimit"`
 	Bytecode         []byte                 `json:"bytecode"`
 	ContractAddr     common.Address         `json:"contractAddr"`
+}
+
+func (e *Event) String() string {
+	return e.TxHash.Hex()
 }
 
 type ContractData struct {
@@ -144,6 +150,29 @@ type Event2 struct {
 	GasLimit         uint64         `json:"gasLimit"`
 	Bytecode         []byte         `json:"bytecode"`
 	ContractAddr     common.Address `json:"contractAddr"`
+}
+
+func (e *Event2) ToEventData() *model.EventData {
+	return &model.EventData{
+		Address:        e.Address.Hex(),
+		ChainID:        e.ChainID,
+		BlockHash:      e.BlockHash.Hex(),
+		BlockNumber:    big.NewInt(0).SetUint64(e.BlockNumber).String(),
+		TxHash:         e.TxHash.Hex(),
+		TxIndex:        e.TxIndex,
+		Gas:            e.Gas,
+		GasPrice:       e.GasPrice,
+		GasTipCap:      e.GasTipCap,
+		GasFeeCap:      e.GasFeeCap,
+		TransactionFee: e.TransactionFee,
+		Value:          bigx.FromString(e.Value),
+		Nonce:          e.Nonce,
+		To:             e.To.Hex(),
+		Status:         e.Status,
+		Timestamp:      e.Timestamp,
+		NewAddress:     e.Address.Hex(),
+		NewToAddress:   e.To.Hex(),
+	}
 }
 
 type Event3 struct {

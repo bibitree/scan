@@ -9,3 +9,8 @@ func Mul(val *big.Int, multiplier float64) *big.Int {
 	}
 	return result
 }
+
+func FromString(val string) *big.Int {
+	result, _ := new(big.Int).SetString(val, 10)
+	return result
+}

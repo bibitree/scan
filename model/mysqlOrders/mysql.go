@@ -175,7 +175,7 @@ func InsertBlock(block sniffer.BlockData) error {
 			// log.Info("重复插入数据: ", block.BlockHash.String())
 			return nil
 		}
-		log.Info("插入数据时出错: ", err)
+		log.Error("插入数据时出错: ", err)
 		return err
 	}
 	// }

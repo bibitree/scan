@@ -249,9 +249,17 @@ func (app *App) GetEventsByTxHash(c *ginx.Context) {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	events, Contract, err := mysqlOrders.GetEventByTxHash(request.TxHash)
-	if err != nil {
-		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	var events []model.EventData
+	var Contract []string
+	var err error
+	// 保证在未同步数据库前也能获取到数据
+	if e, _ := orders.GetLatestTransactionTOPStorageByHash(request.TxHash); e != nil {
+		events = append(events, *(e.ToEventData()))
+	} else {
+		events, Contract, err = mysqlOrders.GetEventByTxHash(request.TxHash)
+		if err != nil {
+			c.Failure(http.StatusBadGateway, err.Error(), nil)
+		}
 	}
 	Contracts, _, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {

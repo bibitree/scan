@@ -39,7 +39,7 @@ func (t *ChainFinder) TransactionStorage(ctx context.Context, message *orders.Me
 		address = t.conf.PrefixChain + address[2:]
 	}
 
-	txHash := common.HexToHash(message.String("TxHash")).String()
+	txHash := message.String("TxHash")
 	if txHash == "0x0000000000000000000000000000000000000000000000000000000000000000" {
 		return t.BlockStorage(ctx, message)
 	}
@@ -434,7 +434,7 @@ func (t *ChainFinder) ProcessBalance(balance Balance) (interface{}, error) {
 		if res.Message == "" {
 			res.Message = fmt.Sprintf("%v", res.Code)
 		}
-		return "", errors.New(res.Message)
+		return "", errors.New("ProcessBalance res error:" + res.Message)
 	}
 
 	return res.Data, nil

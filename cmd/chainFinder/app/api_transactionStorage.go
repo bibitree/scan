@@ -11,6 +11,7 @@ import (
 	"ethgo/util"
 	"ethgo/util/ginx"
 	"fmt"
+	"math/big"
 	"net/http"
 	"time"
 )
@@ -32,7 +33,7 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 	// var events = new(proto.Evensts)
 	now := time.Now().UnixMilli()
 	defer func() {
-		println("AcceptTransactionStorage cost: ", time.Now().UnixMilli()-now)
+		println("AcceptTransactionStorage cost: ", time.Now().String(), time.Now().UnixMilli()-now)
 	}()
 
 	data, err := c.GetRawData()
@@ -95,7 +96,30 @@ func (app *App) AcceptTransactionStorage(c *ginx.Context) {
 		txhash := ev.TxHash.String()
 		if txhash != "0x0000000000000000000000000000000000000000000000000000000000000000" {
 			orders.CreateTransactionTOPStorage(event)
+		} else {
+			// 冗余操作，保证能第一时间看到最新的区块信息
+			go func() {
+				_blockReward, _ := big.NewFloat(0).SetString(event.BlockReward)
+				var blockReward float64
+				if _blockReward != nil {
+					blockReward, _ = _blockReward.Float64()
+				}
+
+				a := int64(blockReward * 1e18)
+				var event = sniffer.BlockData{
+					BlockHash:    event.BlockHash,
+					BlockNumber:  big.NewInt(int64(event.BlockNumber)),
+					Timestamp:    int(event.Timestamp),
+					MinerAddress: event.MinerAddress,
+					Size:         event.Size,
+					BlockReward:  big.NewInt(a),
+					GasLimit:     int(event.GasLimit),
+				}
+				log.Info(event)
+				mysqlOrders.InsertBlock(event)
+			}()
 		}
+		println("AcceptTransactionStorage: ", txhash)
 	}
 	c.Success(http.StatusOK, "succ", nil)
 }
@@ -130,7 +154,8 @@ func (app *App) SetChainData() {
 	gasPriceGasPrice, err := app.ProcessGasPrice()
 	if err != nil {
 		log.Error(err)
-		return
+		// return
+		gasPriceGasPrice = "1" // 保证错误时也能运行
 	}
 
 	paginate := sniffer.ChainData{
