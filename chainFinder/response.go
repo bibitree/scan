@@ -70,6 +70,7 @@ type ChainData struct {
 type EventData struct {
 	// 合约地址
 	ContractData    []model.ContractData `json:"contractData" example:"0"`
+	ContractsData2  []model.ContractData `json:"contractData2" example:"0"`
 	Event           []model.EventData    `json:"event" example:"100"`
 	SupplementEvent []model.EventData    `json:"supplementEvent" example:"100"`
 	BlockData       []model.BlockData3   `json:"blockData" example:"100"`

@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf16"
 	"unicode/utf8"
 
@@ -39,8 +40,6 @@ type Call struct {
 type Balance struct {
 	// 合约地址
 	Address string `json:"address" example:"0xa19844250b2b37c8518cb837b58ffed67f2e915D"`
-	// 方法名(大小写敏感)
-	Balance string `json:"Balance" example:"getDNA"`
 }
 
 func (app *App) GetAllEvents(c *ginx.Context) {
@@ -99,10 +98,84 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
+	Contracts2, _, _, page2, _, err := mysqlOrders.GetEventsByAddress4(txHashs, request.PageNo, request.PageSize)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+
+	eventData := chainFinder.EventData{
+		ContractData:    nil,
+		ContractsData2:  Contracts2,
+		Event:           events,
+		PageNumber:      page,
+		EventPageNumber: page2,
+		Balance:         nil,
+		ETHBalance:      addressData.Balance,
+		SupplementEvent: nil,
+		ContractNum:     len(Contracts2),
+	}
+	c.Success(http.StatusOK, "succ", eventData)
+}
+
+func (app *App) GetContractEventsByAddress(c *ginx.Context) {
+	var request = new(proto.ByAddress)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	request.Address = strings.ToLower(request.Address)
+	addressData, err := mysqlOrders.GetTopAddress(request.Address)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+	now := time.Now()
+	// 格式化输出时间，精确到毫秒
+	fmt.Println(now.Format("2006-01-02 15:04:05.000"))
+	Contracts, txHashsERC, _, page2, _, err := mysqlOrders.GetEventsByAddress2(request.Address, request.PageNo, request.PageSize)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+	now = time.Now()
+	fmt.Println(now.Format("2006-01-02 15:04:05.000"))
+	Contracts2, _, _, _, _, err := mysqlOrders.GetEventsByAddress5(txHashsERC, request.PageNo, request.PageSize)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+
+	eventData := chainFinder.EventData{
+		ContractData:    Contracts,
+		ContractsData2:  nil,
+		Event:           Contracts2,
+		PageNumber:      page2,
+		EventPageNumber: page2,
+		Balance:         nil,
+		ETHBalance:      addressData.Balance,
+		SupplementEvent: nil,
+		ContractNum:     len(Contracts2),
+	}
+	c.Success(http.StatusOK, "succ", eventData)
+}
+
+func (app *App) GetEventsByContractsAddress(c *ginx.Context) {
+	var request = new(proto.ByAddress)
+	if err := c.BindJSONEx(request); err != nil {
+		c.Failure(http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+	request.Address = strings.ToLower(request.Address)
+	addressData, err := mysqlOrders.GetTopAddress(request.Address)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
+	events, txHashs, page, err := mysqlOrders.GetEventsByAddress(request.Address, request.PageNo, request.PageSize)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
+	}
 	Contracts, txHashsERC, _, page2, num, err := mysqlOrders.GetEventsByAddress2(request.Address, request.PageNo, request.PageSize)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
+
 	var txHashsNew []string
 	m := make(map[string]bool)
 
@@ -175,7 +248,67 @@ func (app *App) GetEventsByAddress(c *ginx.Context) {
 		SupplementEvent: supplementEvent,
 		ContractNum:     num,
 	}
+
 	c.Success(http.StatusOK, "succ", eventData)
+}
+
+func (app *App) GetBalancesByUsers() (map[string]interface{}, error) {
+	// 调用 mysqlOrders.GetAllAddresses 获取所有用户地址
+	userAddresses, err := mysqlOrders.GetAllAddresses()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user addresses: %v", err)
+	}
+
+	// 创建一个用于存储用户余额的 map
+	balances := make(map[string]interface{})
+
+	for _, address := range userAddresses {
+		balance := chainFinder.Balance{
+			Address: address,
+		}
+
+		// 调用 ProcessBalance 方法获取余额
+		data, err := app.ProcessBalance(balance)
+		if err != nil {
+			log.Errorf("Failed to fetch balance for address %s: %v", address, err)
+			continue // 跳过错误的地址，处理下一个
+		}
+
+		// 如果余额为空，跳过该地址
+		if data == nil {
+			log.Debugf("Address %s has no balance, skipping", address)
+			continue
+		}
+
+		// 将余额存入 map
+		balances[address] = data
+	}
+
+	return balances, nil
+}
+
+func (app *App) ProcessBalance(balance chainFinder.Balance) (interface{}, error) {
+
+	body, err := util.Post("http://127.0.0.1:8072/tyche/api/wallet/balance_at", balance)
+	if err != nil {
+		return "", err
+	}
+
+	var res Response
+	if err := json.Unmarshal(body, &res); err != nil {
+		return "", err
+	}
+
+	log.Debugf("应答: %v", string(body))
+
+	if res.Code != http.StatusOK {
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("%v", res.Code)
+		}
+		return "", errors.New("ProcessBalance res error:" + res.Message)
+	}
+
+	return res.Data, nil
 }
 
 func (app *App) GetAddres(c *ginx.Context) {
@@ -253,14 +386,14 @@ func (app *App) GetEventsByTxHash(c *ginx.Context) {
 	var Contract []string
 	var err error
 	// 保证在未同步数据库前也能获取到数据
-	if e, _ := orders.GetLatestTransactionTOPStorageByHash(request.TxHash); e != nil {
-		events = append(events, *(e.ToEventData()))
-	} else {
-		events, Contract, err = mysqlOrders.GetEventByTxHash(request.TxHash)
-		if err != nil {
-			c.Failure(http.StatusBadGateway, err.Error(), nil)
-		}
+	// if e, _ := orders.GetLatestTransactionTOPStorageByHash(request.TxHash); e != nil {
+	// 	events = append(events, *(e.ToEventData()))
+	// } else {
+	events, Contract, err = mysqlOrders.GetEventByTxHash(request.TxHash)
+	if err != nil {
+		c.Failure(http.StatusBadGateway, err.Error(), nil)
 	}
+	// }
 	Contracts, _, err := mysqlOrders.GetEventsByTxHashes(Contract)
 	if err != nil {
 		c.Failure(http.StatusBadGateway, err.Error(), nil)
@@ -552,23 +685,18 @@ func (app *App) GetCreateContractData(c *ginx.Context) {
 }
 
 func (app *App) IsContractAddress(c *ginx.Context) {
-	var request = new(proto.ByAddress)
+	var request = new(proto.IsContract)
 	if err := c.BindJSONEx(request); err != nil {
 		c.Failure(http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	createContractData, err := mysqlOrders.IsContractDataExists(request.Address)
+	_, err := mysqlOrders.IsContractDataExists(request.Address)
 	if err != nil {
-		c.Failure(http.StatusBadGateway, err.Error(), nil)
+		c.Success(http.StatusBadGateway, "succ", 0)
 		return
 	}
 
-	isContractAddressResponse := chainFinder.IsContractAddressResponse{
-		Address:    request.Address,
-		IsContract: createContractData,
-	}
-
-	c.Success(http.StatusOK, "succ", isContractAddressResponse)
+	c.Success(http.StatusOK, "succ", 1)
 }
 
 func (app *App) CompareByIcon(c *ginx.Context) {
@@ -777,27 +905,4 @@ func (app *App) UpdateBalance(c *ginx.Context) {
 	log.Info(event)
 	mysqlOrders.InsertAddressData(event)
 	c.Success(http.StatusOK, "succ", num)
-}
-
-func (app *App) ProcessBalance(address chainFinder.Balance) (interface{}, error) {
-	body, err := util.Post(app.conf.ChainFinder.BalanceAt, address)
-	if err != nil {
-		return "", err
-	}
-
-	var res Response
-	if err := json.Unmarshal(body, &res); err != nil {
-		return "", err
-	}
-
-	log.Debugf("应答: %v", string(body))
-
-	if res.Code != http.StatusOK {
-		if res.Message == "" {
-			res.Message = fmt.Sprintf("%v", res.Code)
-		}
-		return "", errors.New(res.Message)
-	}
-
-	return res.Data, nil
 }

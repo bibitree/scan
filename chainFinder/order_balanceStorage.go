@@ -66,3 +66,32 @@ func (t *ChainFinder) BalanceStorage(ctx context.Context, message *orders.Messag
 	balanceUpCache.Store(balance.Address, now)
 	return t.ack(message)
 }
+
+func (t *ChainFinder) GetBalancesByUsers(userAddresses []string) (map[string]interface{}, error) {
+	// 创建一个用于存储用户余额的 map
+	balances := make(map[string]interface{})
+
+	for _, address := range userAddresses {
+		balance := Balance{
+			Address: address,
+		}
+
+		// 调用 ProcessBalance 方法获取余额
+		data, err := t.ProcessBalance(balance)
+		if err != nil {
+			log.Errorf("Failed to fetch balance for address %s: %v", address, err)
+			continue // 跳过错误的地址，处理下一个
+		}
+
+		// 如果余额为空，跳过该地址
+		if data == nil {
+			log.Debugf("Address %s has no balance, skipping", address)
+			continue
+		}
+
+		// 将余额存入 map
+		balances[address] = data
+	}
+
+	return balances, nil
+}

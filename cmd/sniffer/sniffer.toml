@@ -1,5 +1,5 @@
 [logger]
-Filename = "./logs/sniffer.log"
+Filename = "./logs/sniffer1.log"
 Level = "debug"
 Compress = false
 MaxSize = 100
@@ -8,7 +8,7 @@ MaxBackups = 512
 Named = "[SNIFFER]"
 
 [redis]
-Domain = "polygon"
+Domain = "1Ch1ain114"
 MaxIdle = 8
 MaxActive = 0
 IdleTimeout = 0
@@ -16,32 +16,19 @@ URI = "redis://:@127.0.0.1:6379/1"
 
 [sniffer]
 SecrityHeight = 0
-NumberOfBlocks = 10
-#Callback = "http://127.0.0.1:8081/event/bridge"
-Callback = "http://127.0.0.1:18071/chainFinder/api/AcceptTransactionStorage"
-
-
-[[sniffer.contracts]]
-Addr = "ERC1155"
-Abi = "./contracts/ERC1155.abi"
-Events = [
-    "TransferSingle","TransferBatch","ApprovalForAll","URI"
-]
+NumberOfBlocks = 1000
+NumberEnd = 3441587
+NumberStart = 3341587
+Callback = "http://127.0.0.1:18072/chainFinder/api/AcceptTransactionStorage"
+#Callback = "http://192.168.101.12:18071/chainFinder/api/AcceptTransactionStorage"
 
 [[sniffer.contracts]]
-Addr = "ERC721"
-Abi = "./contracts/ERC721.abi"
+Addr = "0x83E1C34BF833fF41e95F704c4e12223020f16611"
+Abi = "./contracts/NovaiFaucet.abi"
 Events = [
-    "Transfer","Approval","ApprovalForAll"
-]
-
-[[sniffer.contracts]]
-Addr = "ERC20"
-Abi = "./contracts/ERC20.abi"
-Events = [
-    "Transfer","Approval"
+    "Transfer"
 ]
 
 [backend]
-Addr = "http://127.0.0.1:8545"
+Addr = "https://rpc.novaichain.com"
 TransactionsPerSecond = 128

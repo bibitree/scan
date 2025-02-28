@@ -1,0 +1,48 @@
+[logger]
+Filename = "./logs/sniffer.log"
+Level = "debug"
+Compress = false
+MaxSize = 100
+MaxAge = 7
+MaxBackups = 512
+Named = "[SNIFFER]"
+
+[redis]
+Domain = "data2217"
+MaxIdle = 8
+MaxActive = 0
+IdleTimeout = 0
+URI = "redis://:@127.0.0.1:6379/1"
+
+[sniffer]
+SecrityHeight = 0
+NumberOfBlocks = 10
+#Callback = "http://127.0.0.1:8081/event/bridge"
+Callback = "http://127.0.0.1:18071/chainFinder/api/AcceptTransactionStorage"
+
+
+[[sniffer.contracts]]
+Addr = "ERC1155"
+Abi = "./contracts/ERC1155.abi"
+Events = [
+    "TransferSingle","TransferBatch","ApprovalForAll","URI"
+]
+
+[[sniffer.contracts]]
+Addr = "ERC721"
+Abi = "./contracts/ERC721.abi"
+Events = [
+    "Transfer","Approval","ApprovalForAll"
+]
+
+[[sniffer.contracts]]
+Addr = "ERC20"
+Abi = "./contracts/ERC20.abi"
+Events = [
+    "Transfer","Approval"
+]
+
+[backend]
+#Addr = "http://127.0.0.1:8545"
+Addr = "https://rpc.novaichain.com"
+TransactionsPerSecond = 128

@@ -124,11 +124,12 @@ func GetEventByTxHash(txHash string) ([]model.EventData, []string, error) {
 }
 
 func GetEventsByAddress(address string, page int, pageSize int) ([]model.EventData, []string, uint64, error) {
-	// 获取结果集
-	resultSQLStr := `SELECT * FROM event WHERE address = ? OR toAddress = ? ORDER BY blockNumber DESC LIMIT ?, ?;`
+	// 计算分页的起始位置和返回记录数
 	rangeStart := (page - 1) * pageSize
-	rangeEnd := rangeStart + pageSize
-	resultRows, err := model.MysqlPool.Query(resultSQLStr, address, address, rangeStart, rangeEnd)
+
+	// 使用 rangeStart 作为偏移量，pageSize 作为查询的记录数
+	resultSQLStr := `SELECT * FROM event WHERE address = ? OR toAddress = ? ORDER BY blockNumber DESC LIMIT ?, ?;`
+	resultRows, err := model.MysqlPool.Query(resultSQLStr, address, address, rangeStart, pageSize)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -141,7 +142,6 @@ func GetEventsByAddress(address string, page int, pageSize int) ([]model.EventDa
 		event := model.EventData{}
 		var chainID, blockHashBytes, txHash []byte
 		var id uint64
-
 		var gasPrice, gasTipCap, gasFeeCap, transactionFee string // Modify the variable types for these fields
 		var value []uint8
 		err := resultRows.Scan(&id, &event.Address, &chainID,
@@ -779,6 +779,43 @@ func GetEventsByTxHashes(txHashes []string) ([]model.ContractData, []string, err
 	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	log.Printf("Generated SQL: %s\n", sqlStr)
+	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	ContractList := make([]string, 0)
+	// 遍历查询结果并将其转换为ContractData类型
+	for rows.Next() {
+		var event model.ContractData
+		var data string
+		// var id string
+		var id uint64
+		err = rows.Scan(&id, &event.ContractName, &event.EventName, &data, &event.Name, &event.TxHash, &event.Contrac)
+		if err != nil {
+			return nil, nil, err
+		}
+		event.ContractName = strings.Replace(event.ContractName, "ERC20", "FRC20", -1)
+		event.EventName = strings.Replace(event.EventName, "ERC20", "FRC20", -1)
+		// 解析data字段
+		event.Decimals, _ = GetDecimals(event.Contrac)
+		json.Unmarshal([]byte(data), &event.Data)
+		ContractList = append(ContractList, event.Contrac)
+		events = append(events, event)
+	}
+	return events, ContractList, nil
+}
+
+func GetEventsByTxHashes2(txHashes string) ([]model.ContractData, []string, error) {
+	events := make([]model.ContractData, 0)
+	// 将传入的TxHash列表转换为字符串形式，以便查询数据库
+	// txHashStr := fmt.Sprintf("'%s'", strings.Join(txHashes, "','"))
+	// 构造sql语句
+	sqlStr := fmt.Sprintf("SELECT * FROM ercevent WHERE txHash in (%s)", txHashes)
+	// 使用QueryContext来查询数据库，并且在查询时使用超时参数
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr)
 	if err != nil {
 		return nil, nil, err
@@ -840,18 +877,31 @@ func GetEventsByAddress3(address string) ([]model.ContractData, []string, error)
 		}
 		fromAddr, ok := jsonData["from"].(string)
 		if !ok {
-			continue
+			fromAddr = ""
 		}
 		toAddr, ok := jsonData["to"].(string)
 		if !ok {
-			continue
+			toAddr = ""
 		}
+
+		sender, ok := jsonData["sender"].(string)
+		if !ok {
+			sender = ""
+		}
+		user, ok := jsonData["user"].(string)
+		if !ok {
+			user = ""
+		}
+
+		owner, ok := jsonData["owner"].(string)
+		if !ok {
+			owner = ""
+		}
+
 		// 筛选出发人或接收人为传入地址的数据
-		if fromAddr == address || toAddr == address {
-			event.Decimals, err = GetDecimals(event.Contrac)
-			if err != nil {
-				return nil, nil, err
-			}
+		if fromAddr == address || toAddr == address || sender == address || user == address || owner == address {
+
+			event.Decimals = "6"
 			json.Unmarshal([]byte(data), &event.Data)
 			ContractList = append(ContractList, event.Contrac)
 			events = append(events, event)
@@ -865,7 +915,7 @@ func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractDa
 	// 构造sql语句
 	sqlCountStr := "SELECT COUNT(*) AS count FROM ercevent WHERE data LIKE CONCAT('%', ?, '%')"
 	sqlStr := "SELECT * FROM ercevent WHERE data LIKE CONCAT('%', ?, '%') ORDER BY id DESC LIMIT ?, ?"
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	// 查询总记录数
 	row := model.MysqlPool.QueryRowContext(ctx, sqlCountStr, address)
@@ -899,17 +949,35 @@ func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractDa
 		if err != nil {
 			return nil, nil, nil, 0, 0, err
 		}
-		fromAddr, ok1 := jsonData["from"].(string)
-		toAddr, ok2 := jsonData["to"].(string)
-		if !ok1 || !ok2 {
-			continue
+		fromAddr, ok := jsonData["from"].(string)
+		if !ok {
+			fromAddr = ""
 		}
+		toAddr, ok := jsonData["to"].(string)
+		if !ok {
+			toAddr = ""
+		}
+		sender, ok := jsonData["sender"].(string)
+		if !ok {
+			sender = ""
+		}
+		user, ok := jsonData["user"].(string)
+		if !ok {
+			user = ""
+		}
+
+		owner, ok := jsonData["owner"].(string)
+		if !ok {
+			owner = ""
+		}
+
 		// 筛选出发人或接收人为传入地址的数据
-		if fromAddr == address || toAddr == address {
-			event.Decimals, err = GetDecimals(event.Contrac)
-			if err != nil {
-				return nil, nil, nil, 0, 0, err
-			}
+		if fromAddr == address || toAddr == address || sender == address || user == address || owner == address {
+			// event.Decimals, err = GetDecimals(event.Contrac)
+			event.Decimals = "6"
+			// if err != nil {
+			// 	return nil, nil, nil, 0, 0, err
+			// }
 			json.Unmarshal([]byte(data), &event.Data)
 			TXHashList = append(TXHashList, event.TxHash)
 			ContractList = append(ContractList, event.Contrac)
@@ -917,6 +985,187 @@ func GetEventsByAddress2(address string, page, pageSize int) ([]model.ContractDa
 		}
 	}
 	return events, TXHashList, ContractList, totalPages, int(count), nil
+}
+
+func GetEventsByAddress4(txHashes []string, page, pageSize int) ([]model.ContractData, []string, []string, uint64, int, error) {
+	events := make([]model.ContractData, 0)
+
+	// 构造 SQL 查询语句
+	sqlStr := "SELECT * FROM ercevent WHERE txHash IN (?) ORDER BY id DESC"
+
+	// 构造占位符
+	txHashPlaceholders := strings.Repeat("?,", len(txHashes))
+	txHashPlaceholders = strings.TrimSuffix(txHashPlaceholders, ",")
+	sqlStr = strings.Replace(sqlStr, "?", txHashPlaceholders, 1)
+
+	// 转换 txHashes 为 SQL 查询参数
+	args := make([]interface{}, len(txHashes))
+	for i, hash := range txHashes {
+		args[i] = hash
+	}
+
+	// 执行查询
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr, args...)
+	if err != nil {
+		return nil, nil, nil, 0, 0, err
+	}
+	defer rows.Close()
+
+	ContractList := make([]string, 0)
+	TXHashList := make([]string, 0)
+
+	// 遍历查询结果并将其转换为 ContractData 类型
+	for rows.Next() {
+		var event model.ContractData
+		var data string
+		var id uint64
+		err = rows.Scan(&id, &event.ContractName, &event.EventName, &data, &event.Name, &event.TxHash, &event.Contrac)
+		if err != nil {
+			return nil, nil, nil, 0, 0, err
+		}
+
+		// 替换 ContractName 和 EventName 中的 ERC20 为 FRC20
+		event.ContractName = strings.Replace(event.ContractName, "ERC20", "FRC20", -1)
+		event.EventName = strings.Replace(event.EventName, "ERC20", "FRC20", -1)
+
+		// 解析 data 字段
+		jsonData := make(map[string]interface{})
+		if err = json.Unmarshal([]byte(data), &jsonData); err != nil {
+			return nil, nil, nil, 0, 0, err
+		}
+		json.Unmarshal([]byte(data), &event.Data)
+
+		event.Decimals = "6"
+		TXHashList = append(TXHashList, event.TxHash)
+		ContractList = append(ContractList, event.Contrac)
+		events = append(events, event)
+	}
+	return events, TXHashList, ContractList, 0, 0, nil
+}
+
+func GetEventsByAddress5(txHashes []string, page, pageSize int) ([]model.EventData, []string, []string, uint64, int, error) {
+	events := make([]model.EventData, 0)
+
+	// 构造 SQL 查询语句
+	sqlStr := "SELECT * FROM event WHERE txHash IN (?) ORDER BY id DESC"
+
+	// 构造占位符
+	txHashPlaceholders := strings.Repeat("?,", len(txHashes))
+	txHashPlaceholders = strings.TrimSuffix(txHashPlaceholders, ",")
+	sqlStr = strings.Replace(sqlStr, "?", txHashPlaceholders, 1)
+
+	// 转换 txHashes 为 SQL 查询参数
+	args := make([]interface{}, len(txHashes))
+	for i, hash := range txHashes {
+		args[i] = hash
+	}
+
+	// 执行查询
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr, args...)
+	if err != nil {
+		return nil, nil, nil, 0, 0, err
+	}
+	defer rows.Close()
+
+	ContractList := make([]string, 0)
+	TXHashList := make([]string, 0)
+	for rows.Next() {
+		event := model.EventData{}
+		var chainID, blockHashBytes []byte
+		var id uint64
+
+		var gasPrice, gasTipCap, gasFeeCap, transactionFee string // Modify the variable types for these fields
+		var value []uint8
+		err := rows.Scan(&id, &event.Address, &chainID,
+			&blockHashBytes, &event.BlockNumber, &event.TxHash, &event.TxIndex,
+			&event.Gas, &gasPrice, &transactionFee, &gasTipCap, &gasFeeCap,
+			&value, &event.Nonce, &event.To,
+			&event.Status, &event.Timestamp, &event.NewAddress,
+			&event.NewToAddress)
+		if err != nil {
+			log.Fatal(err)
+		}
+		event.Value, _ = new(big.Int).SetString(string(value), 10)
+		gasPriceParsed, _ := new(big.Int).SetString(gasPrice, 10)
+		event.GasPrice = gasPriceParsed
+
+		gasTipCapParsed, _ := new(big.Int).SetString(gasTipCap, 10)
+		event.GasTipCap = gasTipCapParsed
+
+		gasFeeCapParsed, _ := new(big.Int).SetString(gasFeeCap, 10)
+		event.GasFeeCap = gasFeeCapParsed
+
+		transactionFeeParsed, _ := new(big.Int).SetString(transactionFee, 10)
+		event.TransactionFee = transactionFeeParsed
+
+		event.ChainID = new(big.Int).SetBytes(chainID) // 将 []byte 转为 *big.Int
+		event.BlockHash = string(blockHashBytes)
+
+		events = append(events, event)
+	}
+	return events, TXHashList, ContractList, 0, 0, nil
+}
+
+func GetAllAddresses() ([]string, error) {
+	// 构造 SQL 语句
+	sqlStr := "SELECT * FROM ercevent ORDER BY id DESC"
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 查询所有数据
+	rows, err := model.MysqlPool.QueryContext(ctx, sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// 用于存储所有地址的集合
+	addressSet := make(map[string]struct{})
+
+	// 遍历查询结果
+	for rows.Next() {
+		var data string
+		var id uint64
+		var contractName, eventName, name, txHash, contrac string
+		err = rows.Scan(&id, &contractName, &eventName, &data, &name, &txHash, &contrac)
+		if err != nil {
+			return nil, err
+		}
+
+		// 解析 data 字段，获取地址
+		jsonData := make(map[string]interface{})
+		err = json.Unmarshal([]byte(data), &jsonData)
+		if err != nil {
+			return nil, err
+		}
+		// 提取可能的地址字段
+		if fromAddr, ok := jsonData["from"].(string); ok {
+			addressSet[fromAddr] = struct{}{}
+		}
+		if toAddr, ok := jsonData["to"].(string); ok {
+			addressSet[toAddr] = struct{}{}
+		}
+		if sender, ok := jsonData["sender"].(string); ok {
+			addressSet[sender] = struct{}{}
+		}
+		if user, ok := jsonData["user"].(string); ok {
+			addressSet[user] = struct{}{}
+		}
+	}
+
+	// 将 addressSet 转为去重后的列表
+	uniqueAddresses := make([]string, 0, len(addressSet))
+	for addr := range addressSet {
+		uniqueAddresses = append(uniqueAddresses, addr)
+	}
+
+	return uniqueAddresses, nil
 }
 
 func GetEventsByContractAddress(contractAddress string) ([]model.ContractData, error) {

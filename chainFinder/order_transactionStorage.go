@@ -25,7 +25,6 @@ func (t *ChainFinder) WatchTransactionStorage(ctx context.Context) {
 	if err != nil {
 		panic(err)
 	}
-
 	messageDispatcher := NewMessageDispatcher(messageReader, t.TransactionStorage, t.conf.SucceedNumberOfConcurrent)
 	messageDispatcher.Run(ctx)
 }
@@ -211,7 +210,6 @@ func (t *ChainFinder) ContractStorage(ctx context.Context, message *orders.Messa
 		TxHash:       common.HexToHash(message.String("TxHash")),
 		Contrac:      common.HexToAddress(message.String("To")),
 	}
-
 	log.Info(event)
 	mysqlOrders.InsertContractData(event)
 }

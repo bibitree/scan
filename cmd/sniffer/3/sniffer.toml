@@ -1,0 +1,77 @@
+[logger]
+Filename = "./logs/sniffer1.log"
+Level = "debug"
+Compress = false
+MaxSize = 100
+MaxAge = 7
+MaxBackups = 512
+Named = "[SNIFFER]"
+
+[redis]
+Domain = "1ChainFendSniffer3"
+MaxIdle = 8
+MaxActive = 0
+IdleTimeout = 0
+URI = "redis://:@127.0.0.1:6379/5"
+
+[sniffer]
+SecrityHeight = 30
+NumberOfBlocks = 1000
+NumberEnd = 900000
+NumberStart = 600000
+#Callback = "http://127.0.0.1:8081/event/bridge"
+Callback = "http://192.168.101.12:18071/chainFinder/api/AcceptTransactionStorage"
+
+
+
+[[sniffer.contracts]]
+Addr = "0x83E8C34BF833fF41e95F704c4e12223020f16687"
+Abi = "./contracts/UniswapV2Router.abi"
+Events = [
+    "Swap"
+]
+
+
+[[sniffer.contracts]]
+Addr = "0x83E8C34BF833fF41e95F704c4e12223020f16685"
+Abi = "./contracts/UniswapV2Router01.abi"
+Events = [
+]
+
+[[sniffer.contracts]]
+Addr = "0x83E8C34BF833fF41e95F704c4e12223020f16686"
+Abi = "./contracts/ChainConnect.abi"
+Events = [
+    "extract","transform"
+]
+
+[[sniffer.contracts]]
+Addr = "0x83E8C34BF833fF41e95F704c4e12223020f16681"
+Abi = "./contracts/ERC1155.abi"
+Events = [
+    "TransferSingle","TransferBatch","ApprovalForAll","URI"
+]
+[[sniffer.contracts]]
+Addr = "0x83E8C34BF833fF41e95F704c4e12223020f16682"
+Abi = "./contracts/ERC721.abi"
+Events = [
+    "Transfer","Approval","ApprovalForAll"
+]
+
+[[sniffer.contracts]]
+Addr = "0x83E8C34BF833fF41e95F704c4e12223020f16683"
+Abi = "./contracts/ERC20.abi"
+Events = [
+    "Transfer","Approval"
+]
+
+[[sniffer.contracts]]
+Addr = "0x83E8C34BF833fF41e95F704c4e12223020f16684"
+Abi = "./contracts/nusdt.abi"
+Events = [
+    "Transfer","Approval"
+]
+
+[backend]
+Addr = "https://rpc.novaichain.com"
+TransactionsPerSecond = 128

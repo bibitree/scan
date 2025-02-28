@@ -8,18 +8,18 @@ MaxBackups = 512
 Named = "[TYCHE]"
 
 [redis]
-Domain = "polygon:chainFinder2"
+Domain = "data:chainFinder127"
 MaxIdle = 8
 MaxActive = 0
 IdleTimeout = 0
-URI = "redis://:@127.0.0.1:6379/2"
-Address = "127.0.0.1:3306"
-Password ="a2683570"
+URI = "redis://:@127.0.0.1:6379/3"
+Address = "192.168.101.12:3306"
+Password ="123456"
 Username = "root"
 Database = "chainfindata"
 
 [chainFinder]
-Listen = "0.0.0.0:18071"
+Listen = "0.0.0.0:18072"
 ReadTimeout = 15
 WriteTimeout = 15
 MaxHeaderBytes = 8192
@@ -69,9 +69,11 @@ WaitMinedRetryInterval = 10
 CallbackRetryInterval = 15
 
 [backend]
-Addr = "http://127.0.0.1:8545"
+#Addr = "http://127.0.0.1:8545"
+Addr = "https://rpc.novaichain.com"
 DefaultGasLimit = 5500000
 TransactionsPerSecond = 20
+
 
 [[backend.headers]]
 Key = "x-api-key"

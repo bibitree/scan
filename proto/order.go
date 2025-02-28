@@ -75,6 +75,10 @@ type ByAddress struct {
 	PageSize int    `json:"pageSize" example:"100"`
 }
 
+type IsContract struct {
+	Address string `json:"address" example:"0x66e3076f604491c0944b3c885d451424fd644c4ebf61c333e0d4622d567af38b"`
+}
+
 type ERCTop struct {
 	N int `json:"n" example:"100"`
 }

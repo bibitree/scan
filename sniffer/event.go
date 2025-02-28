@@ -202,7 +202,6 @@ type Event3 struct {
 }
 
 type ChainData struct {
-	// 合约地址
 	BlockRewards            string `json:"blockRewards" example:"0"`
 	SuperNodes              uint64 `json:"superNodes" example:"100"`
 	BlockHeight             string `json:"blockHeight" example:"49335849638413224831"`

@@ -1,0 +1,34 @@
+[logger]
+Filename = "./logs/sniffer1.log"
+Level = "debug"
+Compress = false
+MaxSize = 100
+MaxAge = 7
+MaxBackups = 512
+Named = "[SNIFFER]"
+
+[redis]
+Domain = "1ChainFend1Sniffe1r1295116"
+MaxIdle = 8
+MaxActive = 0
+IdleTimeout = 0
+URI = "redis://:@127.0.0.1:6379/1"
+
+[sniffer]
+SecrityHeight = 0
+NumberOfBlocks = 1000
+NumberEnd = 3741587
+NumberStart = 3641587
+Callback = "http://127.0.0.1:18072/chainFinder/api/AcceptTransactionStorage"
+#Callback = "http://192.168.101.12:18071/chainFinder/api/AcceptTransactionStorage"
+
+[[sniffer.contracts]]
+Addr = "0x83E1C34BF833fF41e95F704c4e12223020f16611"
+Abi = "./contracts/NovaiFaucet.abi"
+Events = [
+    "Transfer"
+]
+
+[backend]
+Addr = "https://rpc.novaichain.com"
+TransactionsPerSecond = 128

@@ -110,12 +110,7 @@ func (s *Sniffer) Run(ctx context.Context, backend eth.Backend) error {
 		return err
 	}
 
-	// latest, err := backend.BlockNumber(ctx)
-	// if err != nil {
-	// 	return err
-	// }
-
-	if err := blocknumber.SetNX(); err != nil {
+	if err := blocknumber.SetNX(s.conf.NumberStart); err != nil {
 		return err
 	}
 
@@ -168,10 +163,13 @@ func (s *Sniffer) run(ctx context.Context, backend eth.Backend) {
 		blockCnt := toBlockNumber - fromBlockNumber + 1
 		if blockCnt > s.conf.NumberOfBlocks {
 			toBlockNumber = fromBlockNumber + s.conf.NumberOfBlocks - 1
+			// toBlockNumber = fromBlockNumber
 		}
 
 		log.Debugf("起始块: %d, 结束块: %d", fromBlockNumber, toBlockNumber)
-
+		if toBlockNumber >= s.conf.NumberEnd && s.conf.NumberEnd != 0 {
+			log.Fatalf("同步结束")
+		}
 		// Executes a filter query.
 		// 执行日志筛选操作，从区块中抽取感兴趣的日志信息。
 		beginTs := time.Now().UnixMilli()
@@ -241,6 +239,15 @@ func (s *Sniffer) filterLogs(ctx context.Context, backend eth.Backend, blockNumb
 	return backend.FilterLogs(ctx, query)
 }
 
+func (s *Sniffer) filterLogsSwap(ctx context.Context, backend eth.Backend, blockNumber *big.Int) ([]types.Log, error) {
+	query := ethereum.FilterQuery{
+		FromBlock: blockNumber,
+		ToBlock:   blockNumber,
+		Topics:    [][]common.Hash{},
+	}
+	return backend.FilterLogs(ctx, query)
+}
+
 func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backend, fromBlockNumber uint64, toBlockNumber uint64) (blocks []TransactionInfo, transactions []TransactionInfo, err error) {
 
 	var wg sync.WaitGroup
@@ -300,10 +307,15 @@ func (s *Sniffer) getTransactionsInBlocks(ctx context.Context, backend eth.Backe
 }
 
 func getBlockTransactions(ctx context.Context, backend eth.Backend, blockNumber *big.Int) (blocks []TransactionInfo, transactions []TransactionInfo, err error) {
-	block, err := backend.BlockByNumber(ctx, blockNumber)
-	if err != nil {
-		log.Error("getBlockTransactions.BlockByNumber", err)
-		return nil, nil, err
+	var block *types.Block
+	for {
+		block, err = backend.BlockByNumber(ctx, blockNumber)
+		if err != nil {
+			log.Error("getBlockTransactions.BlockByNumber", err)
+			time.Sleep(3 * time.Second) // Pause for 3 seconds before retrying
+			continue
+		}
+		break
 	}
 	blockReward, averageGasTipCap, err := getBlockRewar(block)
 	if err != nil {
@@ -407,23 +419,38 @@ func getBlockRewar(block *types.Block) (string, string, error) {
 
 func (s *Sniffer) handleLogs(ctx context.Context, backend eth.Backend, txs []TransactionInfo) error {
 	event2 := []*Event{}
-
 	var WaitGroup sync.WaitGroup
+	var mu sync.Mutex
+	errors := make(chan error, len(txs))
+
 	for _, tx := range txs {
 		WaitGroup.Add(1)
-		event := new(Event)
-		go func(tx TransactionInfo, event *Event) {
+		go func(tx TransactionInfo) {
 			defer WaitGroup.Done()
-
-			// 解析交易数据成为事件对象
-			if err := s.unpackTransaction(ctx, backend, &tx, event); err != nil {
-				log.Panic(err)
+			if ctx.Err() != nil {
+				log.Info("Context cancelled, skipping transaction:", tx)
+				return
 			}
 
-		}(tx, event)
-		event2 = append(event2, event)
+			event := new(Event)
+			if err := s.unpackTransaction(ctx, backend, &tx, event); err != nil {
+				errors <- fmt.Errorf("unpackTransaction error for tx %v: %w", tx, err)
+				return
+			}
+
+			mu.Lock()
+			event2 = append(event2, event)
+			mu.Unlock()
+		}(tx)
 	}
+
 	WaitGroup.Wait()
+	close(errors)
+
+	for err := range errors {
+		log.Info("Error occurred:", err)
+	}
+
 	if err := s.handleEvent(ctx, event2); err != nil {
 		return err
 	}
@@ -437,12 +464,6 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	if tx.From == (common.Address{}) {
 		return s.unpackBlock(ctx, backend, tx, out)
 	}
-
-	// TODO 操作太耗时，暂时注释掉
-	// receipt, err := backend.TransactionReceipt(ctx, tx.Tx.Hash())
-	// if err != nil {
-	// 	return err
-	// }
 	gasUsed := tx.GasLimit //receipt.GasUsed
 
 	// 计算Transaction Fee
@@ -461,6 +482,7 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	out.Address = tx.From
 	out.BlockHash = tx.BlockHash
 	out.TxHash = tx.Tx.Hash()
+	fmt.Println("1+++++++++++++++++++++++++", out.TxHash.String())
 	out.BlockNumber = tx.BlockNumber
 	out.TxIndex = strconv.FormatUint(uint64(tx.TxIndex), 10)
 	out.Gas = tx.Tx.Gas()
@@ -496,52 +518,77 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 		}
 	} else {
 		if len(tx.Tx.Data()) > 0 {
-
-			txLogs, err := s.filterLogs(ctx, backend, big.NewInt(int64(tx.BlockNumber)), out.To)
-			if err != nil {
-				return err
+			var txLogs []types.Log
+			if out.To.String() == "0xC4025331019A0EB9BF855F59844E34A8eB4EB1CA" {
+				txLogs, _ = s.filterLogsSwap(ctx, backend, big.NewInt(int64(tx.BlockNumber)))
+			} else {
+				txLogs, _ = s.filterLogs(ctx, backend, big.NewInt(int64(tx.BlockNumber)), out.To)
 			}
 			if len(txLogs) == 0 {
 				return nil
 			}
-
+			if out.To.String() != "0x16BdAD6e3Dbb2f066bd5a5f5744FeB9B2335FB8B" {
+				return nil
+			}
 			for _, log := range txLogs {
-				if log.TxHash != tx.Tx.Hash() {
-					return nil
-				}
-				if len(log.Topics) == 0 {
-					continue
-				}
-				// if len(log.Topics) >= 0 {
-				// 	continue
-				// }
+				if log.TxHash == tx.Tx.Hash() {
+					if log.TxHash != tx.Tx.Hash() {
+						return nil
+					}
+					if len(log.Topics) == 0 {
+						continue
+					}
+					// if len(log.Topics) >= 0 {
+					// 	continue
+					// }
 
-				// 遍历所有待匹配地址
-				for _, address := range s.addresses {
-					// 在嗅探器对象的合约映射中查找是否存在与地址匹配的合约对象
-					contract := s.contracts[address]
+					// 遍历所有待匹配地址
+					for _, address := range s.addresses {
+						// 在嗅探器对象的合约映射中查找是否存在与地址匹配的合约对象
+						contract := s.contracts[address]
 
-					// 根据日志中第一个topic查找对应的事件
-					event, err := contract.EventByID(log.Topics[0])
-					if err == nil { // 如果找到了对应的事件
-						out.ContractName = contract.Name        // 设置Event结构中的合约名
-						out.ChainID = s.chainID                 // 设置Event结构中的链ID
-						out.Name = event.Name                   // 设置Event结构中的事件名
-						out.Data = make(map[string]interface{}) // 准备一个空的数据映射
-						// 解压日志中的数据成为Event结构中的映射
-						err := contract.UnpackLogIntoMap(out.Data, out.Name, log)
-
-						if err != nil {
-							fmt.Println("+++++++++++++++++++++++++", out.TxHash.String())
-							continue
+						// 根据日志中第一个topic查找对应的事件
+						event, err := contract.EventByID(log.Topics[0])
+						if err == nil { // 如果找到了对应的事件
+							out.ContractName = contract.Name        // 设置Event结构中的合约名
+							out.ChainID = s.chainID                 // 设置Event结构中的链ID
+							out.Name = event.Name                   // 设置Event结构中的事件名
+							out.Data = make(map[string]interface{}) // 准备一个空的数据映射
+							Data1 := make(map[string]interface{})   // 准备一个空的数据映射
+							// 解压日志中的数据成为Event结构中的映射
+							if out.Name == "Swap" {
+								if out.To.String() == "0xC4025331019A0EB9BF855F59844E34A8eB4EB1CA" {
+									addr := common.HexToAddress("0x83E8C34BF833fF41e95F704c4e12223020f16685")
+									out.Data, err = decodeTransactionDataWithMap(tx.Tx.Data(), *s.contracts[addr].ABI)
+									if err != nil {
+										continue
+									}
+									err := contract.UnpackLogIntoMap(Data1, out.Name, log)
+									if err != nil {
+										continue
+									}
+									for key, value := range Data1 {
+										out.Data[key] = value
+									}
+									out.Data["from"] = tx.From
+									fmt.Println("+++++++++++++++++++++++++", out.TxHash.String())
+								}
+							} else {
+								err := contract.UnpackLogIntoMap(out.Data, out.Name, log)
+								if err != nil {
+									fmt.Println("+++++++++++++++++++++++++", out.TxHash.String())
+									continue
+								}
+							}
+							out.Data["data"] = tx.Tx.Data()
+							// 设置Event对象的其他属性
+							// out.Address = txLogs[0].Address
+							out.BlockHash = txLogs[0].BlockHash
+							// out.TxHash = txLogs[0].TxHash
+							out.BlockNumber = txLogs[0].BlockNumber
+							out.TxIndex = strconv.FormatUint(uint64(txLogs[0].TxIndex), 10)
+							// return nil // 成功解析后结束函数
 						}
-						// 设置Event对象的其他属性
-						// out.Address = txLogs[0].Address
-						out.BlockHash = txLogs[0].BlockHash
-						out.TxHash = txLogs[0].TxHash
-						out.BlockNumber = txLogs[0].BlockNumber
-						out.TxIndex = strconv.FormatUint(uint64(txLogs[0].TxIndex), 10)
-						return nil // 成功解析后结束函数
 					}
 				}
 			}
@@ -551,6 +598,30 @@ func (s *Sniffer) unpackTransaction(ctx context.Context, backend eth.Backend, tx
 	}
 
 	return nil
+}
+
+func decodeTransactionDataWithMap(txData []byte, contractABI abi.ABI) (map[string]interface{}, error) {
+	if len(txData) < 4 {
+		return nil, fmt.Errorf("invalid transaction data: too short")
+	}
+
+	// 提取方法 ID
+	methodID := txData[:4]
+
+	// 查找 ABI 中的方法
+	method, err := contractABI.MethodById(methodID)
+	if err != nil {
+		return nil, fmt.Errorf("method not found in ABI: %w", err)
+	}
+
+	// 解码方法的输入参数到 Map
+	args := txData[4:]
+	decodedArgs := make(map[string]interface{})
+	if err := method.Inputs.UnpackIntoMap(decodedArgs, args); err != nil {
+		return nil, fmt.Errorf("failed to decode method inputs into map: %w", err)
+	}
+
+	return decodedArgs, nil
 }
 
 func (s *Sniffer) unpackBlock(ctx context.Context, backend eth.Backend, tx *TransactionInfo, out *Event) error {
@@ -585,4 +656,5 @@ func (s *Sniffer) handleEvent(ctx context.Context, event []*Event) error {
 		case <-time.After(5 * time.Second):
 		}
 	}
+	return nil
 }

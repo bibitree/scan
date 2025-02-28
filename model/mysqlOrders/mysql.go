@@ -60,7 +60,7 @@ func InsertContractData(event sniffer.ContractData) error {
 	// }
 
 	// if count == 0 { // 如果不存在相同的txHash，直接插入新数据
-	sqlStr := `INSERT INTO ercevent(contractName,EventName,data,  name, txHash, toAddress) VALUES (?, ?, ?, ?, ?, ?)`
+	sqlStr := `INSERT INTO ercevent(contractName,EventName,data, name, txHash, toAddress) VALUES (?, ?, ?, ?, ?, ?)`
 	// 使用ExecContext来执行sql语句，并且在执行时使用超时参数
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
